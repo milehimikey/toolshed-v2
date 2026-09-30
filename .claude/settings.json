@@ -15,7 +15,25 @@
       "Bash(./gradlew *)",
       "Bash(docker compose *)",
       "Bash(curl http://localhost:*)",
-      "Bash(curl http://127.0.0.1:*)"
+      "Bash(curl http://127.0.0.1:*)",
+      "Bash(cd *)",
+      "Bash(echo *)",
+      "Bash(printf *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(wc *)",
+      "Bash(jq *)",
+      "Bash(sort *)",
+      "Bash(diff *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(date *)",
+      "Bash(mkdir *)",
+      "Bash(test *)"
     ],
     "ask": [
       "Bash(git push --force*)",
@@ -24,10 +42,7 @@
       "Bash(git clean *)"
     ],
     "deny": [
-      "Bash(gh pr merge *)",
-      "Read(//Users/mikey/projects/toolshed/**)",
-      "Grep(//Users/mikey/projects/toolshed/**)",
-      "Glob(//Users/mikey/projects/toolshed/**)"
+      "Bash(gh pr merge *)"
     ]
   }
 }

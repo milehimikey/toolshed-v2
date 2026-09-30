@@ -15,3 +15,7 @@ out/
 CLAUDE.local.md
 .claude/settings.local.json
 .mcp.json
+# OpenRig: per-seat skill, plugin, and hook projections
+.claude/skills/shared:*/
+.claude/plugins/
+.openrig/
