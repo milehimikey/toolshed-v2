@@ -1,0 +1,17 @@
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+out/
+*.iml
+.idea/
+.vscode/
+.DS_Store
+
+# Slice-implementation git worktrees (one per slice, created by the delivery pod); never part of the project
+.claude/worktrees/
+
+# OpenRig: managed instruction blocks and per-seat runtime settings for the em-factory rig
+CLAUDE.local.md
+.claude/settings.local.json
+.mcp.json

@@ -1,0 +1,15 @@
+# em-factory rig — project-scope command rules for Codex seats (critic, QA, reviewer).
+# Mirrors .claude/settings.json. Loads only while this project is trusted in Codex.
+prefix_rule(pattern = ["rig"], decision = "allow")
+prefix_rule(pattern = ["em"], decision = "allow")
+prefix_rule(pattern = ["git"], decision = "allow")
+prefix_rule(pattern = ["./gradlew"], decision = "allow")
+prefix_rule(pattern = ["docker", "compose"], decision = "allow")
+prefix_rule(pattern = ["gh", "pr", "view"], decision = "allow")
+prefix_rule(pattern = ["gh", "pr", "diff"], decision = "allow")
+prefix_rule(pattern = ["gh", "pr", "checks"], decision = "allow")
+prefix_rule(pattern = ["gh", "pr", "checkout"], decision = "allow")
+prefix_rule(pattern = ["git", "push", "--force"], decision = "prompt")
+prefix_rule(pattern = ["git", "push", "-f"], decision = "prompt")
+prefix_rule(pattern = ["git", "reset", "--hard"], decision = "prompt")
+prefix_rule(pattern = ["gh", "pr", "merge"], decision = "forbidden")

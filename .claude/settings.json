@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rig *)",
+      "Bash(em *)",
+      "Bash(git *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr checkout *)",
+      "Bash(gh run view *)",
+      "Bash(gh run list *)",
+      "Bash(./gradlew *)",
+      "Bash(docker compose *)",
+      "Bash(curl http://localhost:*)",
+      "Bash(curl http://127.0.0.1:*)"
+    ],
+    "ask": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)"
+    ],
+    "deny": [
+      "Bash(gh pr merge *)",
+      "Read(//Users/mikey/projects/toolshed/**)",
+      "Grep(//Users/mikey/projects/toolshed/**)",
+      "Glob(//Users/mikey/projects/toolshed/**)"
+    ]
+  }
+}
