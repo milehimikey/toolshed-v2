@@ -120,7 +120,7 @@ it is silent, these apply.
   under implementation left uncovered by `em coverage --strict`; any gap the implementer had to
   guess at rather than surface — that goes back to the model as an open question or a ratified
   delta before the code merges.
-- **Branch / commit conventions:** one branch and one PR per slice, `impl/<slice-key>`. Commit
+- **Branch / commit conventions:** one branch and one PR per slice doc, `impl/<slice-key>`. Commit
   messages name the slice. The PR description cites the slice doc and lists each invariant with
   the test that covers it.
 - **At merge:** run `em slice mark-implemented toolshed.em <slice-key> <pr-url>` — the one edit an
@@ -138,10 +138,15 @@ they differ.
    package before any further slice is implemented, so a slice never creates, edits, or reaches
    into another slice's code. A slice imports events (and only events) from other packages.
 2. **One read slice per read model.** A view that the model shows `again` in later slices is the
-   same read model listening to more events. It is implemented once, in the package of the slice
-   that introduces it, as one projection handling every event any of its `again` positions reads,
-   with the invariants and scenarios of all those docs covered in that package's tests. The one
-   PR implements all of them (`em slice mark-implemented` for each). (em finding: MIL-208.)
+   same read model listening to more events. Each later position is a continuation of the slice
+   that first declares the view (em 1.12.0+, MIL-208): it has no doc, status, ratification,
+   branch, or PR of its own. The read model is implemented once, in the originating slice's
+   package, as one projection handling every event `em export toolshed.em --slice
+   <originating-key>` lists for it, including `alsoReads`. The originating doc's invariants and
+   scenarios (one scenario per event a continuation feeds) are covered in that package's tests;
+   a continuation event with no scenario there is a gap to surface, not to fill. One PR, and
+   `em slice mark-implemented` runs once, for the originating key only. (Revised 2026-10-04 by
+   Mike Key for em finding MIL-208.)
 3. **Commands and views are the API.** Every State Change slice exposes its command over REST and
    every State View slice exposes its query; the model's UI boxes are the consumers. Endpoints are
    resource-style, designed per slice and listed in the PR for ratification; invariant rejections
