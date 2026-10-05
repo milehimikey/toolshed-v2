@@ -13,8 +13,17 @@ version: 1
 Let the shed manager suspend a flagged neighbor, so someone who keeps returning tools late stops
 borrowing until the shed manager reinstates them. The system flags; the shed manager decides.
 
+## Trigger & Actor
+The shed manager issues Suspend Neighbor from either of two screens:
+- **Flagged Neighbors**, for a neighbor the system has flagged for late returns.
+- **Neighbors**, for any active neighbor, flagged or not.
+
 ## Invariants / Business Rules
-- **INV-SUS-1:** Only the shed manager suspends a neighbor, from Flagged Neighbors.
+- **INV-SUS-1:** Only the shed manager suspends a neighbor, from Flagged Neighbors or from the
+  Neighbors screen.
+  - On the Neighbors screen, Suspend is offered for any active neighbor, flagged or not. This
+    covers a neighbor who closed their account while suspended and signed up again with a
+    different email.
   - The system never suspends anyone. Automatic suspension at the late-return threshold was
     turned down.
 - **INV-SUS-2:** Only an active neighbor can be suspended.
@@ -30,6 +39,12 @@ borrowing until the shed manager reinstates them. The system flags; the shed man
     and they can cancel them.
 - **INV-SUS-6:** Once suspended, the neighbor leaves Flagged Neighbors and appears on Suspended
   Neighbors. The Neighbors screen and the neighbor's own My Account show them as suspended.
+  - While suspended, the neighbor is never flagged.
+- **INV-SUS-7:** The neighbor isn't emailed about the suspension.
+  - They see it on My Account, and as the reason when a checkout, extension or new hold is
+    refused.
+- **INV-SUS-8:** No reason or note is recorded with the suspension.
+  - The flag and its late returns are the reason.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -39,20 +54,11 @@ borrowing until the shed manager reinstates them. The system flags; the shed man
   - **Then:** Neighbor Suspended is recorded for Ana. She leaves Flagged Neighbors and appears on
     Suspended Neighbors, and the Neighbors screen and her My Account show her as suspended. She
     still has the ladder on loan, and her hold on the drill keeps its place.
+- **Suspending a neighbor who isn't flagged**
+  - **Given:** Ben is active and not flagged
+  - **When:** the shed manager suspends Ben from the Neighbors screen
+  - **Then:** Neighbor Suspended is recorded for Ben. The Neighbors screen and his My Account
+    show him as suspended, and he appears on Suspended Neighbors.
 
 ## Open Questions
-- [ ] Can the shed manager suspend a neighbor who hasn't been flagged?
-  - As modeled, Suspend is offered only on Flagged Neighbors. But a neighbor suspended when they
-    closed their account can sign up again with a different email, and the shed manager is meant
-    to be able to suspend that new account. It won't have been flagged.
-  - Options: (a) also offer Suspend on the Neighbors screen, for any active neighbor (a model
-    change: Neighbors also triggers Suspend Neighbor); (b) flagged neighbors only.
-  - Recommendation: (a). Without it, the shed manager can't act on the known gap in sign-up.
-- [ ] Is the neighbor told by email that they've been suspended?
-  - Today they see it on My Account, and in the reason given when a checkout, extension or hold
-    is refused.
-  - Recommendation: no email. My Account and the refusal reason are enough, and the shed is a
-    neighborhood where the shed manager can talk to them.
-- [ ] Does the shed manager record a reason or note with the suspension?
-  - Recommendation: no. The flag and its late returns are the reason, and nothing on record asks
-    for a note.
+None.

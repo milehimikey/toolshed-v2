@@ -40,11 +40,13 @@ Catalog screen they check tools out and place holds from.
   - The action is offered by the tool's state alone, the same to every neighbor. A neighbor who
     can't place the hold (they already hold the tool, have it on loan, or are suspended) still
     sees it, and Place Hold refuses them with the reason.
-- **INV-TCAT-8:** A retired tool drops off the catalog.
+- **INV-TCAT-8:** A retired tool drops off the catalog, including one retired while on loan.
   - Retiring a tool also ends its holds.
+- **INV-TCAT-10:** A tool marked lost drops off the catalog.
+  - Marking a tool lost ends its loan, retires it and ends its holds, all at once.
 - **INV-TCAT-9:** Only Tool Added, Tool Checked Out, Loan Extended, Hold Placed, Hold Cancelled,
-  Tool Returned, Hold Fulfilled, Hold Expired, Tool Retired and Neighbor Account Closed change
-  the catalog.
+  Tool Returned, Hold Fulfilled, Hold Expired, Tool Retired, Tool Lost and Neighbor Account
+  Closed change the catalog.
   - Overdue notices are shown on My Loans, not here.
 
 ## Scenarios (Given / When / Then)
@@ -120,4 +122,13 @@ Catalog screen they check tools out and place holds from.
 - **Tool retired**
   - **Given:** the catalog lists the drill as available
   - **When:** Tool Retired is recorded for the drill
+  - **Then:** the drill drops off the catalog. Other tools are unchanged.
+- **Tool retired while on loan**
+  - **Given:** the catalog shows the hedge trimmer as checked out, due 20 October, with 1 hold
+    waiting
+  - **When:** Tool Retired is recorded for the hedge trimmer
+  - **Then:** the hedge trimmer drops off the catalog, though its loan carries on.
+- **Tool marked lost**
+  - **Given:** the catalog shows the drill as checked out, due 12 October, with 1 hold waiting
+  - **When:** Tool Lost is recorded for the drill
   - **Then:** the drill drops off the catalog. Other tools are unchanged.

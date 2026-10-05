@@ -25,8 +25,11 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
   comes back.
   - One notice per loan. An overdue loan can't be extended, so it stays overdue until it is
     returned, and no second notice goes out.
-- **INV-OLN-4:** When the tool is returned, its loan leaves the list.
-  - A loan returned late, before its notice went out, never gets a notice.
+- **INV-OLN-4:** When the tool is returned, or the shed manager records it lost, its loan leaves
+  the list.
+  - A loan that ends this way before its notice went out never gets a notice.
+  - A closed account never has a loan on the list, because an account can't be closed while
+    tools are on loan.
 - **INV-OLN-5:** The list has no screen. Only the overdue notice gateway reads it.
 - **INV-OLN-6:** Each loan on the list carries everything the notice needs: the borrower's name
   and email, the tool's name, and the due date.
@@ -34,9 +37,13 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
     Added. The gateway looks nothing up elsewhere.
 - **INV-OLN-7:** A loan is ready for its notice as soon as it joins the list. There are no quiet
   hours.
-- **INV-OLN-8:** A notice that later fails to deliver doesn't put the loan back on the list.
-  - The failure is recorded as Overdue Notice Failed and shown to the shed manager on
-    Undelivered Notices. No second notice goes out for that loan.
+- **INV-OLN-8:** When a notice fails, its loan leaves the list if it is still on it, and never
+  comes back.
+  - A notice the provider refuses at hand-off leaves no Overdue Notice Sent, so Overdue Notice
+    Failed is what takes that loan off the list. A notice that bounces later has already left
+    the list.
+  - No further attempt is made after a failure. The shed manager sees it on Undelivered Notices
+    and follows up.
 
 ## Scenarios (Given / When / Then)
 - **Loan not yet overdue**
@@ -67,10 +74,15 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
   - **Given:** Overdue Notice Sent has been recorded for Ana's drill loan, so it is off the list
   - **When:** Overdue Notice Failed is recorded for that notice
   - **Then:** the drill loan stays off the list.
+- **Notice refused at hand-off**
+  - **Given:** Ana's overdue drill loan is on the list, and no Overdue Notice Sent has been
+    recorded for it
+  - **When:** Overdue Notice Failed is recorded for that loan
+  - **Then:** the drill loan leaves the list, and no further notice is tried.
+- **Tool recorded lost**
+  - **Given:** Ana's overdue drill loan is on the list
+  - **When:** Tool Lost is recorded for the drill
+  - **Then:** the drill loan leaves the list, and no notice is sent for it.
 
 ## Open Questions
-- [ ] If a borrower closes their account while a loan is overdue and no notice has been sent, is
-  the notice still sent?
-  - This depends on whether Close Account allows closing with tools still out.
-  - Recommendation: if closing with tools out is allowed, still send the notice, because the
-    tool is still owed.
+None.

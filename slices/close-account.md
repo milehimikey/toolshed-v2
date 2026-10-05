@@ -30,6 +30,11 @@ My Account. Closing is the neighbor's own choice, and it is final.
   - They can't check out, extend, or place holds.
 - **INV-CLS-6:** A closed account is never flagged, and drops off Flagged Neighbors and Suspended
   Neighbors. The Neighbors screen shows it as closed, and My Account shows it closed.
+- **INV-CLS-7:** An account can't be closed while the neighbor has any tool on loan, overdue or
+  not. The closing is refused, with a reason the neighbor can see.
+  - They return their tools first. A loan ended by the shed manager recording the tool lost no
+    longer counts as on loan.
+  - So a closed account never has a tool out.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -49,16 +54,11 @@ My Account. Closing is the neighbor's own choice, and it is final.
   - **When:** Ana closes her account
   - **Then:** Neighbor Account Closed is recorded. Ana's set-aside ends, and the drill passes to
     Cara.
+- **Closing with a tool still on loan**
+  - **Given:** Ana has the ladder on loan
+  - **When:** Ana tries to close her account from My Account
+  - **Then:** the closing is refused, telling her to return the ladder first. Nothing is
+    recorded.
 
 ## Open Questions
-- [ ] Can a neighbor close their account while they still have tools on loan, including overdue
-  ones?
-  - Options:
-    - (a) Refused until every tool is returned, with a reason they can see.
-    - (b) Allowed. The loans stay open: the neighbor can still return the tools, overdue
-      notices still go out, and a late return doesn't count toward a flag, because closed
-      accounts are never flagged.
-  - Recommendation: (a). It keeps the shed's tools from walking off with a closed account, and
-    the questions that depend on this all fall away: returning after closing, notices to closed
-    accounts, and late returns by closed accounts. With (b), each of those needs its own rule.
-  - Holds don't need this rule: closing ends them.
+None.

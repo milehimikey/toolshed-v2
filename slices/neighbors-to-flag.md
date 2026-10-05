@@ -19,6 +19,7 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
   - A return is late when it happens after the loan's due date in force, after any extensions.
     A return on the due date is on time.
   - A loan that is still out doesn't count, even if it is overdue, until it is returned late.
+  - A tool recorded lost never counts as a late return, even if the loan was overdue.
 - **INV-NTF-2:** A neighbor joins the list when they have 3 late returns within 90 days that
   have not yet counted toward a flag.
   - The 90 days are a rolling window, counted back from today by the date of each late return.
@@ -35,6 +36,10 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
 - **INV-NTF-6:** A neighbor whose account is closed is never flagged.
   - Once Neighbor Account Closed is recorded, the neighbor leaves the list if they are on it,
     and later late returns don't put them back.
+- **INV-NTF-7:** A suspended neighbor is never flagged.
+  - Once Neighbor Suspended is recorded, the neighbor leaves the list if they are on it, and late
+    returns while they are suspended don't put them on it. Reinstatement then starts their count
+    again from zero.
 
 ## Scenarios (Given / When / Then)
 - **On-time return doesn't count**
@@ -73,13 +78,10 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
   - **When:** Neighbor Account Closed is recorded for Ana, and a late Tool Returned is then
     recorded for her
   - **Then:** Ana is not on the list.
+- **Suspended neighbor**
+  - **Given:** Ana is suspended
+  - **When:** a late Tool Returned is recorded for Ana
+  - **Then:** Ana is not on the list.
 
 ## Open Questions
-- [ ] Can a suspended neighbor be flagged?
-  - A suspended neighbor may still return tools, so they can keep making late returns. A flag
-    while suspended would put them on Flagged Neighbors, where the only action is to suspend
-    them. Reinstatement then resets their count anyway, so those late returns never count.
-  - Options: (a) a suspended neighbor is never flagged. This list would also hear Neighbor
-    Suspended, which is a model change. (b) Flag them as usual.
-  - Recommendation: (a). A flag for someone already suspended gives the shed manager nothing to
-    do.
+None.

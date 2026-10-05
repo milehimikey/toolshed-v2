@@ -22,8 +22,13 @@ not gone out yet, with everything the email needs.
     collect-by date is the set-aside date plus 3 days.
 - **INV-PNS-3:** Once Pickup Notice Sent is recorded for a hold, it leaves the list and never
   comes back.
-- **INV-PNS-4:** A hold leaves the list, unsent, when its set-aside ends first: the hold is
-  cancelled, the tool is retired, or the holder closes their account.
+- **INV-PNS-4:** A hold leaves the list, unsent, when its set-aside ends first: the holder
+  collects the tool, the hold is cancelled, the tool is retired, or the holder closes their
+  account.
+- **INV-PNS-6:** Once Pickup Notice Failed is recorded for a hold, it leaves the list and never
+  comes back.
+  - A refusal at hand-off records no Pickup Notice Sent, so this is what keeps the email from
+    being handed over again.
 - **INV-PNS-5:** The list has no screen. Only the pickup notice gateway reads it.
 
 ## Scenarios (Given / When / Then)
@@ -49,19 +54,15 @@ not gone out yet, with everything the email needs.
   - **Given:** Ben's hold is on the list
   - **When:** Neighbor Account Closed is recorded for Ben
   - **Then:** Ben's hold leaves the list.
+- **Holder collects before the email**
+  - **Given:** Ben's hold on the drill is on the list
+  - **When:** Tool Checked Out is recorded for the drill and Ben
+  - **Then:** Ben's hold leaves the list.
+- **Pickup email refused**
+  - **Given:** Ben's hold is on the list
+  - **When:** Pickup Notice Failed is recorded for it
+  - **Then:** Ben's hold leaves the list.
 - **No set-aside, nothing to send**
   - **Given:** the list is empty
   - **When:** Neighbor Registered is recorded for Cara, and Tool Added for a ladder
   - **Then:** the list is still empty.
-
-## Open Questions
-- [ ] If the gateway can't get the email delivered and gives up without recording anything,
-  what takes the hold off the list?
-  - As modeled, nothing does, so the gateway would keep picking the hold up for as long as the
-    tool stays set aside, and beyond.
-  - Recommendation: the list also hears Hold Expired. An unsent hold then leaves the list when
-    the pickup window closes, and the gateway keeps retrying until then. If a pickup-email
-    failure event is chosen instead, that event takes it off. Either way it is a model change.
-- [ ] If the holder collects the tool before the email goes out, does the hold leave the list?
-  - Recommendation: yes, which means the list also hears Tool Checked Out. This is the same
-    question as on Send Pickup Notice.

@@ -21,12 +21,17 @@ late-return record.
     reinstated, because closed is final, even if they were suspended when they closed it.
 - **INV-REI-3:** A reinstated neighbor is active again.
   - They can check out tools, extend loans, place holds and collect set-aside tools, subject to
-    the usual rules. An overdue loan, for example, still blocks checkouts.
+    the usual rules.
+  - A neighbor can be reinstated while they still have an overdue loan. The overdue loan goes on
+    blocking checkouts and pickups until the tool is returned.
   - Holds they kept while suspended carry on from their place in the queue.
 - **INV-REI-4:** Reinstatement starts the neighbor's late-return count again from zero.
   - Late returns from before the reinstatement never count toward a later flag.
 - **INV-REI-5:** Once reinstated, the neighbor leaves Suspended Neighbors. The Neighbors screen
   and the neighbor's own My Account show them as active.
+- **INV-REI-6:** The neighbor isn't emailed about the reinstatement, and no reason or note is
+  recorded with it.
+  - My Account shows them as active again.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -42,10 +47,4 @@ late-return record.
   - **Then:** Tool Checked Out is recorded for Ana.
 
 ## Open Questions
-- [ ] Can a neighbor be reinstated while they still have an overdue loan?
-  - Recommendation: yes. Reinstatement lifts only the suspension. The overdue loan goes on
-    blocking checkouts and pickups until the tool is returned.
-- [ ] Is the neighbor told by email that they've been reinstated?
-  - Recommendation: no, the same as for suspension. My Account shows it.
-- [ ] Does the shed manager record a reason or note with the reinstatement?
-  - Recommendation: no, the same as for suspension.
+None.

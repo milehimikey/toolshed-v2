@@ -27,6 +27,8 @@ active, suspended, or closed.
 - **INV-NBRS-4:** Closed is final.
   - A suspended neighbor who closes their account shows as closed, not suspended.
 - **INV-NBRS-5:** Each entry shows the neighbor's name, email, date of sign-up, and status.
+- **INV-NBRS-6:** The shed manager can suspend any active neighbor from this screen, whether
+  or not they have been flagged.
 
 ## Scenarios (Given / When / Then)
 - **Neighbor registered**

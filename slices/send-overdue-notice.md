@@ -32,10 +32,13 @@ and stops a second notice.
 - **INV-OVN-7:** The notice gives the neighbor's name, the tool's name, the due date, a request
   to return the tool, and that an overdue loan blocks new checkouts and pickups.
   - Overdue Loans To Notify carries all of these with each loan.
-- **INV-OVN-8:** If the email provider refuses the notice, or the email bounces, the system
-  retries a few times. If it still fails, Overdue Notice Failed is recorded, and the shed manager
-  sees it on the Undelivered Notices screen.
-  - Retrying never sends a second notice for a loan once one has been delivered.
+- **INV-OVN-8:** The email provider does the retrying, not the shed: 3 delivery attempts over
+  about an hour. If the notice is refused or bounces on all of them, the provider reports one
+  final failure. Overdue Notice Failed is then recorded, and the shed manager sees it on the
+  Undelivered Notices screen.
+  - The gateway hands each notice over once, and never resends.
+- **INV-OVN-9:** After Overdue Notice Failed, no further notice is attempted for that loan.
+  - The loan leaves Overdue Loans To Notify. The shed manager follows up in person.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -53,19 +56,8 @@ and stops a second notice.
   - **When:** the overdue notice gateway checks Overdue Loans To Notify
   - **Then:** the drill loan is not on the list, and no further notice is sent.
 - **Notice can't be delivered**
-  - **Given:** Ana's drill loan is overdue, and the email provider refuses the notice every time
-    the system tries
-  - **When:** the retries run out
+  - **Given:** Ana's drill loan is overdue, and the email provider refuses the notice on each of
+    its 3 attempts
+  - **When:** the provider reports a final failure
   - **Then:** Overdue Notice Failed is recorded for the drill loan, and the shed manager's
-    Undelivered Notices screen shows it.
-
-## Open Questions
-- [ ] How many retries, over how long, before a notice is recorded as failed?
-  - Recommendation: 3 attempts over about an hour. The shed manager then hears about it the same
-    day.
-- [ ] After Overdue Notice Failed, does the system try that loan again later (for example, after
-  the neighbor's email changes), or is the shed manager's follow-up the end of it?
-  - Recommendation: no further attempts. The failure is the record that the neighbor wasn't
-    told, and the shed manager follows up in person. For a refusal at hand-off, no Overdue Notice
-    Sent is recorded, so Overdue Loans To Notify must also drop the loan on Overdue Notice
-    Failed. Otherwise the gateway would keep picking it up.
+    Undelivered Notices screen shows it. No further notice is sent for the loan.

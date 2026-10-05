@@ -20,7 +20,9 @@ tool moves on to the next neighbor.
 - **INV-PTE-2:** A set-aside is due to expire once its collect-by date has passed and the holder
   has not collected the tool.
   - This is worked out by comparing the collect-by date with today. No event marks the
-    set-aside as lapsed. The exact cut-off is an open question below.
+    set-aside as lapsed.
+  - The set-aside lapses at the start of the day after its collect-by date, in the shed's local
+    time. The holder can collect at any time on the collect-by date itself.
 - **INV-PTE-3:** When the holder checks the tool out, the set-aside leaves the list.
 - **INV-PTE-4:** When the holder cancels the hold, the set-aside leaves the list.
 - **INV-PTE-5:** When Hold Expired is recorded, the set-aside leaves the list.
@@ -40,7 +42,7 @@ tool moves on to the next neighbor.
     expire.
 - **Collect-by date passes**
   - **Given:** the drill is set aside for Ben, collect by 13 October, and Ben has not collected it
-  - **When:** it is 14 October
+  - **When:** it is the start of 14 October in the shed's local time
   - **Then:** the set-aside is due to expire. Nothing is recorded until the pickup expirer acts.
 - **Holder collects in time**
   - **Given:** the drill is set aside for Ben, collect by 13 October
@@ -69,7 +71,4 @@ tool moves on to the next neighbor.
   - **Then:** the set-aside is due to expire, the same as for any holder.
 
 ## Open Questions
-- [ ] When exactly does a set-aside lapse: at the end of the collect-by date in the shed's local
-  time, so the holder can collect it any time on that day?
-  - Recommendation: yes. It lapses at the start of the day after the collect-by date, in the
-    shed's time zone, the same way a loan becomes overdue the day after its due date.
+None.

@@ -30,7 +30,8 @@ extend and return loans from.
     returned.
 - **INV-MYL-5:** Once an overdue notice is sent for a loan, My Loans shows that the borrower was
   notified.
-- **INV-MYL-6:** A returned loan drops off My Loans.
+- **INV-MYL-6:** A returned loan drops off My Loans, and so does a loan ended by the shed manager
+  recording the tool lost.
   - My Loans shows only what the neighbor has out now. It keeps no borrowing history.
 - **INV-MYL-7:** Each loan shows the tool, the checkout date, the due date, whether it is
   overdue, and whether an overdue notice has been sent.
@@ -38,7 +39,7 @@ extend and return loans from.
 - **INV-MYL-8:** A loan's entry changes only through its own checkout, extension, overdue notice
   and return, and through holds placed on or ended for its tool.
   - That is: Tool Checked Out, Loan Extended, Overdue Notice Sent, Tool Returned, Hold Placed,
-    Hold Cancelled, Tool Retired, and Neighbor Account Closed of a holder.
+    Hold Cancelled, Tool Retired, Tool Lost, and Neighbor Account Closed of a holder.
 - **INV-MYL-9:** While any hold is waiting on a loan's tool, My Loans shows that the loan can't
   be extended because someone is waiting.
   - A hold on a tool out on loan is waiting from Hold Placed until it is cancelled, or ended
@@ -46,7 +47,8 @@ extend and return loans from.
     any more, the loan can be extended again.
 - **INV-MYL-10:** An overdue loan, and a loan whose tool has been retired, are marked as not
   extendable.
-  - A loan on a retired tool stays on My Loans until it is returned, like any other loan.
+  - A tool can be retired while it is on loan. The loan stays on My Loans until it is returned,
+    like any other loan.
   - Suspension is not shown on My Loans. A suspended neighbor sees it on My Account, and an
     extension they try is refused with that reason.
 
@@ -95,6 +97,10 @@ extend and return loans from.
   - **Given:** Ana's My Loans lists the cordless drill, due 12 October
   - **When:** Tool Retired is recorded for the drill
   - **Then:** Ana's My Loans still lists the drill, due 12 October, marked as not extendable.
+- **Tool recorded lost**
+  - **Given:** Ana's My Loans lists the ladder, overdue
+  - **When:** Tool Lost is recorded for the ladder
+  - **Then:** the ladder drops off Ana's My Loans.
 - **Other neighbors' loans**
   - **Given:** Ana has the cordless drill on loan
   - **When:** Tool Checked Out is recorded for Ben borrowing a ladder

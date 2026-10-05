@@ -24,10 +24,13 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - The collect-by date is the date the tool was set aside plus 3 days.
   - My Holds is the only screen that tells a neighbor a tool is set aside for them. The Tool
     Catalog is the same for every neighbor.
-- **INV-MYHD-4:** A tool stays ready for pickup for 3 days. If the holder has not checked it out
-  by then, the hold expires and drops off My Holds.
+- **INV-MYHD-4:** A tool stays ready for pickup until the end of its collect-by date. If the
+  holder has not checked it out by then, the hold expires at the start of the next day, shed
+  local time, and drops off My Holds.
   - The tool then passes to the next hold, which shows as ready for pickup on that neighbor's My
     Holds.
+  - The neighbor is not told the hold expired, and an expired hold doesn't count against them.
+    They may place a new hold on the same tool, which joins the back of the queue.
 - **INV-MYHD-5:** When a holder checks out the tool they hold, their hold ends and drops off My
   Holds, whether or not it had been fulfilled.
   - The loan then appears on My Loans.
@@ -35,7 +38,9 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   pickup. A cancelled hold drops off My Holds.
   - Cancelling a hold that is ready for pickup passes the tool to the next hold, the same as
     expiry.
-- **INV-MYHD-7:** Retiring a tool ends every hold on it, and those holds drop off My Holds.
+- **INV-MYHD-7:** Retiring a tool, or marking it lost, ends every hold on it, and those holds
+  drop off My Holds.
+  - The holders are not told.
 - **INV-MYHD-8:** Closing an account ends all of that neighbor's holds. Their holds drop off My
   Holds, and holds behind them move up.
   - A tool that was ready for pickup for them passes to the next hold, the same as expiry.
@@ -49,8 +54,8 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   pickup, and My Holds shows that the email was sent.
 - **INV-MYHD-10:** A neighbor has at most one hold on any one tool.
 - **INV-MYHD-11:** Only Hold Placed, Hold Cancelled, Hold Fulfilled, Pickup Notice Sent, Hold
-  Expired, Tool Checked Out by a holder of that tool, Tool Retired and Neighbor Account Closed
-  change My Holds.
+  Expired, Tool Checked Out by a holder of that tool, Tool Retired, Tool Lost and Neighbor
+  Account Closed change My Holds.
   - A checkout by anyone else leaves every neighbor's My Holds unchanged.
 
 ## Scenarios (Given / When / Then)
@@ -107,6 +112,14 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - **Given:** Ben holds position 1 and Cara position 2 on the drill
   - **When:** Tool Retired is recorded for the drill
   - **Then:** the drill drops off both Ben's and Cara's My Holds.
+- **Tool marked lost**
+  - **Given:** Ana has the drill on loan, and Ben holds position 1 and Cara position 2 on it
+  - **When:** Tool Lost is recorded for the drill
+  - **Then:** the drill drops off both Ben's and Cara's My Holds.
+- **Hold again after expiry**
+  - **Given:** Ben's hold on the drill expired, and Cara now holds the drill, ready for pickup
+  - **When:** Hold Placed is recorded for Ben on the drill
+  - **Then:** Ben's My Holds lists the drill, waiting, at position 1, behind Cara's set-aside.
 - **Holder closes their account**
   - **Given:** Ben holds position 1 and Cara position 2 on the drill
   - **When:** Neighbor Account Closed is recorded for Ben
@@ -117,12 +130,10 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - **Then:** no neighbor's My Holds changes.
 
 ## Open Questions
-- [ ] What happens if the pickup email can't be delivered?
-  - Overdue notices that fail are retried, then recorded and shown to the shed manager. Nothing
-    is decided for pickup emails.
-  - (a) The same treatment: retry, then record the failure and show it on Undelivered Notices.
-    That is another new event. (b) Retry, then give up. The hold still shows as ready for pickup
-    on My Holds and expires after 3 days if it isn't collected.
-  - Recommendation: (b). An undelivered pickup email costs the holder their turn but owes the
-    shed nothing, and My Holds still tells them. An overdue notice is about a tool the shed needs
-    back.
+- [ ] When the pickup email can't be delivered, what does My Holds show?
+  - As written, My Holds shows that the email was sent, and nothing changes when Pickup Notice
+    Failed is recorded. The holder would see "emailed" for an email they never got.
+  - (a) My Holds shows the email couldn't be delivered. It then also hears Pickup Notice Failed,
+    which is a model change. (b) My Holds keeps showing that the email was sent.
+  - Recommendation: (a). The holder is looking at My Holds anyway, and it is the one place they
+    can learn their email address needs fixing.

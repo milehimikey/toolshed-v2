@@ -21,18 +21,26 @@ flags; a person decides.
   that have not yet counted toward a flag.
   - A return is late when it happens after the loan's due date in force. The 90 days are a
     rolling window.
+  - A tool recorded lost never counts as a late return.
 - **INV-FLG-3:** Flagging never suspends anyone.
   - The shed manager decides whether to suspend a flagged neighbor. Automatic suspension at the
     threshold was turned down.
 - **INV-FLG-4:** A flag uses up the late returns that caused it.
   - The neighbor is flagged again only after 3 new late returns within 90 days.
 - **INV-FLG-5:** A neighbor is flagged only while they are still due a flag.
-  - A neighbor whose account is closed is never flagged. A neighbor whose count was reset by
-    reinstatement after they joined Neighbors To Flag is not flagged for those late returns.
+  - A neighbor whose account is closed is never flagged, and nor is a suspended neighbor. A
+    neighbor whose count was reset by reinstatement after they joined Neighbors To Flag is not
+    flagged for those late returns.
 - **INV-FLG-6:** Once flagged, the neighbor appears on Flagged Neighbors and stays there until the
   shed manager acts.
   - There is no dismiss action. A flag the shed manager doesn't act on stays on Flagged
     Neighbors.
+- **INV-FLG-7:** A neighbor flagged again while an earlier flag is still waiting on Flagged
+  Neighbors gets a second Neighbor Flagged.
+  - Flagged Neighbors keeps one entry for the neighbor, showing how many times they have been
+    flagged and the date of the latest flag.
+- **INV-FLG-8:** The neighbor isn't told they have been flagged.
+  - A flag is a prompt for the shed manager, not a penalty.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -42,24 +50,12 @@ flags; a person decides.
   - **Then:** Neighbor Flagged is recorded for Ana, and the three late returns are used up. Ana
     leaves Neighbors To Flag and appears on the shed manager's Flagged Neighbors.
 - **Flagged again on new late returns**
-  - **Given:** Ana was flagged on 5 October, and since then has returned tools late on
-    20 October, 1 November and 15 November, so she is on Neighbors To Flag again
+  - **Given:** Ana was flagged on 5 October, and the shed manager hasn't acted on it. Since then
+    she has returned tools late on 20 October, 1 November and 15 November, so she is on
+    Neighbors To Flag again.
   - **When:** the late-return flagger acts on Ana
   - **Then:** Neighbor Flagged is recorded for Ana again, using up the three new late returns.
+    Flagged Neighbors still shows one entry for Ana: flagged twice, latest on 15 November.
 
 ## Open Questions
-- [ ] Can a suspended neighbor be flagged?
-  - A suspended neighbor can still return tools late. Their only possible flag would put them on
-    Flagged Neighbors, whose only action is to suspend them, and reinstatement resets their count
-    anyway. The same question is open on Neighbors To Flag.
-  - Recommendation: never flag a suspended neighbor.
-- [ ] If a neighbor is flagged again while an earlier flag is still waiting on Flagged Neighbors,
-  what does the shed manager see?
-  - Options: (a) a second flag is recorded, and Flagged Neighbors keeps one entry for the
-    neighbor showing they were flagged again; (b) no new flag while one is still waiting, and
-    their late returns keep counting.
-  - Recommendation: (a). Repeated late returns are the signal the shed manager needs, and
-    recording each flag keeps that history.
-- [ ] Is the neighbor told they have been flagged?
-  - Recommendation: no. A flag is a prompt for the shed manager, not a penalty. The neighbor
-    hears from the shed only if they are suspended.
+None.

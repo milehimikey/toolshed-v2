@@ -17,42 +17,46 @@ Flagged Neighbors screen they suspend neighbors from. The system flags; the shed
 - **INV-FLN-1:** A neighbor appears on Flagged Neighbors when Neighbor Flagged is recorded for
   them.
   - A neighbor is flagged by the system after 3 late returns within 90 days. Being on this list
-    never suspends anyone by itself.
-- **INV-FLN-2:** A flagged neighbor stays on the list until the shed manager suspends them.
+    never suspends anyone by itself, and the neighbor is not told they were flagged.
+  - A suspended neighbor is never flagged, so never appears here while suspended.
+- **INV-FLN-2:** Each entry shows the neighbor's name and email, the date of their latest flag,
+  and the late returns behind the flag.
+- **INV-FLN-3:** A neighbor has at most one entry. If they are flagged again while still listed,
+  the entry shows how many times they have been flagged, and the latest flag date.
+- **INV-FLN-4:** A flagged neighbor stays on the list until they are suspended or close their
+  account.
   - There is no dismiss action. A flag the shed manager decides not to act on stays on the list.
-- **INV-FLN-3:** When the shed manager suspends a flagged neighbor, the neighbor leaves the list.
-  - Suspending is the only action this screen offers.
-- **INV-FLN-4:** Only the shed manager sees Flagged Neighbors.
-- **INV-FLN-5:** Only Neighbor Flagged and Neighbor Suspended change Flagged Neighbors.
+- **INV-FLN-5:** When a flagged neighbor is suspended, they leave the list.
+  - Suspending is the only action this screen offers. A flagged neighbor suspended from the
+    Neighbors screen leaves this list too.
+- **INV-FLN-6:** When a flagged neighbor closes their account, they leave the list.
+  - Closed is final, so the shed manager is never offered Suspend on a closed account.
+- **INV-FLN-7:** Only the shed manager sees Flagged Neighbors.
+- **INV-FLN-8:** Only Neighbor Flagged, Neighbor Suspended and Neighbor Account Closed change
+  Flagged Neighbors.
 
 ## Scenarios (Given / When / Then)
 - **Neighbor flagged**
-  - **Given:** Flagged Neighbors is empty
+  - **Given:** Flagged Neighbors is empty, and Ana Ruiz (ana@example.org) returned tools late on
+    1 September, 20 September and 5 October
   - **When:** Neighbor Flagged is recorded for Ana on 5 October
-  - **Then:** Flagged Neighbors lists Ana, flagged 5 October, with a Suspend action.
+  - **Then:** Flagged Neighbors lists Ana Ruiz, ana@example.org, flagged once, on 5 October, with
+    those three late returns and a Suspend action.
+- **Flagged again while still listed**
+  - **Given:** Flagged Neighbors lists Ana, flagged once, on 5 October
+  - **When:** Neighbor Flagged is recorded for Ana again on 15 November
+  - **Then:** Flagged Neighbors still lists Ana once, now flagged twice, latest on 15 November,
+    with the late returns behind the new flag.
 - **Flagged neighbor suspended**
   - **Given:** Flagged Neighbors lists Ana and Ben
   - **When:** Neighbor Suspended is recorded for Ana
   - **Then:** Ana leaves Flagged Neighbors. Ben is still listed.
+- **Flagged neighbor closes their account**
+  - **Given:** Flagged Neighbors lists Ana
+  - **When:** Neighbor Account Closed is recorded for Ana
+  - **Then:** Ana leaves Flagged Neighbors.
 - **Flag left alone**
   - **Given:** Flagged Neighbors has listed Ana since 5 October, and the shed manager has not
     suspended her
   - **When:** a month passes with no Neighbor Suspended recorded for Ana
   - **Then:** Ana is still listed.
-
-## Open Questions
-- [ ] What happens to a flagged neighbor who closes their account before the shed manager acts?
-  - As modeled, Flagged Neighbors doesn't hear Neighbor Account Closed. The neighbor would stay
-    on the list forever, with a Suspend action for an account that is closed and final.
-  - Recommendation: they drop off the list when the account is closed. Flagged Neighbors would
-    then also hear Neighbor Account Closed, which is a model change.
-- [ ] What does the shed manager see for each flagged neighbor?
-  - Recommendation: the neighbor's name and email, the date they were flagged, and the late
-    returns that caused the flag (tool, due date, date returned), so the shed manager can judge
-    whether to suspend. The details would need to reach this view, either carried on Neighbor
-    Flagged or from Neighbor Registered and the loan events.
-- [ ] If a neighbor already on the list is flagged again, does the list show one entry or two?
-  - This depends on whether a second flag is recorded while one is still waiting, which is open
-    on Flag Neighbor.
-  - Recommendation: one entry per neighbor, showing how many times they have been flagged and
-    the latest flag date.

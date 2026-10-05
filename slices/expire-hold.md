@@ -20,8 +20,8 @@ does this itself; no person decides it.
     The shed manager doesn't cancel set-asides by hand.
 - **INV-EXP-2:** A set-aside expires once its collect-by date has passed and the holder has not
   collected the tool.
-  - The collect-by date is the set-aside date plus 3 days. The exact cut-off is an open question
-    below.
+  - The collect-by date is the set-aside date plus 3 days. The set-aside lapses at the start of
+    the day after the collect-by date, in the shed's local time.
 - **INV-EXP-3:** Only a set-aside still in force can expire.
   - If the holder has collected the tool or cancelled the hold, or the tool was retired, or the
     holder closed their account, nothing expires.
@@ -34,6 +34,12 @@ does this itself; no person decides it.
   available to borrow if no hold is waiting.
   - Setting the tool aside for the next hold is the hold fulfiller's job, recorded as Hold
     Fulfilled.
+- **INV-EXP-7:** After a hold expires, the neighbor may place a new hold on the same tool. It
+  joins the back of the queue.
+- **INV-EXP-8:** The neighbor gets no message when their hold expires.
+  - They were emailed when the tool was set aside, and that email gave the collect-by date.
+- **INV-EXP-9:** An expired hold doesn't count against the neighbor.
+  - Only late returns count toward a flag.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: set-aside lapses, next hold waiting**
@@ -55,17 +61,4 @@ does this itself; no person decides it.
   - **Then:** Hold Expired is recorded for Ben's hold, and the drill passes to Cara.
 
 ## Open Questions
-- [ ] When exactly does a set-aside lapse?
-  - Recommendation: at the start of the day after the collect-by date, in the shed's local
-    time, so the holder can collect any time on that day. Loans become overdue the same way.
-- [ ] After a hold expires, may the neighbor place a new hold on the same tool?
-  - Recommendation: yes, joining the back of the queue, as after cancelling a hold.
-- [ ] Is the holder told when their hold expires, beyond it dropping off My Holds?
-  - Options: (a) no message; (b) an email through the same provider (a new event and email
-    slice, a model change).
-  - Recommendation: (a). They were emailed when the tool was set aside, and My Holds shows the
-    collect-by date.
-- [ ] Does an expired hold count against the neighbor in any way, the way late returns count
-  toward a flag?
-  - Recommendation: no. An uncollected tool costs the next neighbor at most 3 days, and only
-    late returns are on record as counting.
+None.

@@ -17,6 +17,9 @@ back in the shed, for the next holder or for anyone to borrow.
 - **INV-RET-1:** The borrower returns their own loan themselves, from My Loans.
   - The shed manager does not record returns.
 - **INV-RET-2:** Only a loan that is still out can be returned, and only once.
+  - A loan ended by the shed manager recording the tool lost can't be returned.
+  - A closed account never has a loan out, because an account can't be closed while tools are
+    on loan.
 - **INV-RET-3:** Returning a tool records only Tool Returned.
   - Setting the tool aside for the first waiting hold is a separate system reaction to the
     return, recorded as Hold Fulfilled.
@@ -32,6 +35,10 @@ back in the shed, for the next holder or for anyone to borrow.
 - **INV-RET-7:** A suspended neighbor can return a tool.
 - **INV-RET-8:** Nothing about the tool's condition is recorded on return.
   - A damaged tool is the shed manager's to retire.
+- **INV-RET-9:** A tool retired while on loan can still be returned. Once returned, it stays out
+  of the shed's tools.
+  - The return ends the loan as usual. The tool doesn't come back into the Tool Catalog or Tool
+    Inventory, and no hold is waiting on it, because retiring it ended its holds.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: on-time return, no holds**
@@ -62,14 +69,11 @@ back in the shed, for the next holder or for anyone to borrow.
   - **Given:** Ana is suspended and has the drill on loan
   - **When:** Ana returns the drill from My Loans
   - **Then:** Tool Returned is recorded, and the drill drops off Ana's My Loans.
+- **Returning a tool that was retired while on loan**
+  - **Given:** Ana has the ladder on loan, and the shed manager retired it while it was out
+  - **When:** Ana returns the ladder from My Loans
+  - **Then:** Tool Returned is recorded, and the ladder drops off Ana's My Loans. The ladder
+    doesn't appear in the Tool Catalog.
 
 ## Open Questions
-- [ ] Can a neighbor whose account is closed still return a tool they have out?
-  - This depends on whether Close Account allows closing with tools still out. After closing,
-    the neighbor can only view My Account.
-  - Recommendation: if closing with tools out is allowed, the neighbor can still return them.
-    Otherwise the question doesn't arise.
-- [ ] If the tool was retired while it was on loan, what happens when it comes back?
-  - This depends on whether a tool on loan can be retired at all, which Retire Tool decides.
-  - Recommendation: the return is recorded as usual and the tool doesn't come back into the
-    catalog. Retiring it already ended its holds, so nobody is waiting.
+None.
