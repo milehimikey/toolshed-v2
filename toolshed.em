@@ -266,8 +266,8 @@ slice "Neighbors To Flag" {
 
 slice "Flag Neighbor" {
   processor Late Return Flagger from "Neighbors To Flag" note "slices/flag-neighbor.md"
-  command Flag Neighbor
-  event Neighbor Flagged loops-to "Neighbors To Flag" @Neighbors
+  command Flag Neighbor { neighborId: NeighborId, loanIds: LoanId[] }
+  event Neighbor Flagged { neighborId: NeighborId, loanIds: LoanId[], flaggedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
 }
 slice "Flagged Neighbors" {
   view Flagged Neighbors from "Neighbor Flagged", "Neighbor Registered", "Tool Added", "Tool Checked Out", "Loan Extended", "Tool Returned", "Neighbor Email Changed" note "slices/flagged-neighbors.md"
@@ -276,15 +276,15 @@ slice "Flagged Neighbors" {
 
 slice "Suspend Neighbor" {
   ui Flagged Neighbors @Shed Manager
-  command Suspend Neighbor note "slices/suspend-neighbor.md"
-  event Neighbor Suspended loops-to "Neighbors To Flag" @Neighbors
+  command Suspend Neighbor { neighborId: NeighborId } note "slices/suspend-neighbor.md"
+  event Neighbor Suspended { neighborId: NeighborId, suspendedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
 }
 slice "Flagged Neighbors — neighbor suspended" {
   view Flagged Neighbors again from "Neighbor Suspended"
   ui Flagged Neighbors @Shed Manager
 }
 slice "Suspended Neighbors" {
-  view Suspended Neighbors from "Neighbor Suspended", "Neighbor Registered", "Neighbor Email Changed" note "slices/suspended-neighbors.md"
+  view Suspended Neighbors from "Neighbor Suspended", "Neighbor Registered", "Neighbor Email Changed" { neighborId: NeighborId, name: Text, email: Text, suspendedAt: Instant } note "slices/suspended-neighbors.md"
   ui Suspended Neighbors @Shed Manager
 }
 slice "Neighbors — neighbor suspended" {
@@ -298,8 +298,8 @@ slice "My Account — neighbor suspended" {
 
 slice "Reinstate Neighbor" {
   ui Suspended Neighbors @Shed Manager
-  command Reinstate Neighbor note "slices/reinstate-neighbor.md"
-  event Neighbor Reinstated loops-to "Neighbors To Flag" @Neighbors
+  command Reinstate Neighbor { neighborId: NeighborId } note "slices/reinstate-neighbor.md"
+  event Neighbor Reinstated { neighborId: NeighborId, reinstatedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
 }
 slice "Suspended Neighbors — neighbor reinstated" {
   view Suspended Neighbors again from "Neighbor Reinstated"
