@@ -73,6 +73,8 @@ Check Out Tool lends to it under its usual rules.
   to a closed account that was suspended when it was closed.
   - An account's email is its current one: the email it registered with, or the latest Neighbor
     Email Changed for it. An email an account has changed away from belongs to no one.
+  - Whether a closed account was suspended when it was closed is read from its Neighbor Account
+    Closed (whileSuspended), never worked out from earlier suspensions and reinstatements.
   - One account per email. A closed account's email can be used again, so a neighbor who left
     can come back with the same address.
   - An account closed while suspended keeps its email for good, so a suspended neighbor can't
@@ -148,8 +150,8 @@ Check Out Tool lends to it under its usual rules.
   - **Given:** Ben's account N2, using ben@example.org, was suspended, then reinstated, and then
     closed while active
   - **When:** Ben signs up as N9 with ben@example.org
-  - **Then:** Neighbor Registered is recorded for N9. The account wasn't suspended when it was
-    closed, so its email is free again.
+  - **Then:** Neighbor Registered is recorded for N9. N2's Neighbor Account Closed has
+    whileSuspended no, so its email is free again.
 - **Different email after closing while suspended (INV-REG-4, INV-REG-6)**
   - **Given:** Ben's account N2, using ben@example.org, was closed while suspended
   - **When:** Ben signs up as N5 with ben.new@example.org
@@ -230,11 +232,9 @@ There are no retries, compensations or external calls in this slice. No email is
   reads from each:
   - Neighbor Registered (this slice): neighborId, name, email.
   - Neighbor Email Changed (Change Email): neighborId, email.
-  - Neighbor Suspended (Suspend Neighbor): neighborId.
-  - Neighbor Reinstated (Reinstate Neighbor): neighborId.
-  - Neighbor Account Closed (Close Account): neighborId.
-  - Those slices aren't yet written in depth. These names are this slice's assumptions; each of
-    those slices is checked against them when it is.
+  - Neighbor Account Closed (Close Account): neighborId, whileSuspended.
+  - Neighbor Email Changed matches slices/change-email.md. Close Account is specified in a slice
+    being written in depth; it is checked against these keys when it is.
 - **Downstream read models / slices affected:** Neighbors and My Account (a new entry); Tool
   Inventory, Overdue Loans To Notify, Undelivered Notices, Pickup Notices To Send, Flagged
   Neighbors and Suspended Neighbors (the neighbor's name and email). Every later neighbor action

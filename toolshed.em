@@ -370,8 +370,8 @@ slice "Undelivered Notices — tool lost" {
 
 slice "Close Account" {
   ui My Account @Neighbor
-  command Close Account note "slices/close-account.md"
-  event Neighbor Account Closed loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send", "Neighbors To Flag" @Neighbors
+  command Close Account { neighborId: NeighborId } note "slices/close-account.md"
+  event Neighbor Account Closed { neighborId: NeighborId, whileSuspended: Bool assigned, closedAt: Instant assigned } loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send", "Neighbors To Flag" @Neighbors
 }
 slice "Flagged Neighbors — account closed" {
   view Flagged Neighbors again from "Neighbor Account Closed"

@@ -160,8 +160,8 @@ first that holds wins:
 - **Repeated events:** every event is applied idempotently (INV-MYAC-10). An event applied a
   second time leaves the account as it was after the first.
 - **Events for a closed account:** closed is final, so no Neighbor Suspended, Neighbor Reinstated
-  or Neighbor Email Changed is recorded for a closed account (Close Account INV-CLS-3, Change
-  Email INV-CEM-3). If one reaches this view, it can only be a replay, and it changes nothing.
+  or Neighbor Email Changed is recorded for a closed account (Close Account: nothing reopens,
+  suspends or reinstates a closed account; Change Email, INV-CEM-3). If one reaches this view, it can only be a replay, and it changes nothing.
 - **Unknown neighbor ID:** the query returns not found. The screen shows that no account was
   found rather than an error.
 - **Stale actions:** an action offered on the screen can be out of date by the time it is used

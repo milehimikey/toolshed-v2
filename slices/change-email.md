@@ -72,6 +72,8 @@ Notice Failure, INV-ONF-6).
   closed account that was suspended when it was closed.
   - This is the same one-account-per-email rule as at sign-up (INV-REG-4, Register Neighbor). An
     account's email is always its current one.
+  - Whether a closed account was suspended when it was closed is read from its Neighbor Account
+    Closed (whileSuspended), never worked out from earlier suspensions and reinstatements.
 - **INV-CEM-3:** A neighbor whose account is closed can't change their email.
   - After closing, My Account is read-only.
 - **INV-CEM-3a:** A suspended neighbor can't change their email. The change is refused with a
@@ -226,11 +228,13 @@ email changes.
 - **Upstream events this slice relies on**, to apply its rules, and the fields it reads from each:
   - Neighbor Registered (Register Neighbor): neighborId, email.
   - Neighbor Email Changed (this slice): neighborId, email.
-  - Neighbor Suspended (Suspend Neighbor): neighborId.
-  - Neighbor Reinstated (Reinstate Neighbor): neighborId.
-  - Neighbor Account Closed (Close Account): neighborId.
-  - Neighbor Registered matches slices/register-neighbor.md. The other three are specified in
-    slices not yet written in depth; each is checked against these keys when it is.
+  - Neighbor Suspended (Suspend Neighbor): neighborId. Used for INV-CEM-3a (this neighbor's own
+    suspension).
+  - Neighbor Reinstated (Reinstate Neighbor): neighborId. Used for INV-CEM-3a.
+  - Neighbor Account Closed (Close Account): neighborId, whileSuspended.
+  - These match slices/register-neighbor.md, slices/suspend-neighbor.md and
+    slices/reinstate-neighbor.md. Close Account is specified in a slice being written in depth;
+    it is checked against these keys when it is.
 - **Downstream read models / slices affected:** My Account, Neighbors, Overdue Loans To Notify,
   Pickup Notices To Send, Undelivered Notices, Flagged Neighbors and Suspended Neighbors (the
   email). Register Neighbor and later Change Email requests check the new email as held.
