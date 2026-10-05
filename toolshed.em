@@ -35,11 +35,11 @@ slice "Tool Inventory — neighbor registered" {
   ui Tool Inventory @Shed Manager
 }
 slice "Neighbors" {
-  view Neighbors from "Neighbor Registered" note "slices/neighbors.md"
+  view Neighbors from "Neighbor Registered" { neighborId: NeighborId, name: Text, email: Text, registeredAt: Instant, status: Text derived, canSuspend: Bool derived } note "slices/neighbors.md"
   ui Neighbors @Shed Manager
 }
 slice "My Account" {
-  view My Account from "Neighbor Registered" note "slices/my-account.md"
+  view My Account from "Neighbor Registered" { neighborId: NeighborId, name: Text, email: Text, registeredAt: Instant, status: Text derived, canChangeEmail: Bool derived, canCloseAccount: Bool derived } note "slices/my-account.md"
   ui My Account @Neighbor
 }
 
