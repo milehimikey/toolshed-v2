@@ -59,8 +59,8 @@ eventually consistent.
 ## Invariants / Business Rules
 A **counting late return**, for a neighbor today, is a loan of theirs whose Tool Returned has late
 yes, and which:
-- was returned within the 90 days ending today (returnedOn is today or one of the 89 days before),
-  in the shed's local time;
+- counts on its return day and the next 89 days: returnedOn is today or one of the 89 days
+  before, in the shed's local time;
 - isn't named by an earlier Neighbor Flagged for them;
 - was returned after their latest Neighbor Reinstated, if any;
 - was not returned while they were suspended.
@@ -205,7 +205,7 @@ neighbor is flagged.
 
 ## Non-Functional Requirements
 - **Security / authz:** only the Late Return Flagger issues Flag Neighbor. No person or screen
-  does.
+  does. It is an internal automation command, not on the REST API, so it has no sign-in guard.
 - **PII & compliance:** Neighbor Flagged links a neighbor to loans they returned late. It holds no
   name or email.
 - **Performance / SLA:** none beyond the list's freshness. The flagger acts as soon as the
@@ -230,6 +230,4 @@ neighbor is flagged.
   Neighbor is offered on Flagged Neighbors.
 
 ## Open Questions
-- [ ] Exactly where the 90-day window starts and ends: open in Neighbors To Flag
-  (slices/neighbors-to-flag.md). This doc uses the same reading, the 90 days ending today
-  (today and the 89 days before), and follows its answer.
+None.

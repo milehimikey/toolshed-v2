@@ -16,9 +16,8 @@ chooses. It is also how a holder collects a tool set aside for them: there is no
 
 ## Trigger & Actor
 The neighbor who will borrow the tool, from the Tool Catalog screen, on a tool the catalog offers
-Check Out on (available, reserved or set aside). The shed manager does not record checkouts. How
-the system recognises the neighbor is the open identity question in Add Tool
-(slices/add-tool.md); this slice follows its answer.
+Check Out on (available, reserved or set aside). The shed manager does not record checkouts.
+Sign-in, handled outside the shed's events, supplies the acting neighbor's ID.
 
 ## Command / Input
 **Command:** `Check Out Tool`
@@ -66,7 +65,9 @@ eventually consistent.
 - **INV-CHK-1:** A neighbor checks a tool out themselves, for themselves.
   - The command names the acting neighbor in neighborId, and the request must come from that
     neighbor (`requester-mismatch` otherwise). The shed manager does not
-    record checkouts. How the requester is recognised is the open identity question.
+    record checkouts. Sign-in, handled outside the shed's events, supplies the acting
+    neighbor's ID, resolving a person to their newest account.
+  - A caller with no sign-in is refused with `not-signed-in`, before anything else is checked.
 - **INV-CHK-2:** A tool that is already checked out can't be checked out again until it is
   returned or recorded lost.
   - A loan is open from Tool Checked Out until Tool Returned or Tool Lost for that loan.
@@ -295,6 +296,10 @@ October.
   - **When:** a request to check out the drill for Ana comes from someone other than Ana
   - **Then:** refused with `requester-mismatch`: "You can only check out tools for yourself." No
     event is recorded.
+- **No sign-in (INV-CHK-1)**
+  - **Given:** a caller with no sign-in
+  - **When:** they ask to check out the drill
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -302,7 +307,7 @@ the neighbor on the Tool Catalog screen. The name is the contract; the sentence 
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-CHK-1).
+1. `not-signed-in`, then `requester-mismatch` (INV-CHK-1).
 2. The loan ID is already used (INV-CHK-12): a repeat with the same details succeeds with nothing
    recorded; otherwise `loan-id-in-use`.
 3. `tool-not-found`, then `neighbor-not-found` (INV-CHK-11).
@@ -323,6 +328,7 @@ The checks run in this order, and the first that fails is the reason returned:
 | Reason | Sentence | Rule |
 |--------|----------|------|
 | `loan-id-in-use` | That loan ID is already used by another loan. | INV-CHK-12 |
+| `not-signed-in` | Please sign in. | INV-CHK-1 |
 | `requester-mismatch` | You can only check out tools for yourself. | INV-CHK-1 |
 | `tool-not-found` | There is no such tool. | INV-CHK-11 |
 | `neighbor-not-found` | There is no such neighbor. | INV-CHK-11 |
@@ -352,8 +358,9 @@ There are no external calls, retries or compensations in this slice.
 
 ## Non-Functional Requirements
 - **Security / authz:** a neighbor may check out a tool only for themselves (INV-CHK-1); the
-  shed manager doesn't check tools out. How the requester is recognised is the open identity
-  question in Add Tool.
+  shed manager doesn't check tools out. Sign-in, handled outside the shed's events,
+  supplies the acting neighbor's ID; `requester-mismatch` means it isn't the neighborId in the
+  request.
 - **PII & compliance:** Tool Checked Out links a neighbor to a tool and a due date. It holds no
   name or email; those stay on Neighbor Registered and Neighbor Email Changed.
 - **Performance / SLA:** none beyond the one-at-a-time rule above.
@@ -384,4 +391,4 @@ There are no external calls, retries or compensations in this slice.
   Lost act on the loan by its loan ID.
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1. The requester checks here follow its answer.
+None.

@@ -19,7 +19,7 @@ slice "Add Tool" {
   event Tool Added { toolId: ToolId, name: Text, description: Text, defaultCheckoutPeriodDays: Int, addedAt: Instant assigned } @Tools
 }
 slice "Tool Inventory" {
-  view Tool Inventory from "Tool Added" { toolId: ToolId, name: Text, description: Text, defaultCheckoutPeriodDays: Int, addedAt: Instant, onLoan: Bool derived, loanId: LoanId derived, borrowerId: NeighborId derived, borrowerName: Text derived, dueDate: Date derived, retired: Bool derived, canRetire: Bool derived, canMarkLost: Bool derived } note "slices/tool-inventory.md"
+  view Tool Inventory from "Tool Added" { toolId: ToolId, name: Text, description: Text, defaultCheckoutPeriodDays: Int, addedAt: Instant, onLoan: Bool derived, loanId: LoanId derived, borrowerId: NeighborId derived, borrowerName: Text derived, dueDate: Date derived, retired: Bool derived, canRetire: Bool derived, canMarkLost: Bool derived, overdue: Bool derived } note "slices/tool-inventory.md"
   ui Tool Inventory @Shed Manager
 }
 slice "Tool Catalog" {
@@ -41,7 +41,7 @@ slice "Neighbors" {
   ui Neighbors @Shed Manager
 }
 slice "My Account" {
-  view My Account from "Neighbor Registered" { neighborId: NeighborId, name: Text, email: Text, registeredAt: Instant, status: Text derived, canChangeEmail: Bool derived, canCloseAccount: Bool derived } note "slices/my-account.md"
+  view My Account from "Neighbor Registered" { neighborId: NeighborId, name: Text, email: Text, status: Text derived, canChangeEmail: Bool derived, canCloseAccount: Bool derived } note "slices/my-account.md"
   ui My Account @Neighbor
 }
 

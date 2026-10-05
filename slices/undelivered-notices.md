@@ -68,8 +68,8 @@ Nothing brings an entry back.
 
 **Queries**
 - **List undelivered notices.** Takes nothing. Returns every entry with all the fields above.
-  There is no paging. The order is the shared list-order question in .event-modeling.md (Open
-  questions); under its recommendation entries are listed by neighbor name, then by failedAt.
+  There is no paging. Entries are listed by neighbor name, then by failedAt, the time the entry
+  was created (INV-UDN-9).
 
 ## Invariants / Business Rules
 - **INV-UDN-1:** Every Overdue Notice Failed and every Pickup Notice Failed creates exactly one
@@ -97,8 +97,14 @@ Nothing brings an entry back.
 - **INV-UDN-5:** A pickup-notice entry drops off when its set-aside ends.
   - A set-aside ends when the holder collects the tool, or the hold is cancelled or expires, or
     it ends because the tool was retired or the holder closed their account.
+- **INV-UDN-9:** Entries are listed by neighbor name, ignoring case, then by when the failure was
+  recorded.
+  - The same order as every list in the shed.
 - **INV-UDN-8:** Applying the same event twice leaves Undelivered Notices as if it had been
   applied once.
+- **INV-UDN-10:** Only the shed manager can read Undelivered Notices.
+  - A signed-in caller without the shed-manager role is refused with `not-shed-manager`, and a
+    caller with no sign-in with `not-signed-in`. Nothing is returned to either.
 
 ## Scenarios (Given / When / Then)
 Unless a scenario says otherwise: Ana Ruiz registered with ana@example.org and has the cordless
@@ -166,29 +172,47 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
   - **When:** Neighbor Email Changed is recorded for Ana, to ana.ruiz@example.net
   - **Then:** Ana's entry shows ana.ruiz@example.net. The entry stays until L1 is returned or
     recorded lost.
+- **Listing order (INV-UDN-9)**
+  - **Given:** Undelivered Notices lists Ben's pickup-notice entry (failed 13 October), Ana's
+    overdue-notice entry (failed 14 October) and Ana's pickup-notice entry (failed 12 October)
+  - **When:** the shed manager lists undelivered notices
+  - **Then:** the entries come back as: Ana's pickup-notice entry, Ana's overdue-notice entry,
+    then Ben's.
 - **Listing undelivered notices**
   - **Given:** Undelivered Notices lists Ana's overdue-notice entry and Ben's pickup-notice entry
   - **When:** the shed manager's screen lists undelivered notices
   - **Then:** both entries are returned with all their fields, with no paging.
+- **A neighbor tries to read the list (INV-UDN-10)**
+  - **Given:** Undelivered Notices has entries
+  - **When:** a neighbor, signed in without the shed-manager role, asks for the undelivered notices
+  - **Then:** refused with `not-shed-manager`: "Only the shed manager can see this screen."
+    Nothing is returned.
+- **No sign-in (INV-UDN-10)**
+  - **Given:** Undelivered Notices has entries
+  - **When:** a caller with no sign-in asks for the undelivered notices
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
 
 ## Alternate & Error Flows
+- **Read refusals:** the list query refuses a caller without the shed-manager role with
+  `not-shed-manager` ("Only the shed manager can see this screen."), and a caller with no
+  sign-in with `not-signed-in` ("Please sign in."). Nothing is returned on a refusal. These
+  mean the same conditions as in the shed manager's commands.
 - **Repeated events:** every event is applied idempotently (INV-UDN-8). An event applied a
   second time leaves the entries as they were after the first.
 - **Ended loans and set-asides:** a failure report for a loan or set-aside that has already
   ended is ignored by Record Overdue Notice Failure and Record Pickup Notice Failure, so no entry
   is ever created for one. An entry, once it drops off, never comes back.
-- **No actions:** the screen issues no commands, so it has no refusals. Its only use is to
-  prompt the shed manager to follow up in person.
+- **No actions:** the screen issues no commands. Its only use is to prompt the shed manager to
+  follow up in person.
 
 ## Non-Functional Requirements
 - **Security / authz:** the Undelivered Notices screen is the shed manager's alone; neighbors
-  never see it. How the
-  system recognises the shed manager is the open identity question in Add Tool
-  (slices/add-tool.md); this view follows its answer.
+  never see it. Sign-in, handled outside the shed's events, supplies the shed-manager role; only
+  a caller with it may read this view.
 - **PII & compliance:** shows neighbors' names, current emails and the tools they have or are
   waiting for, to the shed manager only. An entry is kept only while its loan or set-aside is
-  live. How long personal data is kept in general is the shed-wide personal-data question in
-  .event-modeling.md (Open questions).
+  live. Names and emails themselves are kept with the shed's loan and hold history and never
+  erased.
 - **Performance / SLA:** none beyond the freshness above.
 
 ## Dependencies & Read Models Affected
@@ -211,6 +235,4 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
 - **Downstream read models / slices affected:** none. The screen issues no commands.
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1. Only the shed manager may see this screen.
-- [ ] List order — brief 10 A4.
-- [ ] How long personal data is kept — brief 11 B7. This screen shows neighbors' names and emails.
+None.

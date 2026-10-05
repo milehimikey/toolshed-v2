@@ -17,9 +17,7 @@ be delivered. It is the screen the neighbor extends and returns loans from.
 
 ## Trigger & Actor
 - **Actor:** a neighbor, opening their own My Loans screen.
-- **Whose loans it shows:** the loans of the neighbor asking. How the system knows who is asking
-  is the open identity question below; this view answers for whichever neighbor ID that
-  supplies.
+- **Whose loans it shows:** the loans of the neighbor asking. Sign-in, handled outside the model, supplies the neighbor's ID, resolving a person to their newest account, or to their closed one only when they have no newer.
 - **Actions offered:** nothing on this screen records anything by itself. Its actions issue
   commands owned by other slices:
   - **Return** (Return Tool slice) — offered on every listed loan (INV-MYL-12).
@@ -71,14 +69,11 @@ is bookkeeping, not part of the row, and is never returned.
 **Queries**
 - **List my loans.** Takes the asking neighbor's neighborId. Returns every open loan whose
   borrower is that neighbor, each with every field above, and nothing about anyone else's loans
-  (INV-MYL-1). There is no paging. A neighbor with no open loans gets an empty list. The order is
-  an open question below.
+  (INV-MYL-1). There is no paging. A neighbor with no open loans gets an empty list. Loans are listed by tool name, ignoring case, then by when the loan was checked out (checkedOutAt); loans checked out at the same instant keep the order their Tool Checked Out was recorded (INV-MYL-13).
 
 ## Invariants / Business Rules
 - **INV-MYL-1:** A neighbor's My Loans shows only that neighbor's own loans.
-  - The query returns only loans whose borrower is the neighbor ID it is given. It never shows
-    who else has a tool or who is waiting for one; whether any neighbor-facing screen shows that
-    is the open question in Tool Catalog (slices/tool-catalog.md) about showing who has a tool.
+  - The query returns only loans whose borrower is the neighbor ID it is given. It never shows who else has a tool or who is waiting for one. No neighbor-facing screen ever shows who has a tool or who holds one; only the shed manager sees borrowers, on Tool Inventory.
 - **INV-MYL-2:** Every checkout appears on the borrower's My Loans as one loan, with the tool
   and its due date.
   - The due date is the one Tool Checked Out carries. How it is set is Check Out Tool's rule.
@@ -127,6 +122,9 @@ is bookkeeping, not part of the row, and is never returned.
 - **INV-MYL-12:** My Loans offers Return on every loan it lists.
   - That includes overdue loans, loans whose tool has been retired, and loans of a suspended
     neighbor.
+- **INV-MYL-13:** Loans are listed by tool name, ignoring case, then by when they were checked out.
+- **INV-MYL-14:** A request with no sign-in is refused before anything else is checked.
+- **INV-MYL-15:** My Loans is answered only for the signed-in neighbor: a request for any other neighbor ID is refused.
 
 ## Scenarios (Given / When / Then)
 - **Tool checked out (INV-MYL-2, INV-MYL-7, INV-MYL-12)**
@@ -209,12 +207,34 @@ is bookkeeping, not part of the row, and is never returned.
   - **Given:** Ana's My Loans lists L1 once
   - **When:** the same Tool Checked Out for L1 is applied again
   - **Then:** Ana's My Loans still lists L1 once, unchanged.
+- **List order (INV-MYL-13)**
+  - **Given:** Ana checked out a ladder on 3 October, then a cordless drill on 5 October
+  - **When:** her loans are listed
+  - **Then:** the cordless drill comes first, then the ladder.
 - **No loans (INV-MYL-1)**
   - **Given:** Ana has no open loans
   - **When:** her loans are listed
   - **Then:** the list is empty.
+- **Not signed in (INV-MYL-14)**
+  - **Given:** nobody is signed in
+  - **When:** My Loans is asked for
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
+- **Asked by the wrong person (INV-MYL-15)**
+  - **Given:** Ben (N2) is signed in
+  - **When:** the loans of N1, Ana, are asked for
+  - **Then:** refused with `requester-mismatch`: "You can only see your own loans." Nothing is returned.
 
 ## Alternate & Error Flows
+Reading this view is guarded like a command. A refused read returns nothing and one reason: the
+stable name, and the sentence shown on the screen. The checks run in this order:
+1. `not-signed-in` (INV-MYL-14).
+2. `requester-mismatch` (INV-MYL-15).
+
+| Reason | Sentence | Rule |
+|--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-MYL-14 |
+| `requester-mismatch` | You can only see your own loans. | INV-MYL-15 |
+
 - **Repeated events:** every event is applied idempotently (INV-MYL-11). An event applied a
   second time leaves the view as it was after the first.
 - **Events for a loan that has ended:** once a loan is returned or its tool recorded lost, it is
@@ -230,9 +250,7 @@ is bookkeeping, not part of the row, and is never returned.
   view raises no errors of its own.
 
 ## Non-Functional Requirements
-- **Security / authz:** a neighbor may list only their own loans (INV-MYL-1). How the system
-  knows which neighbor is asking is the open identity question below; until it is answered,
-  nothing stops a caller asking for another neighbor ID.
+- **Security / authz:** a neighbor may list only their own loans (INV-MYL-1). The query is always asked for the signed-in neighbor's own ID, which sign-in, handled outside the model, supplies; a request for any other neighbor ID is refused `requester-mismatch` (INV-MYL-15), and one with no sign-in `not-signed-in` (INV-MYL-14).
 - **PII & compliance:** shows a neighbor their own loans only. It never shows who holds or is
   waiting for a tool. The holders it keeps for matching hold events are never returned.
 - **Performance / SLA:** none beyond the freshness above.
@@ -259,14 +277,4 @@ is bookkeeping, not part of the row, and is never returned.
   Return Tool.
 
 ## Open Questions
-- [ ] How does the system know which neighbor is asking, so My Loans shows their loans and no one
-  else's? (brief 10 A1)
-  - The same identity question is open in Add Tool, Register Neighbor and My Account.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
-    supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
-  - Recommendation: (b), which adds nothing to the model.
-- [ ] In what order are loans listed? (brief 10 A4)
-  - This is the shed-wide question of one order for every list view: by name, then by when the
-    item was created. For this view that means by tool name, then by checkedOutAt.
-  - Recommendation: yes, that order.
-- [ ] Whether any neighbor-facing screen shows who has or holds a tool (brief 11 B1).
+None.

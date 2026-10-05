@@ -65,9 +65,7 @@ list when Pickup Notice Sent was recorded.
 A failure is recorded only from the email provider's report; no person records it, and the only
 way in is the translation in Trigger & Actor. The shed records only the provider's one final
 failure report: the provider makes 3 delivery attempts over about an hour and reports a final
-failure only if all of them fail. The shed does no retrying of its own. How the provider's link to
-the shed is secured is part of the email port contract proposed for the constitution (brief 10,
-A5).
+failure only if all of them fail. The shed does no retrying of its own. The provider signs each final report, under the shed's house email-port contract; the translation checks the signature and drops an unsigned or wrongly signed report without issuing any command. The provider's signature, not a sign-in, is what guards this command.
 
 A failed pickup email changes nothing about the hold: the tool stays set aside for the holder
 until the end of the collect-by date, and the window isn't extended (Expire Hold owns when it
@@ -172,8 +170,7 @@ know another way.
 
 ## Non-Functional Requirements
 - **Security / authz:** only the email provider's failure report can trigger this command,
-  through the translation. How the shed checks a report really comes from its provider is part of
-  the email port contract proposed for the constitution (brief 10, A5).
+  through the translation. The provider signs each final report, under the shed's house email-port contract; the translation checks the signature and drops an unsigned or wrongly signed report without issuing any command. The provider's signature, not a sign-in, is what guards this command.
 - **PII & compliance:** Pickup Notice Failed holds no name or email: only the hold, the reason and
   the time. The address the email went to is already on Pickup Notice Sent, so the address in the
   provider's report is not recorded again.
@@ -196,5 +193,4 @@ know another way.
 - **Downstream read models / slices affected:** My Holds and Undelivered Notices (the failure).
 
 ## Open Questions
-- [ ] How the provider's failure reports are secured: part of the email port contract (brief 10
-  A5).
+None.

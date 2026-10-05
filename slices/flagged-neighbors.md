@@ -67,16 +67,16 @@ date and return date. These are bookkeeping, not rows, and are never returned.
 
 **Queries**
 - **List flagged neighbors.** Takes nothing. Returns every entry with all the fields above,
-  including its late returns. There is no paging. The order follows the shared list-order rule
-  (open; see Open Questions).
+  including its late returns. There is no paging. Entries are listed by name, then by when the
+  entry was created: the flaggedAt of its first flag (INV-FLN-10).
 
 ## Invariants / Business Rules
 - **INV-FLN-1:** A neighbor appears on Flagged Neighbors when Neighbor Flagged is recorded for
   them.
   - Being on this list never suspends anyone by itself.
 - **INV-FLN-2:** Each entry shows the neighbor's name and current email, the date of their latest
-  flag, and the late returns behind the flags, each with the tool's name, its due date and the
-  date it was returned.
+  flag, and the late returns behind every flag on the entry, each with the tool's name, its due
+  date, the date it was returned, and the date of the flag that named it.
   - The name comes from Neighbor Registered. The email is the current one: Neighbor Registered
     sets it, Neighbor Email Changed replaces it.
   - Neighbor Flagged names the late returns it uses up, as the loans they belong to. It carries
@@ -94,9 +94,12 @@ date and return date. These are bookkeeping, not rows, and are never returned.
   - A flagged neighbor suspended from the Neighbors screen leaves this list too.
 - **INV-FLN-6:** When a flagged neighbor closes their account, they leave the list.
   - Closed is final, so the shed manager is never offered Suspend on a closed account.
+- **INV-FLN-10:** Entries are listed by name, ignoring case, then by when the entry was created.
+  - The same order as every list in the shed.
 - **INV-FLN-9:** Applying the same event twice leaves the list as if it had been applied once.
-
-Only the shed manager sees Flagged Neighbors; neighbors never do.
+- **INV-FLN-11:** Only the shed manager can read Flagged Neighbors.
+  - A signed-in caller without the shed-manager role is refused with `not-shed-manager`, and a
+    caller with no sign-in with `not-signed-in`. Nothing is returned to either.
 
 ## Scenarios (Given / When / Then)
 Unless a scenario says otherwise: Ana Ruiz registered with ana@example.org. She returned the
@@ -119,9 +122,9 @@ the hedge trimmer (L3, due 1 October) on 5 October, all late.
   - **Given:** Flagged Neighbors lists Ana, flagged once on 5 October, and she has since
     returned three more tools late (L4, L5, L6)
   - **When:** Neighbor Flagged is recorded for Ana on 15 November, naming L4, L5 and L6
-  - **Then:** Flagged Neighbors still lists Ana once: flagged twice, latest on 15 November. Under
-    the recommendation in the first open question below, it shows all six late returns: L1, L2
-    and L3 flagged 5 October, and L4, L5 and L6 flagged 15 November.
+  - **Then:** Flagged Neighbors still lists Ana once: flagged twice, latest on 15 November, with
+    all six late returns: L1, L2 and L3 flagged 5 October, and L4, L5 and L6 flagged 15
+    November.
 - **Flagged again after reinstatement (INV-FLN-3)**
   - **Given:** Ana was flagged, then suspended, which removed her entry, and later reinstated
   - **When:** Neighbor Flagged is recorded for Ana on 20 January, naming L7, L8 and L9
@@ -148,12 +151,30 @@ the hedge trimmer (L3, due 1 October) on 5 October, all late.
   - **Given:** Flagged Neighbors lists Ana, flagged once
   - **When:** the same Neighbor Flagged for Ana is applied again
   - **Then:** Ana is still listed once, flagged once.
+- **Listing order (INV-FLN-10)**
+  - **Given:** Flagged Neighbors lists Ben Ito (first flagged 1 October) and Ana Ruiz (first
+    flagged 5 October)
+  - **When:** the shed manager lists flagged neighbors
+  - **Then:** Ana Ruiz comes first, then Ben Ito.
 - **Listing flagged neighbors**
   - **Given:** Flagged Neighbors lists Ana and Ben
   - **When:** the shed manager's screen lists flagged neighbors
   - **Then:** both entries are returned with all their fields and late returns, with no paging.
+- **A neighbor tries to read the list (INV-FLN-11)**
+  - **Given:** Flagged Neighbors has entries
+  - **When:** a neighbor, signed in without the shed-manager role, asks for the flagged neighbors
+  - **Then:** refused with `not-shed-manager`: "Only the shed manager can see this screen."
+    Nothing is returned.
+- **No sign-in (INV-FLN-11)**
+  - **Given:** Flagged Neighbors has entries
+  - **When:** a caller with no sign-in asks for the flagged neighbors
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
 
 ## Alternate & Error Flows
+- **Read refusals:** the list query refuses a caller without the shed-manager role with
+  `not-shed-manager` ("Only the shed manager can see this screen."), and a caller with no
+  sign-in with `not-signed-in` ("Please sign in."). Nothing is returned on a refusal. These
+  mean the same conditions as in the shed manager's commands.
 - **Repeated events:** every event is applied idempotently (INV-FLN-9).
 - **Events after an entry is gone:** once an entry has been removed, a later Neighbor Suspended
   or Neighbor Account Closed for that neighbor changes nothing. A later Neighbor Flagged starts a
@@ -163,12 +184,13 @@ the hedge trimmer (L3, due 1 October) on 5 October, all late.
   rules and refuses with its own reason; this view raises no errors of its own.
 
 ## Non-Functional Requirements
-- **Security / authz:** the Flagged Neighbors screen is the shed manager's alone. How the system
-  recognises the shed manager is the identity question (see Open Questions).
+- **Security / authz:** the Flagged Neighbors screen is the shed manager's alone. Sign-in, handled outside the shed's events, supplies the
+  shed-manager role; only a caller with it may read this view.
 - **PII & compliance:** shows flagged neighbors' names, current emails and their late-return
   history to the shed manager only. An entry is removed when the neighbor is suspended or closes
   their account. To fill entries, the view keeps every neighbor's name and current email, every
-  tool's name, and every loan's tool, borrower and dates, whether or not they are flagged.
+  tool's name, and every loan's tool, borrower and dates, whether or not they are flagged. Names
+  and emails are kept with the shed's loan and hold history and never erased.
 - **Performance / SLA:** none beyond the freshness above.
 
 ## Dependencies & Read Models Affected
@@ -187,11 +209,4 @@ the hedge trimmer (L3, due 1 October) on 5 October, all late.
   Neighbor.
 
 ## Open Questions
-- [ ] When a neighbor is flagged more than once while listed, does the entry show the late
-  returns behind every flag, or only the latest flag's?
-  - Recommendation: every flag's, each marked with its flag date. Repeated lateness is what the
-    shed manager is judging.
-- [ ] How a person is recognised (the identity question) — brief 10 A1.
-- [ ] List order — brief 10 A4.
-- [ ] How long personal data is kept — brief 11 B7. This screen shows neighbors' names, emails
-  and late-return history.
+None.

@@ -25,8 +25,8 @@ physical item is added on its own, including an item identical to one already in
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | toolId | ToolId | yes | A UUID chosen by the caller for the new tool, so a retried request is recognised. Must not belong to a different tool already added (INV-ADD-10). |
-| name | Text | yes | Leading and trailing whitespace (any Unicode whitespace) removed. Must not then be empty (INV-ADD-4). Need not be unique (INV-ADD-8). |
-| description | Text | no | Optional. Leading and trailing whitespace removed. Empty after that means none. |
+| name | Text | yes | Leading and trailing whitespace (any Unicode whitespace) removed. Must not then be empty (INV-ADD-4), and at most 100 characters (INV-ADD-11). Need not be unique (INV-ADD-8). |
+| description | Text | no | Optional. Leading and trailing whitespace removed. Empty after that means none. At most 500 characters (INV-ADD-11). |
 | defaultCheckoutPeriodDays | Int | yes | Whole days, 1 to 30 inclusive (INV-ADD-3). A fractional value is refused, never rounded. |
 
 ## Trigger
@@ -60,7 +60,9 @@ Added.
 
 ## Invariants / Business Rules
 - **INV-ADD-1:** Only the shed manager can add a tool.
-  - Neighbors do not add tools. How the shed manager is recognised is an open question below.
+  - Neighbors do not add tools. Sign-in, handled outside the shed's events, supplies the
+    shed-manager role; a signed-in caller without it is refused with `not-shed-manager`, and a
+    caller with no sign-in with `not-signed-in`.
 - **INV-ADD-2:** Every tool is added with a default checkout period.
   - A checkout of this tool may start with a shorter period, never a longer one. An extension
     can later take a loan past it.
@@ -80,6 +82,10 @@ Added.
   - A repeat with the same details, compared after trimming, succeeds and records nothing new,
     whatever has happened to the tool since. A repeat with different details is refused
     (`tool-id-in-use`).
+
+- **INV-ADD-11:** A tool's name is at most 100 characters, and its description at most 500,
+  counted as user-visible characters (not bytes) after trimming.
+  - A longer one is refused, never cut short.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -108,6 +114,21 @@ Added.
     drill"
   - **Then:** Tool Added is recorded for T2, a separate tool with its own tool ID. The shed now
     has two tools named "Cordless drill", T1 and T2.
+- **Longest allowed name and description (INV-ADD-11)**
+  - **Given:** the shed has no tools
+  - **When:** the shed manager adds a tool with a name of exactly 100 characters and a
+    description of exactly 500 characters, with a 7-day period
+  - **Then:** Tool Added is recorded with that name and description.
+- **Name too long (INV-ADD-11)**
+  - **Given:** the shed has no tools
+  - **When:** the shed manager tries to add a tool with a name of 101 characters
+  - **Then:** refused with `name-too-long`: "A tool's name can be at most 100 characters." No event
+    is recorded.
+- **Description too long (INV-ADD-11)**
+  - **Given:** the shed has no tools
+  - **When:** the shed manager tries to add a tool with a description of 501 characters
+  - **Then:** refused with `description-too-long`: "A tool's description can be at most 500
+    characters." No event is recorded.
 - **Shortest allowed period (INV-ADD-3)**
   - **Given:** the shed has no tools
   - **When:** the shed manager adds a tool named "Stud finder" with a default checkout period of
@@ -144,10 +165,14 @@ Added.
   - **When:** the shed manager tries to add a tool whose name is empty, or only whitespace
   - **Then:** refused with `name-missing`: "A tool needs a name." No event is recorded.
 - **Someone other than the shed manager tries to add a tool (INV-ADD-1)**
-  - **Given:** the request does not come from the shed manager
+  - **Given:** the caller is signed in without the shed-manager role
   - **When:** it asks to add a tool
   - **Then:** refused with `not-shed-manager`: "Only the shed manager can add tools." No event
     is recorded.
+- **No sign-in (INV-ADD-1)**
+  - **Given:** a caller with no sign-in
+  - **When:** they ask to add a tool
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 - **The same request arrives twice (INV-ADD-10)**
   - **Given:** Tool Added was recorded for tool T1, "Cordless drill", 7 days
   - **When:** the same Add Tool request for T1, "Cordless drill", 7 days, arrives again
@@ -172,10 +197,21 @@ Every refusal records nothing and returns one reason: the stable name, and the s
 the shed manager on the Tool Inventory screen. The name is the contract; the sentence is the
 required wording of the message.
 
+The checks run in this order, and the first that fails is the reason returned:
+1. `not-signed-in`, then `not-shed-manager` (INV-ADD-1).
+2. The tool ID is already used (INV-ADD-10): a repeat with the same details succeeds with
+   nothing recorded; otherwise `tool-id-in-use`.
+3. `name-missing`, then `name-too-long` (INV-ADD-4, INV-ADD-11).
+4. `description-too-long` (INV-ADD-11).
+5. `period-missing`, then `period-out-of-range` (INV-ADD-2, INV-ADD-3).
+
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-ADD-1 |
 | `not-shed-manager` | Only the shed manager can add tools. | INV-ADD-1 |
 | `name-missing` | A tool needs a name. | INV-ADD-4 |
+| `name-too-long` | A tool's name can be at most 100 characters. | INV-ADD-11 |
+| `description-too-long` | A tool's description can be at most 500 characters. | INV-ADD-11 |
 | `period-missing` | A tool needs a default checkout period. | INV-ADD-2 |
 | `period-out-of-range` | The default checkout period must be a whole number of days from 1 to 30. | INV-ADD-3 |
 | `tool-id-in-use` | That tool ID is already used by another tool. | INV-ADD-10 |
@@ -194,8 +230,8 @@ never by matching names or details.
 There are no retries, compensations or external calls in this slice.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the shed manager may add a tool (INV-ADD-1). How the shed manager
-  is recognised is the identity question below.
+- **Security / authz:** only the shed manager may add a tool (INV-ADD-1). Sign-in, handled
+  outside the shed's events, supplies the shed-manager role.
 - **PII & compliance:** none. Tool Added holds only tool details, and doesn't record who added
   the tool.
 - **Performance / SLA:** none.
@@ -209,14 +245,4 @@ There are no retries, compensations or external calls in this slice.
   ID, and Check Out Tool takes the tool's default checkout period from it.
 
 ## Open Questions
-- [ ] How does the system know that the person adding a tool is the shed manager?
-  - No event or slice records who the shed manager is or how they sign in. Every shed-manager
-    action (add, retire and mark tools lost; suspend and reinstate) depends on the answer.
-  - (a) The shed manager has a sign-in set up outside the model, with a shed-manager role.
-    Nothing about it is recorded as an event. (b) The shed manager is a neighbor account given a
-    shed-manager role, which needs an event and slice to grant it.
-  - Recommendation: (a). There is one shed manager, and nothing on record asks to change who it
-    is.
-- [ ] Are there length limits on a tool's name and description?
-  - Recommendation: name up to 100 characters, description up to 500. A longer one is refused
-    with the limit in the reason, never cut short.
+None.

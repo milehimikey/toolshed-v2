@@ -51,12 +51,12 @@ marked optional can be absent.
 | dueDate | Date | `Derived:` Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for that loan, while the tool is on loan; none otherwise. Optional: present only while on loan. |
 | retired | Bool | `Derived:` yes once Tool Retired is recorded for this tool. A retired row exists only while the tool is still out on loan. |
 | canRetire | Bool | `Derived:` yes while retired is no. Returned so the screen can offer Retire (INV-TINV-7). |
+| overdue | Bool | `Derived:` yes while the tool is on loan and today's date in the shed's local time zone is after dueDate; no otherwise (INV-TINV-9). Worked out when the inventory is read. |
 | canMarkLost | Bool | `Derived:` same as onLoan. Returned so the screen can offer Mark lost (INV-TINV-6). |
 
 **Queries**
 - **List the tool inventory.** Takes nothing. Returns every listed tool, each with all the fields
-  above. There is no paging: the query always returns every listed tool. The order is an open
-  question below.
+  above. There is no paging: the query always returns every listed tool. Tools are listed by name, ignoring case, then by when they were added (addedAt); tools added at the same instant keep the order their Tool Added was recorded (INV-TINV-10).
 
 ## Invariants / Business Rules
 - **INV-TINV-1:** Every added tool appears in the inventory exactly once.
@@ -93,6 +93,14 @@ marked optional can be absent.
   - A tool retired while out on loan stays listed but is not offered "retire" again.
 - **INV-TINV-8:** Applying the same event twice leaves the inventory as if it had been applied
   once.
+- **INV-TINV-9:** A tool that is out shows whether its loan is overdue.
+  - Overdue means today's date in the shed's local time zone is after the due date in force. It
+    is worked out when the inventory is read; no event marks a loan overdue.
+- **INV-TINV-10:** Tools are listed by name, ignoring case, then by when they were added.
+  - Tools with the same name are in the order they were added; tools added at the same instant
+    keep the order their Tool Added was recorded.
+- **INV-TINV-11:** A request with no sign-in is refused before anything else is checked.
+- **INV-TINV-12:** Only the shed manager can read the Tool Inventory: a caller signed in without the shed-manager role is refused.
 
 ## Scenarios (Given / When / Then)
 - **Tool added (INV-TINV-1, INV-TINV-4, INV-TINV-7)**
@@ -155,6 +163,18 @@ marked optional can be absent.
   - **Given:** the Tool Inventory shows the hedge trimmer out on loan to Ana
   - **When:** Tool Lost is recorded for Ana's hedge trimmer loan
   - **Then:** the hedge trimmer drops off the Tool Inventory.
+- **Out tool becomes overdue (INV-TINV-9)**
+  - **Given:** the Tool Inventory shows the drill out on loan to Ana, due 12 October
+  - **When:** the inventory is read at 23:59 on 12 October, and again at 00:00 on 13 October,
+    shed time
+  - **Then:** the drill shows not overdue on the first read and overdue on the second. Nothing is
+    recorded.
+- **List order (INV-TINV-10)**
+  - **Given:** Tool Added was recorded for "Ladder", then "Cordless drill", then a second
+    "Cordless drill"
+  - **When:** the shed manager's screen lists the tool inventory
+  - **Then:** the order is the first "Cordless drill", the second "Cordless drill", then
+    "Ladder".
 - **Holds and notices don't change it (INV-TINV-3)**
   - **Given:** the Tool Inventory shows the drill out on loan to Ana, due 12 October
   - **When:** Hold Placed is recorded for Ben on the drill, and later Overdue Notice Sent is
@@ -165,8 +185,26 @@ marked optional can be absent.
     loan to Ben, due 20 October)
   - **When:** the shed manager's screen lists the tool inventory
   - **Then:** both tools are returned with all their fields, with no paging.
+- **Not signed in (INV-TINV-11)**
+  - **Given:** nobody is signed in
+  - **When:** the tool inventory is asked for
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
+- **Asked by the wrong person (INV-TINV-12)**
+  - **Given:** a neighbor is signed in, without the shed-manager role
+  - **When:** the tool inventory is asked for
+  - **Then:** refused with `not-shed-manager`: "Only the shed manager can see the tool inventory." Nothing is returned.
 
 ## Alternate & Error Flows
+Reading this view is guarded like a command. A refused read returns nothing and one reason: the
+stable name, and the sentence shown on the screen. The checks run in this order:
+1. `not-signed-in` (INV-TINV-11).
+2. `not-shed-manager` (INV-TINV-12).
+
+| Reason | Sentence | Rule |
+|--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-TINV-11 |
+| `not-shed-manager` | Only the shed manager can see the tool inventory. | INV-TINV-12 |
+
 - **Repeated events:** every event is applied idempotently (INV-TINV-8). A Tool Added, Tool
   Checked Out, Loan Extended, Tool Returned, Tool Retired or Tool Lost applied a second time leaves
   the entry as it was after the first.
@@ -179,8 +217,7 @@ marked optional can be absent.
 
 ## Non-Functional Requirements
 - **Security / authz:** the Tool Inventory is the shed manager's screen; neighbors see tools on
-  the Tool Catalog instead. How the system recognises the shed manager is the open identity
-  question in Add Tool (slices/add-tool.md); this view follows its answer.
+  the Tool Catalog instead. Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager` (INV-TINV-12), and one with no sign-in `not-signed-in` (INV-TINV-11).
 - **PII & compliance:** shows a borrower's name while they have a tool out. It never shows their
   email. The name stops being shown on that tool once the loan ends.
 - **Performance / SLA:** none beyond the freshness above.
@@ -200,14 +237,4 @@ marked optional can be absent.
   Tool and Record Tool Lost.
 
 ## Open Questions
-- [ ] Should a tool that is out show when its loan is overdue? (brief 10 A3)
-  - The inventory already has the due date. Overdue would be worked out when the inventory is
-    read, from dueDate and today's date in the shed's local time zone, so it needs no model
-    change. It would be a bare `derived` field.
-  - Recommendation: yes. It is what tells the shed manager a tool may be lost.
-- [ ] In what order are tools listed? (brief 10 A4)
-  - This is the shed-wide question of one order for every list view: by name, then by when the
-    item was created. For this view that means by name, then by addedAt.
-  - Recommendation: yes, that order.
-- [ ] Identity: how the system recognises who is asking (brief 10 A1). This slice follows its
-  answer; see the identity question in Add Tool.
+None.

@@ -30,7 +30,8 @@ What follows a closure is decided by the views and slices that read Neighbor Acc
 The neighbor, from the My Account screen, on their own active or suspended account. My Account
 offers Close Account on any account that isn't closed. While the neighbor has a tool on loan,
 the closing is refused with a reason they can see (INV-CLS-7). The shed manager doesn't close
-accounts. How the system recognises the neighbor is the identity question (see Open Questions).
+accounts. Sign-in, handled outside the shed's events, supplies the acting neighbor's ID. It
+resolves a person to their newest account, and to a closed one only when there is no newer.
 
 ## Command / Input
 **Command:** `Close Account`
@@ -67,6 +68,7 @@ specified in its own doc. All are eventually consistent.
 - **INV-CLS-1:** A neighbor closes their own account themselves.
   - The command names the account in neighborId, and the request must come from that neighbor
     (`requester-mismatch` otherwise). The shed manager doesn't close accounts.
+  - A caller with no sign-in is refused with `not-signed-in`, before anything else is checked.
 - **INV-CLS-2:** An active or a suspended account can be closed.
   - Closing an account that is already closed succeeds and records nothing new, so a double
     submit or a retry never fails and never records a second Neighbor Account Closed.
@@ -131,6 +133,10 @@ Unless a scenario says otherwise: Ana is registered as N1, is active, and has no
   - **When:** a request to close N9 arrives
   - **Then:** refused with `neighbor-not-found`: "There is no such neighbor." No event is
     recorded.
+- **No sign-in (INV-CLS-1)**
+  - **Given:** a caller with no sign-in
+  - **When:** they ask to close an account
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -138,13 +144,14 @@ the neighbor on the My Account screen. The name is the contract; the sentence is
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-CLS-1).
+1. `not-signed-in`, then `requester-mismatch` (INV-CLS-1).
 2. `neighbor-not-found` (INV-CLS-8).
 3. If the account is already closed, the request succeeds and records nothing (INV-CLS-2).
 4. `tools-on-loan` (INV-CLS-7).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-CLS-1 |
 | `requester-mismatch` | You can only close your own account. | INV-CLS-1 |
 | `neighbor-not-found` | There is no such neighbor. | INV-CLS-8 |
 | `tools-on-loan` | Return all your tools before closing your account. | INV-CLS-7 |
@@ -163,11 +170,11 @@ reinstatement is decided just before, whileSuspended reflects it.
 There are no external calls in this slice, and no email is sent.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the neighbor may close their own account (INV-CLS-1). How the
-  requester is recognised is the identity question (see Open Questions).
+- **Security / authz:** only the neighbor may close their own account (INV-CLS-1). Sign-in,
+  handled outside the shed's events, supplies the acting neighbor's ID.
 - **PII & compliance:** Neighbor Account Closed holds only the account ID, whether it was
-  suspended, and a time. Closing doesn't erase the neighbor's name or email; whether they are
-  ever erased is the personal-data question (see Open Questions).
+  suspended, and a time. Closing doesn't erase the neighbor's name or email: they are kept
+  with the shed's loan and hold history and never erased.
 - **Performance / SLA:** none.
 
 ## Dependencies & Read Models Affected
@@ -188,7 +195,4 @@ There are no external calls in this slice, and no email is sent.
   Reinstate Neighbor and Change Email refuse a closed account.
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1. Whatever is chosen must
-  resolve a person to their newest account, and to a closed one only when there is no newer.
-- [ ] How long personal data is kept — brief 11 B7. A closed account's name and email stay
-  recorded.
+None.

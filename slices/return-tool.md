@@ -69,9 +69,7 @@ check it out (INV-CHK-3a, Check Out Tool). Late returns count toward a neighbor 
 within 90 days (Neighbors To Flag). Those rules are owned by those slices.
 
 - **INV-RET-1:** The borrower returns their own loan themselves, from My Loans.
-  - The request must come from the neighbor it names, and the loan must be theirs. How the
-    requester is recognised is the open identity question below. The shed manager does not
-    record returns.
+  - The request must come from the neighbor it names, and the loan must be theirs. Sign-in, handled outside the model, supplies the acting neighbor's ID; a request whose neighbor ID isn't the signed-in neighbor's is refused `requester-mismatch`. The shed manager does not record returns.
 - **INV-RET-2:** Only a loan that is still out can be returned, and only once.
   - A loan ended by the shed manager recording the tool lost can't be returned.
   - A closed account never has a loan out, because an account can't be closed while tools are
@@ -93,6 +91,7 @@ within 90 days (Neighbors To Flag). Those rules are owned by those slices.
   nothing.
   - So a double submit, or a retry after a lost response, never records a second return.
 - **INV-RET-11:** The loan must have been checked out.
+- **INV-RET-12:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: on-time return, no holds (INV-RET-1, INV-RET-3, INV-RET-4)**
@@ -149,6 +148,10 @@ within 90 days (Neighbors To Flag). Those rules are owned by those slices.
   - **Given:** no loan has ID L9
   - **When:** Ana asks to return L9
   - **Then:** refused with `loan-not-found`: "There is no such loan." No event is recorded.
+- **Not signed in (INV-RET-12)**
+  - **Given:** nobody is signed in
+  - **When:** a request for returning a tool arrives
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -156,15 +159,17 @@ the borrower on the My Loans screen. The name is the contract; the sentence is t
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-RET-1).
-2. `loan-not-found` (INV-RET-11).
-3. `not-your-loan` (INV-RET-1).
-4. If Tool Returned is already recorded for the loan, the request is a repeat: it succeeds and
+1. `not-signed-in` (INV-RET-12): a request with no sign-in is refused first.
+2. `requester-mismatch` (INV-RET-1).
+3. `loan-not-found` (INV-RET-11).
+4. `not-your-loan` (INV-RET-1).
+5. If Tool Returned is already recorded for the loan, the request is a repeat: it succeeds and
    records nothing (INV-RET-10).
-5. `loan-ended`, if Tool Lost is recorded for the loan (INV-RET-2).
+6. `loan-ended`, if Tool Lost is recorded for the loan (INV-RET-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-RET-12 |
 | `requester-mismatch` | You can only return loans for yourself. | INV-RET-1 |
 | `loan-not-found` | There is no such loan. | INV-RET-11 |
 | `not-your-loan` | You can only return your own loans. | INV-RET-1 |
@@ -190,7 +195,7 @@ There are no external calls, retries or compensations in this slice.
 
 ## Non-Functional Requirements
 - **Security / authz:** a borrower may return only their own loans (INV-RET-1); the shed manager
-  doesn't record returns. How the requester is recognised is the open identity question below.
+  doesn't record returns. Sign-in, handled outside the model, supplies the acting neighbor's ID; a request whose neighbor ID isn't the signed-in neighbor's is refused `requester-mismatch`.
 - **PII & compliance:** Tool Returned holds no name or email; it records which loan ended, when,
   and whether it was late.
 - **Performance / SLA:** none beyond the one-at-a-time rule above.
@@ -208,9 +213,4 @@ There are no external calls, retries or compensations in this slice.
   Fulfill Hold reacts to a returned tool with holds waiting.
 
 ## Open Questions
-- [ ] How does the system know the request comes from the borrower? (brief 10 A1)
-  - The same identity question is open in Add Tool, Register Neighbor and the other neighbor
-    commands.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
-    supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
-  - Recommendation: (b), which adds nothing to the model.
+None.

@@ -17,9 +17,7 @@ them, and the screen they cancel holds from.
 
 ## Trigger & Actor
 - **Actor:** a neighbor, opening their own My Holds screen.
-- **Whose holds it shows:** the holds of the neighbor asking. How the system knows who is asking
-  is the open identity question below; this view answers for whichever neighbor ID that
-  supplies.
+- **Whose holds it shows:** the holds of the neighbor asking. Sign-in, handled outside the model, supplies the neighbor's ID, resolving a person to their newest account, or to their closed one only when they have no newer.
 - **Actions offered:** nothing on this screen records anything by itself. Its one action issues
   a command owned by another slice:
   - **Cancel** (Cancel Hold slice) — offered on every listed hold (INV-MYHD-16).
@@ -78,8 +76,7 @@ holds are never returned.
 **Queries**
 - **List my holds.** Takes the asking neighbor's neighborId. Returns every hold of that neighbor
   that hasn't ended, each with every field above, and nothing about anyone else's holds
-  (INV-MYHD-1). There is no paging. A neighbor with no holds gets an empty list. The order is an
-  open question below.
+  (INV-MYHD-1). There is no paging. A neighbor with no holds gets an empty list. Holds are listed by tool name, ignoring case, then by when the hold was placed, in the order Hold Placed was recorded (INV-MYHD-18).
 
 ## Invariants / Business Rules
 A neighbor has at most one hold on any one tool, because Place Hold refuses a second
@@ -94,9 +91,7 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
 
 - **INV-MYHD-1:** A neighbor's My Holds shows only their own holds.
   - The query returns only holds whose holder is the neighbor ID it is given. It never shows who
-    else holds a tool, only the neighbor's own position; whether any neighbor-facing screen shows
-    that is the open question in Tool Catalog (slices/tool-catalog.md) about showing who has a
-    tool.
+    else holds a tool, only the neighbor's own position. No neighbor-facing screen ever shows who has a tool or who holds one; only the shed manager sees borrowers, on Tool Inventory.
 - **INV-MYHD-2:** Holds on a tool queue in the order they were placed. Each waiting hold shows
   the neighbor's position in that tool's queue.
   - Position 1 is the next hold to be fulfilled. A hold moves up as holds ahead of it are
@@ -145,6 +140,9 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
     is no longer theirs: the tool goes to the next neighbor in the queue, or to whoever checks it
     out first if nobody is waiting (INV-CHK-3b, Check Out Tool). The hold drops off when Hold
     Expired is recorded.
+- **INV-MYHD-18:** Holds are listed by tool name, ignoring case, then by when they were placed.
+- **INV-MYHD-19:** A request with no sign-in is refused before anything else is checked.
+- **INV-MYHD-20:** My Holds is answered only for the signed-in neighbor: a request for any other neighbor ID is refused.
 
 ## Scenarios (Given / When / Then)
 - **Hold placed (INV-MYHD-2, INV-MYHD-14, INV-MYHD-16)**
@@ -236,13 +234,35 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
   - **Given:** Ben has H1 and Cara has H2, both on T1
   - **When:** Ben's holds are listed
   - **Then:** only H1 is returned, with its position. Nothing about H2 or Cara is returned.
+- **List order (INV-MYHD-18)**
+  - **Given:** Ben placed H5 on the ladder, then H1 on the cordless drill
+  - **When:** his holds are listed
+  - **Then:** H1 (cordless drill) comes first, then H5 (ladder).
 - **Same event applied twice (INV-MYHD-15)**
   - **Given:** Ben's My Holds lists H1 at position 1
   - **When:** the same Hold Placed for H1 is applied again
   - **Then:** Ben's My Holds still lists H1 once, at position 1, and no later hold's position
     changes.
+- **Not signed in (INV-MYHD-19)**
+  - **Given:** nobody is signed in
+  - **When:** My Holds is asked for
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
+- **Asked by the wrong person (INV-MYHD-20)**
+  - **Given:** Ben (N2) is signed in
+  - **When:** the holds of N1, Ana, are asked for
+  - **Then:** refused with `requester-mismatch`: "You can only see your own holds." Nothing is returned.
 
 ## Alternate & Error Flows
+Reading this view is guarded like a command. A refused read returns nothing and one reason: the
+stable name, and the sentence shown on the screen. The checks run in this order:
+1. `not-signed-in` (INV-MYHD-19).
+2. `requester-mismatch` (INV-MYHD-20).
+
+| Reason | Sentence | Rule |
+|--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-MYHD-19 |
+| `requester-mismatch` | You can only see your own holds. | INV-MYHD-20 |
+
 - **Repeated events:** every event is applied idempotently (INV-MYHD-15). An event applied a
   second time leaves the view as it was after the first.
 - **Events for a hold that has ended:** once a hold has ended it is gone from this view. A later
@@ -255,9 +275,7 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
   and refuses with its own reason; this view raises no errors of its own.
 
 ## Non-Functional Requirements
-- **Security / authz:** a neighbor may list only their own holds (INV-MYHD-1). How the system
-  knows which neighbor is asking is the open identity question below; until it is answered,
-  nothing stops a caller asking for another neighbor ID.
+- **Security / authz:** a neighbor may list only their own holds (INV-MYHD-1). The query is always asked for the signed-in neighbor's own ID, which sign-in, handled outside the model, supplies; a request for any other neighbor ID is refused `requester-mismatch` (INV-MYHD-20), and one with no sign-in `not-signed-in` (INV-MYHD-19).
 - **PII & compliance:** shows a neighbor their own holds only, and never who else holds or has a
   tool. The other holders and borrowers it keeps for working out positions are never returned.
 - **Performance / SLA:** none beyond the freshness above.
@@ -281,15 +299,4 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
 - **Downstream read models / slices affected:** none. The screen it feeds issues Cancel Hold.
 
 ## Open Questions
-- [ ] How does the system know which neighbor is asking, so My Holds shows their holds and no one
-  else's? (brief 10 A1)
-  - The same identity question is open in Add Tool, Register Neighbor, My Account, My Loans and
-    Place Hold.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
-    supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
-  - Recommendation: (b), which adds nothing to the model.
-- [ ] In what order are holds listed? (brief 10 A4)
-  - This is the shed-wide question of one order for every list view: by name, then by when the
-    item was created. For this view that means by tool name, then by when the hold was placed.
-  - Recommendation: yes, that order.
-- [ ] Whether any neighbor-facing screen shows who has or holds a tool (brief 11 B1).
+None.

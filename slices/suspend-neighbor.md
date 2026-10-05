@@ -74,13 +74,14 @@ the suspension on My Account and as the reason whenever something is refused. Fl
 Suspended Neighbors, Neighbors and My Account own how a suspension is shown.
 
 - **INV-SUS-1:** Only the shed manager suspends a neighbor.
-  - How the shed manager is recognised is the open identity question below.
+  - Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
 - **INV-SUS-2:** Only an active neighbor can be suspended.
   - A neighbor whose account is closed can't be suspended, because closed is final.
   - Suspending a neighbor who is already suspended changes nothing (INV-SUS-9).
 - **INV-SUS-9:** Suspending a neighbor who is already suspended succeeds and records nothing.
   - So a double submit, or a retry after a lost response, never records a second suspension.
 - **INV-SUS-10:** The neighbor must be a registered account.
+- **INV-SUS-11:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: suspending a flagged neighbor (INV-SUS-1, INV-SUS-2)**
@@ -116,7 +117,7 @@ Suspended Neighbors, Neighbors and My Account own how a suspension is shown.
     suspended, so this isn't treated as a repeat. No event is recorded.
 - **Someone other than the shed manager (INV-SUS-1)**
   - **Given:** N1 is active
-  - **When:** a request that doesn't come from the shed manager asks to suspend N1
+  - **When:** a caller signed in without the shed-manager role asks to suspend N1
   - **Then:** refused with `not-shed-manager`: "Only the shed manager can suspend neighbors." No
     event is recorded.
 - **Unknown neighbor (INV-SUS-10)**
@@ -124,6 +125,10 @@ Suspended Neighbors, Neighbors and My Account own how a suspension is shown.
   - **When:** the shed manager asks to suspend N9
   - **Then:** refused with `neighbor-not-found`: "There is no such neighbor." No event is
     recorded.
+- **Not signed in (INV-SUS-11)**
+  - **Given:** nobody is signed in
+  - **When:** a request for suspending a neighbor arrives
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -131,15 +136,17 @@ the shed manager on the screen they acted from. The name is the contract; the se
 required wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `not-shed-manager` (INV-SUS-1): who is asking is settled before anything else.
-2. `neighbor-not-found` (INV-SUS-10).
-3. If the neighbor's status is already suspended, the request succeeds and records nothing
+1. `not-signed-in` (INV-SUS-11): a request with no sign-in is refused first.
+2. `not-shed-manager` (INV-SUS-1): who is asking is settled next, before any other rule.
+3. `neighbor-not-found` (INV-SUS-10).
+4. If the neighbor's status is already suspended, the request succeeds and records nothing
    (INV-SUS-9). Status is tested with closed first: an account closed while suspended has status
    closed, so it gets `account-closed`, not the repeat.
-4. `account-closed` (INV-SUS-2).
+5. `account-closed` (INV-SUS-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-SUS-11 |
 | `not-shed-manager` | Only the shed manager can suspend neighbors. | INV-SUS-1 |
 | `neighbor-not-found` | There is no such neighbor. | INV-SUS-10 |
 | `account-closed` | This account is closed. | INV-SUS-2 |
@@ -160,8 +167,7 @@ decided in the same order: whichever is recorded first stands.
 There are no external calls, retries or compensations in this slice. Nothing is emailed.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the shed manager may suspend a neighbor (INV-SUS-1). How the shed
-  manager is recognised is the open identity question below.
+- **Security / authz:** only the shed manager may suspend a neighbor (INV-SUS-1). Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
 - **PII & compliance:** Neighbor Suspended links a neighbor to a suspension. It holds no name,
   email or reason.
 - **Performance / SLA:** none.
@@ -180,5 +186,4 @@ There are no external calls, retries or compensations in this slice. Nothing is 
   Neighbor refuse a suspended neighbor; Reinstate Neighbor lifts the suspension.
 
 ## Open Questions
-- [ ] Identity: how the system recognises the shed manager (brief 10 A1). This slice follows its
-  answer; see the identity question in Add Tool.
+None.

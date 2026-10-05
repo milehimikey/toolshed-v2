@@ -32,8 +32,8 @@ one step. A lost tool that later turns up is added again as a new tool.
 
 ## Trigger & Actor
 The shed manager, from the Tool Inventory screen, which offers Retire on every listed tool not
-already retired (INV-TINV-7). How the system recognises the shed manager is the identity
-question (see Open Questions); this slice follows its answer.
+already retired (INV-TINV-7). Sign-in, handled outside the shed's events, supplies the
+shed-manager role.
 
 ## Command / Input
 **Command:** `Retire Tool`
@@ -68,7 +68,9 @@ My Loans. Each view is specified in its own doc. All are eventually consistent.
 
 ## Invariants / Business Rules
 - **INV-RTR-1:** Only the shed manager can retire a tool.
-  - Neighbors do not retire tools. How the shed manager is recognised is the identity question.
+  - Neighbors do not retire tools. Sign-in, handled outside the shed's events, supplies the
+    shed-manager role; a caller without it is refused with `not-shed-manager`.
+  - A caller with no sign-in is refused with `not-signed-in`, before anything else is checked.
 - **INV-RTR-2:** Retiring a tool that is already retired records nothing new.
   - The request succeeds, so a double submit or a retry never fails and never records a second
     Tool Retired. This includes a tool retired by being recorded lost.
@@ -105,13 +107,17 @@ My Loans. Each view is specified in its own doc. All are eventually consistent.
   - **Then:** the request succeeds and nothing new is recorded.
 - **Someone other than the shed manager (INV-RTR-1)**
   - **Given:** the ladder is in the shed
-  - **When:** a request to retire it comes from someone other than the shed manager
+  - **When:** a caller signed in without the shed-manager role asks to retire it
   - **Then:** refused with `not-shed-manager`: "Only the shed manager can retire tools." No event
     is recorded.
 - **Unknown tool (INV-RTR-10)**
   - **Given:** no tool T9 has been added
   - **When:** the shed manager retires T9
   - **Then:** refused with `tool-not-found`: "There is no such tool." No event is recorded.
+- **No sign-in (INV-RTR-1)**
+  - **Given:** a caller with no sign-in
+  - **When:** they ask to retire the ladder
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -119,12 +125,13 @@ the shed manager on the Tool Inventory screen. The name is the contract; the sen
 required wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `not-shed-manager` (INV-RTR-1).
+1. `not-signed-in`, then `not-shed-manager` (INV-RTR-1).
 2. `tool-not-found` (INV-RTR-10).
 3. If the tool is already retired, the request succeeds and records nothing (INV-RTR-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-RTR-1 |
 | `not-shed-manager` | Only the shed manager can retire tools. | INV-RTR-1 |
 | `tool-not-found` | There is no such tool. | INV-RTR-10 |
 
@@ -143,7 +150,8 @@ because the tool is retired.
 There are no external calls in this slice, and no email is sent.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the shed manager may retire a tool (INV-RTR-1).
+- **Security / authz:** only the shed manager may retire a tool (INV-RTR-1). Sign-in, handled
+  outside the shed's events, supplies the shed-manager role.
 - **PII & compliance:** none. Tool Retired holds only the tool and a time.
 - **Performance / SLA:** none.
 
@@ -159,5 +167,4 @@ There are no external calls in this slice, and no email is sent.
   Tool, Place Hold, Extend Loan and Fulfill Hold read whether a tool is retired.
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1. Only the shed manager may
-  retire tools.
+None.

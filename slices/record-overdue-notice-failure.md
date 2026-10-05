@@ -70,8 +70,7 @@ A failure is recorded only from the email provider's report; no person records i
 way in is the translation in Trigger & Actor. The shed records only the provider's one final
 failure report: the provider makes 3 delivery attempts over about an hour and reports a final
 failure only if all of them fail. The shed does no retrying of its own, and a failure a later
-attempt recovers from is never reported. How the provider's link to the shed is secured is part
-of the email port contract proposed for the constitution (brief 10, A5).
+attempt recovers from is never reported. The provider signs each final report, under the shed's house email-port contract; the translation checks the signature and drops an unsigned or wrongly signed report without issuing any command. The provider's signature, not a sign-in, is what guards this command.
 
 - **INV-ONF-3:** Overdue Notice Failed is recorded for the loan the notice was about, with the
   moment of the failure and whether the email was refused or bounced.
@@ -155,8 +154,7 @@ job, in person.
 
 ## Non-Functional Requirements
 - **Security / authz:** only the email provider's failure report can trigger this command,
-  through the translation. How the shed checks a report really comes from its provider is part
-  of the email port contract proposed for the constitution (brief 10, A5).
+  through the translation. The provider signs each final report, under the shed's house email-port contract; the translation checks the signature and drops an unsigned or wrongly signed report without issuing any command. The provider's signature, not a sign-in, is what guards this command.
 - **PII & compliance:** Overdue Notice Failed holds no name or email: only the loan, the reason
   and the time. The address the notice went to is already on Overdue Notice Sent (sentTo), so
   the email address in the provider's report is not recorded again.
@@ -176,5 +174,4 @@ job, in person.
 - **Downstream read models / slices affected:** My Loans and Undelivered Notices (the failure).
 
 ## Open Questions
-- [ ] How the provider's failure reports are secured: part of the email port contract (brief 10
-  A5).
+None.

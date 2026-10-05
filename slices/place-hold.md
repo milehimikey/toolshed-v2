@@ -85,8 +85,7 @@ neighbor can see.
 
 - **INV-HOLD-1:** A neighbor places a hold themselves, from the Tool Catalog, and only for
   themselves.
-  - The neighbor ID must be the neighbor making the request. How the requester is recognised is
-    the open identity question below.
+  - The neighbor ID must be the neighbor making the request. Sign-in, handled outside the model, supplies the acting neighbor's ID; a request whose neighbor ID isn't the signed-in neighbor's is refused `requester-mismatch`.
 - **INV-HOLD-2:** A hold can be placed on any tool that isn't available.
   - That is a tool that is checked out, set aside for a holder, or back in the shed with holds
     waiting but not yet set aside.
@@ -117,6 +116,7 @@ neighbor can see.
     happened to the hold since. A repeat with a different tool or neighbor is refused
     (`hold-id-in-use`).
 - **INV-HOLD-14:** The tool must have been added, and the neighbor must be a registered account.
+- **INV-HOLD-15:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: first hold on a checked-out tool (INV-HOLD-2, INV-HOLD-5)**
@@ -225,6 +225,10 @@ neighbor can see.
   - **When:** a Place Hold request arrives for H1 with T3, Ben
   - **Then:** refused with `hold-id-in-use`: "That hold ID is already used by another hold." No
     event is recorded.
+- **Not signed in (INV-HOLD-15)**
+  - **Given:** nobody is signed in
+  - **When:** a request for placing a hold arrives
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -232,18 +236,20 @@ the neighbor on the Tool Catalog screen. The name is the contract; the sentence 
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-HOLD-1): who is asking is settled before anything else.
-2. The hold ID is already used (INV-HOLD-13): a repeat with the same details succeeds with
+1. `not-signed-in` (INV-HOLD-15): a request with no sign-in is refused first.
+2. `requester-mismatch` (INV-HOLD-1): who is asking is settled next, before any other rule.
+3. The hold ID is already used (INV-HOLD-13): a repeat with the same details succeeds with
    nothing recorded; otherwise `hold-id-in-use`.
-3. `tool-not-found`, then `neighbor-not-found` (INV-HOLD-14).
-4. `tool-retired` (INV-HOLD-3).
-5. `account-closed`, then `neighbor-suspended` (INV-HOLD-4, INV-HOLD-9).
-6. `tool-on-loan-to-you` (INV-HOLD-8).
-7. `already-holding` (INV-HOLD-7).
-8. `tool-available` (INV-HOLD-2).
+4. `tool-not-found`, then `neighbor-not-found` (INV-HOLD-14).
+5. `tool-retired` (INV-HOLD-3).
+6. `account-closed`, then `neighbor-suspended` (INV-HOLD-4, INV-HOLD-9).
+7. `tool-on-loan-to-you` (INV-HOLD-8).
+8. `already-holding` (INV-HOLD-7).
+9. `tool-available` (INV-HOLD-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-HOLD-15 |
 | `hold-id-in-use` | That hold ID is already used by another hold. | INV-HOLD-13 |
 | `requester-mismatch` | You can only place holds for yourself. | INV-HOLD-1 |
 | `tool-not-found` | There is no such tool. | INV-HOLD-14 |
@@ -279,8 +285,7 @@ email.
 
 ## Non-Functional Requirements
 - **Security / authz:** a neighbor may place a hold only for themselves (INV-HOLD-1); the shed
-  manager doesn't place holds. How the requester is recognised is the open identity question
-  below.
+  manager doesn't place holds. Sign-in, handled outside the model, supplies the acting neighbor's ID; a request whose neighbor ID isn't the signed-in neighbor's is refused `requester-mismatch`.
 - **PII & compliance:** Hold Placed links a neighbor to a tool. It holds no name or email; those
   stay on Neighbor Registered and Neighbor Email Changed.
 - **Performance / SLA:** none beyond the one-at-a-time rule above.
@@ -309,8 +314,4 @@ email.
   Extend Loan refuses while a hold is waiting.
 
 ## Open Questions
-- [ ] How does the system know which neighbor is placing the hold? (brief 10 A1)
-  - The same identity question is open in Add Tool, Register Neighbor, My Account and My Loans.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
-    supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
-  - Recommendation: (b), which adds nothing to the model.
+None.

@@ -176,7 +176,8 @@ Tool); that checkout ends their hold, and a later Expire Hold for it is refused 
 There are no external calls, retries or compensations in this slice. No email is sent on expiry.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the Pickup Expirer issues Expire Hold. No person or screen does.
+- **Security / authz:** only the Pickup Expirer issues Expire Hold. No person or screen does. It
+  is an internal automation command, not on the REST API, so it has no sign-in guard.
 - **PII & compliance:** Hold Expired holds no name or email: only the hold and the time.
 - **Performance / SLA:** the Pickup Expirer reads its list every 5 minutes, so a lapsed set-aside
   is expired within about 5 minutes of the cut-off. In that gap the next neighbor in the queue can

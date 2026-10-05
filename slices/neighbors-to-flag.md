@@ -38,7 +38,7 @@ local time zone.
 | neighborId | NeighborId | Tool Checked Out.neighborId for the loan: the borrower. |
 | loanId | LoanId | Tool Returned.loanId. |
 | returnedOn | Date | Tool Returned.returnedOn. |
-| inWindow | Bool | `Derived:` yes while returnedOn is within the last 90 days (INV-NTF-2). Worked out when the list is read. |
+| inWindow | Bool | `Derived:` yes while returnedOn is today or one of the 89 days before it, in the shed's local time zone (INV-NTF-2). Worked out when the list is read. |
 
 To decide whether a return creates a row, the view also keeps, beyond its rows, every loan's
 borrower (from Tool Checked Out) and every neighbor's current status: active, suspended (from
@@ -74,8 +74,9 @@ Nothing puts a row back.
 - **INV-NTF-2:** A neighbor is on the list when they have 3 or more late returns within the last
   90 days that haven't counted toward a flag.
   - The 90 days are a rolling window, counted back from today by the date of each return. A late
-    return older than that no longer counts. Exactly where the window's edge falls is an open
-    question below.
+    return older than that no longer counts. A late return counts on the day it was returned and the
+    next 89 days, 90 calendar days in all, in the shed's local time. A return on 1 June counts
+    through 29 August.
 - **INV-NTF-3:** Once Neighbor Flagged is recorded for a neighbor, the late returns it names are
   used up and never count again.
   - Neighbor Flagged names, by loan, every late return that counted when the flag was recorded.
@@ -148,6 +149,15 @@ today is 5 October.
   - **Given:** Ana is suspended
   - **When:** Tool Returned is recorded for her loan, with late = yes
   - **Then:** no row is created.
+- **Last day in the window (INV-NTF-2)**
+  - **Given:** Ana has late returns counting on 8 July, 20 September and 1 October; today is 5
+    October, which is 89 days after 8 July
+  - **When:** the list is read on 5 October
+  - **Then:** all three are in the window, and the list returns Ana.
+- **First day out of the window (INV-NTF-2)**
+  - **Given:** as above, but today is 6 October, 90 days after 8 July
+  - **When:** the list is read on 6 October
+  - **Then:** the 8 July return no longer counts, and the list doesn't return Ana.
 - **Same event applied twice (INV-NTF-8)**
   - **Given:** Ana has late returns counting on 1 and 20 September
   - **When:** the same Tool Returned for her 20 September return is applied again
@@ -179,7 +189,4 @@ today is 5 October.
   Flag Neighbor.
 
 ## Open Questions
-- [ ] Exactly which days does "within 90 days" cover?
-  - Recommendation: a late return counts on the day it was returned and the 89 days after it,
-    so 90 calendar days in all, in the shed's local time. A return on 1 June counts through 29
-    August.
+None.

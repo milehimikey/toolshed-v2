@@ -28,7 +28,7 @@ removed; text that is empty after that counts as absent.
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | neighborId | NeighborId | yes | The account whose email changes, which must be the neighbor making the request (INV-CEM-1) and a registered account (INV-CEM-10). |
-| email | Text | yes | The new email. Trimmed; must not then be empty (INV-CEM-11). Must not be held by another account under INV-CEM-2. Format and comparison rules are the open questions shared with Register Neighbor, below. |
+| email | Text | yes | The new email. Trimmed; must not then be empty (INV-CEM-11), at most 254 characters, and shaped like an email address (INV-CEM-12). Must not be held by another account under INV-CEM-2, compared ignoring case. Kept as typed. |
 
 There is no name field: only the email can be changed. A neighbor's name stays as they
 registered it.
@@ -65,13 +65,13 @@ not tried again at the new address: no further attempt is made after a failure (
 Notice Failure, INV-ONF-6).
 
 - **INV-CEM-1:** A neighbor changes their own email themselves, from My Account.
-  - The request must come from the neighbor whose account it names. How the requester is
-    recognised is the open identity question below. The shed manager doesn't change neighbors'
-    emails.
+  - The request must come from the neighbor whose account it names. Sign-in, handled outside the model, supplies the acting neighbor's ID; a request whose neighbor ID isn't the signed-in neighbor's is refused `requester-mismatch`. The shed manager doesn't change neighbors' emails.
 - **INV-CEM-2:** The new email is refused if it belongs to an account that is not closed, or to a
   closed account that was suspended when it was closed.
   - This is the same one-account-per-email rule as at sign-up (INV-REG-4, Register Neighbor). An
     account's email is always its current one.
+  - Emails are compared ignoring case. The account's own current email never counts as held by
+    another account.
   - Whether a closed account was suspended when it was closed is read from its Neighbor Account
     Closed (whileSuspended), never worked out from earlier suspensions and reinstatements.
 - **INV-CEM-3:** A neighbor whose account is closed can't change their email.
@@ -89,13 +89,21 @@ Notice Failure, INV-ONF-6).
     address first.
 - **INV-CEM-9:** Asking to change the email to the one the account already has succeeds and
   records nothing.
-  - The comparison is made after trimming. So a repeated request, after a lost response, never
-    records a second change.
+  - The comparison is made after trimming, exactly as typed. So a repeated request, after a lost
+    response, never records a second change. A request that differs from the current email only
+    in capital letters is a change, and is recorded: it is how a neighbor corrects the
+    capitalisation of their address.
   - The command carries no "from" email. A late copy of an older request, arriving after a later
     change, counts as a new request and changes the email again.
 - **INV-CEM-10:** The neighbor must be a registered account.
 - **INV-CEM-11:** A new email is required.
   - An email that is empty, or only whitespace, is missing.
+- **INV-CEM-12:** A new email is at most 254 user-visible characters, counted after trimming,
+  and must be shaped like an email address: an "@" with at least one character before it and at
+  least one after it.
+  - A longer one is refused, never cut short. These are the same limits as at sign-up
+    (INV-REG-10, INV-REG-11, Register Neighbor).
+- **INV-CEM-13:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
 - **Happy path (INV-CEM-1, INV-CEM-4, INV-CEM-7)**
@@ -124,22 +132,42 @@ Notice Failure, INV-ONF-6).
 - **Email used by an active account (INV-CEM-2)**
   - **Given:** Ben's active account N2 uses ben@example.org
   - **When:** Ana asks to change her email to ben@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used."
     No event is recorded.
 - **Email used by a suspended account (INV-CEM-2)**
   - **Given:** Cleo's account N3 uses cleo@example.org and is suspended
   - **When:** Ana asks to change her email to cleo@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used."
     No event is recorded.
 - **Email of an account closed while suspended (INV-CEM-2)**
   - **Given:** Dan's account N4, using dan@example.org, was closed while suspended
   - **When:** Ana asks to change her email to dan@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used."
     No event is recorded.
 - **Email of an account closed while active (INV-CEM-2)**
   - **Given:** Eve's account N5, using eve@example.org, was closed while active
   - **When:** Ana changes her email to eve@example.org
   - **Then:** Neighbor Email Changed is recorded for N1, with eve@example.org.
+- **Email held in different capitals (INV-CEM-2)**
+  - **Given:** Ben's active account N2 uses ben@example.org
+  - **When:** Ana asks to change her email to Ben@Example.ORG
+  - **Then:** refused with `email-in-use`: "That email address can't be used." No event is
+    recorded.
+- **Correcting capital letters (INV-CEM-2, INV-CEM-9)**
+  - **Given:** N1's current email is ana@example.org
+  - **When:** Ana changes her email to Ana@Example.org
+  - **Then:** Neighbor Email Changed is recorded for N1, with Ana@Example.org. Her own account
+    doesn't count as holding the address.
+- **Email not shaped like an address (INV-CEM-12)**
+  - **Given:** N1 is active
+  - **When:** Ana asks to change her email to ana.example.org
+  - **Then:** refused with `email-invalid`: "Please enter a valid email address." No event is
+    recorded.
+- **Email too long (INV-CEM-12)**
+  - **Given:** N1 is active
+  - **When:** Ana asks to change her email to an address of 255 characters
+  - **Then:** refused with `email-too-long`: "Your email address can be at most 254 characters." No
+    event is recorded.
 - **Old email released (INV-CEM-5)**
   - **Given:** Ana changed N1's email from ana@oldmail.example to ana@example.org
   - **When:** Ben asks to change N2's email to ana@oldmail.example
@@ -147,7 +175,7 @@ Notice Failure, INV-ONF-6).
 - **The new email is held from then on (INV-CEM-4)**
   - **Given:** Ana changed N1's email to ana@example.org
   - **When:** Ben asks to change N2's email to ana@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used."
     No event is recorded.
 - **Suspended neighbor (INV-CEM-3a)**
   - **Given:** N1 is suspended, with ana@oldmail.example
@@ -173,6 +201,10 @@ Notice Failure, INV-ONF-6).
   - **When:** a change of N9's email is requested
   - **Then:** refused with `neighbor-not-found`: "There is no such neighbor." No event is
     recorded.
+- **Not signed in (INV-CEM-13)**
+  - **Given:** nobody is signed in
+  - **When:** a request for changing an email arrives
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -180,29 +212,34 @@ the neighbor on My Account. The name is the contract; the sentence is the requir
 message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-CEM-1): who is asking is settled before anything else.
-2. `neighbor-not-found` (INV-CEM-10).
-3. `email-missing` (INV-CEM-11).
-4. The new email is the account's current one (INV-CEM-9): succeeds with nothing recorded.
-5. `account-closed` (INV-CEM-3).
-6. `neighbor-suspended` (INV-CEM-3a).
-7. `email-in-use` (INV-CEM-2).
+1. `not-signed-in` (INV-CEM-13): a request with no sign-in is refused first.
+2. `requester-mismatch` (INV-CEM-1): who is asking is settled next, before any other rule.
+3. `neighbor-not-found` (INV-CEM-10).
+4. `email-missing`, then `email-too-long`, then `email-invalid` (INV-CEM-11, INV-CEM-12).
+5. The new email is the account's current one (INV-CEM-9): succeeds with nothing recorded.
+6. `account-closed` (INV-CEM-3).
+7. `neighbor-suspended` (INV-CEM-3a).
+8. `email-in-use` (INV-CEM-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-CEM-13 |
 | `requester-mismatch` | You can only change your own email. | INV-CEM-1 |
 | `neighbor-not-found` | There is no such neighbor. | INV-CEM-10 |
 | `email-missing` | Please enter your email address. | INV-CEM-11 |
 | `account-closed` | This account is closed. | INV-CEM-3 |
 | `neighbor-suspended` | You can't change your email while your account is suspended. | INV-CEM-3a |
-| `email-in-use` | That email address is already used by an account. | INV-CEM-2 |
+| `email-too-long` | Your email address can be at most 254 characters. | INV-CEM-12 |
+| `email-invalid` | Please enter a valid email address. | INV-CEM-12 |
+| `email-in-use` | That email address can't be used. | INV-CEM-2 |
 
 `neighbor-not-found` can only come from a faulty caller, not from the screen. A missing or
 malformed neighbor ID (not a UUID) is bad input, rejected before any rule is checked. It is not a
-refusal and has no reason name. `email-missing`, `email-in-use`, `account-closed` and
-`neighbor-not-found` mean the same conditions as in Register Neighbor and Check Out Tool, with
-the same sentences. `email-in-use` is one reason for every case of INV-CEM-2, so a refusal never
-reveals another account's status; its wording is the open question in Register Neighbor.
+refusal and has no reason name. `email-missing`, `email-too-long`,
+`email-invalid`, `email-in-use`, `account-closed` and `neighbor-not-found` mean the same
+conditions as in Register Neighbor and Check Out Tool. `email-in-use` is one reason for every
+case of INV-CEM-2, worded to be true in each, so a refusal never reveals another account's
+status; its sentence fits a change rather than a sign-up.
 
 Idempotency: there is no request ID. A request whose effect has already happened, because the
 account's current email is already the one asked for, succeeds and records nothing (INV-CEM-9).
@@ -217,11 +254,10 @@ email changes.
 
 ## Non-Functional Requirements
 - **Security / authz:** a neighbor may change only their own email (INV-CEM-1); the shed manager
-  doesn't change neighbors' emails. How the requester is recognised is the open identity
-  question below.
+  doesn't change neighbors' emails. Sign-in, handled outside the model, supplies the acting neighbor's ID; a request whose neighbor ID isn't the signed-in neighbor's is refused `requester-mismatch`.
 - **PII & compliance:** Neighbor Email Changed holds the neighbor's new email address. The old
-  address stays in the earlier events as the shed's record; whether such details are kept for
-  good is the retention question open in Register Neighbor.
+  address stays in the earlier events as the shed's record. Names and emails are kept with the
+  shed's history and never erased.
 - **Performance / SLA:** none beyond the one-at-a-time email check above.
 
 ## Dependencies & Read Models Affected
@@ -240,17 +276,4 @@ email changes.
   email). Register Neighbor and later Change Email requests check the new email as held.
 
 ## Open Questions
-- [ ] How does the system know the request comes from the neighbor whose account it names? (brief 10 A1)
-  - The same identity question is open in Add Tool, Register Neighbor and the neighbor screens.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
-    supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
-  - Recommendation: (b), which adds nothing to the model. If sign-in is by email, it must follow
-    the account's current email after a change.
-- [ ] What makes a new email acceptable, and are two emails that differ only in capital letters
-  the same? (brief 11 B3, B4)
-  - These are the same open questions as at sign-up (Register Neighbor). Whatever is ruled there
-    applies here too, with the same reason names.
-  - Recommendation: as in Register Neighbor: a basic shape check, and compare without regard to
-    case.
-- [ ] The wording of the `email-in-use` refusal (brief 11 B6).
-- [ ] Whether earlier email addresses are kept for good (brief 11 B7).
+None.

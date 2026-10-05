@@ -61,7 +61,7 @@ shows them as active again. Suspended Neighbors, Neighbors and My Account own ho
 is shown.
 
 - **INV-REI-1:** Only the shed manager reinstates a neighbor.
-  - How the shed manager is recognised is the open identity question below.
+  - Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
 - **INV-REI-2:** Only a suspended neighbor can be reinstated.
   - A neighbor whose account is closed can't be reinstated, because closed is final, even if they
     were suspended when they closed it.
@@ -69,6 +69,7 @@ is shown.
 - **INV-REI-7:** Reinstating a neighbor who is already active succeeds and records nothing.
   - So a double submit, or a retry after a lost response, never records a second reinstatement.
 - **INV-REI-8:** The neighbor must be a registered account.
+- **INV-REI-9:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
 - **Happy path (INV-REI-1, INV-REI-2)**
@@ -96,7 +97,7 @@ is shown.
   - **Then:** refused with `account-closed`: "This account is closed." No event is recorded.
 - **Someone other than the shed manager (INV-REI-1)**
   - **Given:** N1 is suspended
-  - **When:** a request that doesn't come from the shed manager asks to reinstate N1
+  - **When:** a caller signed in without the shed-manager role asks to reinstate N1
   - **Then:** refused with `not-shed-manager`: "Only the shed manager can reinstate neighbors." No
     event is recorded.
 - **Unknown neighbor (INV-REI-8)**
@@ -104,6 +105,10 @@ is shown.
   - **When:** the shed manager asks to reinstate N9
   - **Then:** refused with `neighbor-not-found`: "There is no such neighbor." No event is
     recorded.
+- **Not signed in (INV-REI-9)**
+  - **Given:** nobody is signed in
+  - **When:** a request for reinstating a neighbor arrives
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -111,15 +116,17 @@ the shed manager on the Suspended Neighbors screen. The name is the contract; th
 required wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `not-shed-manager` (INV-REI-1): who is asking is settled before anything else.
-2. `neighbor-not-found` (INV-REI-8).
-3. If the neighbor's status is already active, the request succeeds and records nothing
+1. `not-signed-in` (INV-REI-9): a request with no sign-in is refused first.
+2. `not-shed-manager` (INV-REI-1): who is asking is settled next, before any other rule.
+3. `neighbor-not-found` (INV-REI-8).
+4. If the neighbor's status is already active, the request succeeds and records nothing
    (INV-REI-7). Status is tested with closed first: an account closed while suspended has status
    closed, so it gets `account-closed`.
-4. `account-closed` (INV-REI-2).
+5. `account-closed` (INV-REI-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-REI-9 |
 | `not-shed-manager` | Only the shed manager can reinstate neighbors. | INV-REI-1 |
 | `neighbor-not-found` | There is no such neighbor. | INV-REI-8 |
 | `account-closed` | This account is closed. | INV-REI-2 |
@@ -139,8 +146,7 @@ in the same order: whichever is recorded first stands.
 There are no external calls, retries or compensations in this slice. Nothing is emailed.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the shed manager may reinstate a neighbor (INV-REI-1). How the shed
-  manager is recognised is the open identity question below.
+- **Security / authz:** only the shed manager may reinstate a neighbor (INV-REI-1). Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
 - **PII & compliance:** Neighbor Reinstated links a neighbor to a reinstatement. It holds no name,
   email or reason.
 - **Performance / SLA:** none.
@@ -158,5 +164,4 @@ There are no external calls, retries or compensations in this slice. Nothing is 
   the neighbor as active again.
 
 ## Open Questions
-- [ ] Identity: how the system recognises the shed manager (brief 10 A1). This slice follows its
-  answer; see the identity question in Add Tool.
+None.

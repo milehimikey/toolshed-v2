@@ -72,7 +72,7 @@ and are never returned.
 - **List the catalog.** Takes nothing; it is the same for every neighbor (INV-TCAT-5). Returns
   every listed tool, each with toolId, name, description, defaultCheckoutPeriodDays, addedAt,
   status, dueDate, holdsWaiting, canCheckOut and canPlaceHold. There is no paging: the query
-  always returns every listed tool. The order is an open question below.
+  always returns every listed tool, ordered by name, then by addedAt (INV-TCAT-13).
 
 ## Invariants / Business Rules
 - **INV-TCAT-1:** Every added tool appears in the catalog exactly once, available to borrow.
@@ -103,8 +103,8 @@ and are never returned.
 - **INV-TCAT-5:** The catalog is the same for every neighbor.
   - It never shows a neighbor that a tool is set aside for them; they see their own set-aside on
     My Holds.
-  - As written, it also never shows who a tool is checked out to, reserved for or set aside for.
-    Whether that is right is an open question below.
+  - It never shows who a tool is checked out to, who holds it, or who it is reserved or set
+    aside for. Only the shed manager sees borrowers, on the Tool Inventory.
 - **INV-TCAT-6:** Each tool shows how many holds are waiting on it.
   - A hold is waiting from Hold Placed until it is fulfilled or ends.
 - **INV-TCAT-7:** The catalog offers Place Hold on any tool that isn't available: checked out,
@@ -130,8 +130,13 @@ and are never returned.
   - The action is offered by the tool's state alone, the same to every neighbor. On a reserved
     or set-aside tool, only the holder whose turn it is can check it out; Check Out Tool refuses
     anyone else with the reason.
+- **INV-TCAT-13:** Tools are listed by name, ignoring case, then by when they were added.
+  - The same order as every list in the shed.
 - **INV-TCAT-12:** Applying the same event twice leaves the catalog as if it had been applied
   once.
+- **INV-TCAT-14:** Any signed-in neighbor can read the Tool Catalog; a caller with no sign-in
+  can't.
+  - A caller with no sign-in is refused with `not-signed-in`. Nothing is returned.
 
 ## Scenarios (Given / When / Then)
 - **Tool added (INV-TCAT-1, INV-TCAT-11)**
@@ -247,14 +252,26 @@ and are never returned.
   - **Given:** the catalog shows the drill as checked out, due 12 October
   - **When:** Overdue Notice Sent is recorded for the drill's loan
   - **Then:** the drill's entry is unchanged.
+- **Listing order (INV-TCAT-13)**
+  - **Given:** the catalog lists a ladder, then a cordless drill added on 1 October, then a
+    second cordless drill added on 3 October
+  - **When:** a neighbor lists the catalog
+  - **Then:** the tools come back as: the cordless drill added 1 October, the cordless drill
+    added 3 October, then the ladder.
 - **Listing the catalog (INV-TCAT-5)**
   - **Given:** the catalog lists the drill (checked out, due 12 October, 1 hold waiting) and the
     ladder (available)
   - **When:** Ana lists the catalog, and then Ben does
   - **Then:** both get the same two tools with the same fields, with no paging, and nothing
     about who has borrowed or holds either tool.
+- **No sign-in (INV-TCAT-14)**
+  - **Given:** the catalog lists the drill
+  - **When:** a caller with no sign-in asks for the catalog
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
 
 ## Alternate & Error Flows
+- **Read refusals:** the list query refuses a caller with no sign-in with `not-signed-in`
+  ("Please sign in."). Nothing is returned on a refusal.
 - **Repeated events:** every event is applied idempotently (INV-TCAT-12). An event applied a
   second time leaves the entry as it was after the first.
 - **Event for a tool that is no longer listed:** once a tool has been retired or recorded lost,
@@ -268,9 +285,9 @@ and are never returned.
   checks its own rules and refuses with its own reason; this view raises no errors of its own.
 
 ## Non-Functional Requirements
-- **Security / authz:** the Tool Catalog is the neighbors' screen; it shows only tool details and
-  state. How the system recognises a neighbor is the open identity question in Add Tool
-  (slices/add-tool.md); this view follows its answer.
+- **Security / authz:** the Tool Catalog is the neighbors' screen, for any signed-in neighbor;
+  sign-in is handled outside the shed's events. It shows only tool details and state, the same
+  to everyone.
 - **PII & compliance:** none. The catalog shows no neighbor's name, email or identity. The
   holders and borrowers it keeps for matching events are never returned.
 - **Performance / SLA:** none beyond the freshness above.
@@ -296,18 +313,4 @@ and are never returned.
   and Place Hold.
 
 ## Open Questions
-- [ ] In what order are tools listed, here and on the Tool Inventory?
-  - Recommendation: by name, with tools that share a name in the order they were added
-    (addedAt). One answer for both views.
-- [ ] Does the catalog show who has a tool?
-  - The catalog is the same for every neighbor, and never tells a neighbor a tool is set aside
-    for them. Nothing on record says whether it names the borrower of a checked-out tool.
-  - (a) Never shown: only the shed manager sees who has what, on the Tool Inventory. (b) The
-    borrower's name is shown on a checked-out tool, which needs Neighbor Registered fed to the
-    catalog.
-  - Recommendation: (a). Neighbors need to know when a tool is due back, not who has it.
-- [ ] Is "reserved" the right word for a tool that is back in the shed with holds waiting, but
-  not yet set aside?
-  - It is both the status value the catalog returns and the label neighbors see.
-  - Recommendation: keep "reserved". It tells a neighbor the tool is spoken for without saying by
-    whom.
+None.

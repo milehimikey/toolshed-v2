@@ -25,8 +25,8 @@ What follows a cancellation is decided by the views and slices that read Hold Ca
 
 ## Trigger & Actor
 The holder, from the My Holds screen, on one of their own holds that hasn't ended. The shed
-manager doesn't cancel holds. How the system recognises the holder is the open identity question
-in Add Tool (slices/add-tool.md); this slice follows its answer.
+manager doesn't cancel holds. Sign-in, handled outside the shed's events, supplies the
+acting neighbor's ID.
 
 ## Command / Input
 **Command:** `Cancel Hold`
@@ -64,8 +64,9 @@ My Loans and the hold to-do lists, each specified in its own doc. All are eventu
 - **INV-CNH-1:** A neighbor can cancel only their own hold, and does it themselves.
   - The command names the acting neighbor in neighborId. The request must come from that
     neighbor (`requester-mismatch`), and the hold must be theirs (`not-your-hold`). The shed
-    manager does not cancel holds. How the requester is recognised is the open identity
-    question.
+    manager does not cancel holds. Sign-in, handled outside the shed's events, supplies the
+    acting neighbor's ID.
+  - A caller with no sign-in is refused with `not-signed-in`, before anything else is checked.
 - **INV-CNH-2:** A hold can be cancelled while it is waiting or while the tool is set aside for
   the holder.
   - A suspended neighbor may cancel their own hold. Cancelling only gives up their own claim.
@@ -140,6 +141,10 @@ cordless drill was placed before Cara's hold H2.
   - **Given:** Ben closed his account while H1 was waiting
   - **When:** a request to cancel H1 for Ben arrives
   - **Then:** refused with `hold-ended`. No event is recorded.
+- **No sign-in (INV-CNH-1)**
+  - **Given:** a caller with no sign-in
+  - **When:** they ask to cancel H1
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -147,7 +152,7 @@ the neighbor on the My Holds screen. The name is the contract; the sentence is t
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-CNH-1).
+1. `not-signed-in`, then `requester-mismatch` (INV-CNH-1).
 2. `hold-not-found` (INV-CNH-7).
 3. `not-your-hold` (INV-CNH-1).
 4. If Hold Cancelled is already recorded for the hold, the request succeeds and records nothing
@@ -156,6 +161,7 @@ The checks run in this order, and the first that fails is the reason returned:
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-CNH-1 |
 | `requester-mismatch` | You can only cancel holds for yourself. | INV-CNH-1 |
 | `hold-not-found` | There is no such hold. | INV-CNH-7 |
 | `not-your-hold` | You can only cancel your own holds. | INV-CNH-1 |
@@ -177,8 +183,8 @@ recorded first stands. A cancel decided after an expiry, retirement or closure i
 There are no external calls, retries or compensations in this slice. Cancelling sends no email.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the holder may cancel their own hold (INV-CNH-1). How the requester
-  is recognised is the open identity question in Add Tool.
+- **Security / authz:** only the holder may cancel their own hold (INV-CNH-1). Sign-in, handled
+  outside the shed's events, supplies the acting neighbor's ID.
 - **PII & compliance:** Hold Cancelled holds only the hold's ID and a time. No name or email.
 - **Performance / SLA:** none beyond the one-at-a-time rule above.
 
@@ -200,4 +206,4 @@ There are no external calls, retries or compensations in this slice. Cancelling 
   new hold from the same neighbor on the same tool once this one is cancelled.
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1. The requester checks here follow its answer.
+None.

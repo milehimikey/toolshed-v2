@@ -33,10 +33,9 @@ was told, and stops a second notice.
 - **The email:** to the address recorded on the event, giving the borrower's name, the tool's
   name and the due date recorded on it, asking them to return the tool, and saying that an
   overdue loan blocks new checkouts and pickups (INV-OVN-3, INV-OVN-7).
-- **The provider's contract** assumed here: it accepts a hand-off with a key, sends at most one
-  email per key, makes its own delivery attempts (3 over about an hour), and reports a final
-  failure quoting the key. Which provider, and this contract, is part of the shed's house rules
-  for shared ports, open as the conventions question in .event-modeling.md (Open questions).
+- **The email port's contract**, from the shed's house rules: the provider accepts a hand-off
+  with a key, sends at most one email per key, makes its own delivery attempts (3 over about an
+  hour), and sends one final failure report quoting the key, signed so the shed can trust it.
   The final failure is recorded by Record Overdue Notice Failure (slices/record-overdue-notice-
   failure.md).
 
@@ -241,9 +240,8 @@ recorded, one at a time per loan, so at most one Overdue Notice Sent is recorded
 - **Security / authz:** Send Overdue Notice is internal. Only the Overdue Notice Gateway issues
   it; it is not exposed to neighbors or the shed manager.
 - **PII & compliance:** the email carries the borrower's name, email address and the tool they
-  have. Overdue Notice Sent records the same, as facts of the notice that was sent. How long
-  personal data is kept is the shed-wide personal-data question in .event-modeling.md (Open
-  questions).
+  have. Overdue Notice Sent records the same, as facts of the notice that was sent. Names and
+  emails are kept with the shed's loan and hold history and never erased.
 - **Performance / SLA:** the notice is recorded within 5 minutes of the start of the day after
   the due date (the gateway's read interval), and handed over as soon as the provider accepts
   it.
@@ -263,5 +261,4 @@ recorded, one at a time per loan, so at most one Overdue Notice Sent is recorded
   failure report to the loan by the hand-off key, the loan ID.
 
 ## Open Questions
-- [ ] The email provider's contract (hand-off key, at most one email per key, its own delivery attempts, a final failure report quoting the key) — brief 10 A5.
-- [ ] How long personal data is kept — brief 11 B7. Overdue Notice Sent records the borrower's name and email address.
+None.

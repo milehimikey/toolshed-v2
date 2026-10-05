@@ -17,8 +17,7 @@ tool has been retired.
 
 ## Trigger & Actor
 The borrower, from the My Loans screen, on one of their own loans that My Loans offers Extend
-on. How the system recognises the borrower is the open identity question in Add Tool
-(slices/add-tool.md); this slice follows its answer.
+on. Sign-in, handled outside the shed's events, supplies the acting neighbor's ID.
 
 ## Command / Input
 **Command:** `Extend Loan`
@@ -61,7 +60,9 @@ Each view is specified in its own doc. All are eventually consistent.
 - **INV-EXT-1:** Only the borrower can extend a loan, and they do it themselves.
   - The command names the acting neighbor in neighborId. The request must come from that
     neighbor (`requester-mismatch`), and the loan must be theirs: the neighbor who checked the
-    tool out (`not-your-loan`). How the requester is recognised is the open identity question.
+    tool out (`not-your-loan`). Sign-in, handled outside the shed's events, supplies the acting
+    neighbor's ID.
+  - A caller with no sign-in is refused with `not-signed-in`, before anything else is checked.
 - **INV-EXT-2:** Only an open loan can be extended.
   - A loan is open from Tool Checked Out until Tool Returned or Tool Lost for that loan.
 - **INV-EXT-3:** An extension adds one of the tool's default checkout periods to the loan's
@@ -190,6 +191,10 @@ on the drill. Ana is active, and today is 10 October.
   - **When:** a request to extend L1 from 5 October arrives
   - **Then:** refused with `due-date-changed`: "This loan's due date has changed. Check it and
     try again." No event is recorded.
+- **No sign-in (INV-EXT-1)**
+  - **Given:** a caller with no sign-in
+  - **When:** they ask to extend L1
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -197,7 +202,7 @@ the borrower on the My Loans screen. The name is the contract; the sentence is t
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `requester-mismatch` (INV-EXT-1).
+1. `not-signed-in`, then `requester-mismatch` (INV-EXT-1).
 2. `loan-not-found` (INV-EXT-9).
 3. `not-your-loan` (INV-EXT-1).
 4. If a Loan Extended for this loan already has the same fromDueDate, the request is a repeat:
@@ -211,6 +216,7 @@ The checks run in this order, and the first that fails is the reason returned:
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-EXT-1 |
 | `requester-mismatch` | You can only extend loans for yourself. | INV-EXT-1 |
 | `loan-not-found` | There is no such loan. | INV-EXT-9 |
 | `not-your-loan` | You can only extend your own loans. | INV-EXT-1 |
@@ -237,8 +243,8 @@ There are no external calls, retries or compensations in this slice.
 
 ## Non-Functional Requirements
 - **Security / authz:** only the borrower may extend their own loan (INV-EXT-1). The shed
-  manager doesn't extend loans. How the requester is recognised is the open identity question in
-  Add Tool.
+  manager doesn't extend loans. Sign-in, handled outside the shed's events, supplies the acting
+  neighbor's ID.
 - **PII & compliance:** Loan Extended holds only the loan and its dates. No name or email.
 - **Performance / SLA:** none beyond the one-at-a-time rule above.
 
@@ -263,4 +269,4 @@ There are no external calls, retries or compensations in this slice.
   date).
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1. The requester checks here follow its answer.
+None.

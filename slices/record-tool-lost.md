@@ -71,7 +71,7 @@ To Notify). The borrower isn't emailed; the loan simply drops off their My Loans
 told their hold ended, as for any retired tool.
 
 - **INV-LOST-1:** Only the shed manager records a tool lost.
-  - How the shed manager is recognised is the open identity question below.
+  - Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
 - **INV-LOST-2:** A tool can be recorded lost only while it is out on loan, and the loss is
   recorded against that loan.
   - It can be recorded at any time while the tool is out, before or after the loan is overdue.
@@ -84,6 +84,7 @@ told their hold ended, as for any retired tool.
   nothing.
   - So a double submit, or a retry after a lost response, never records a second loss.
 - **INV-LOST-11:** The loan must have been checked out.
+- **INV-LOST-12:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
 - **Happy path (INV-LOST-1, INV-LOST-2, INV-LOST-3)**
@@ -111,13 +112,17 @@ told their hold ended, as for any retired tool.
   - **Then:** refused with `loan-ended`: "This loan has ended." No event is recorded.
 - **Someone other than the shed manager (INV-LOST-1)**
   - **Given:** Ana has L2 out
-  - **When:** a request that doesn't come from the shed manager asks to record L2 lost
+  - **When:** a caller signed in without the shed-manager role asks to record L2 lost
   - **Then:** refused with `not-shed-manager`: "Only the shed manager can record tools lost." No
     event is recorded.
 - **Unknown loan (INV-LOST-11)**
   - **Given:** no loan has ID L9
   - **When:** the shed manager asks to record L9 lost
   - **Then:** refused with `loan-not-found`: "There is no such loan." No event is recorded.
+- **Not signed in (INV-LOST-12)**
+  - **Given:** nobody is signed in
+  - **When:** a request for recording a tool lost arrives
+  - **Then:** refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ## Alternate & Error Flows
 Every refusal records nothing and returns one reason: the stable name, and the sentence shown to
@@ -125,14 +130,16 @@ the shed manager on the Tool Inventory screen. The name is the contract; the sen
 required wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `not-shed-manager` (INV-LOST-1): who is asking is settled before anything else.
-2. `loan-not-found` (INV-LOST-11).
-3. If Tool Lost is already recorded for the loan, the request succeeds and records nothing
+1. `not-signed-in` (INV-LOST-12): a request with no sign-in is refused first.
+2. `not-shed-manager` (INV-LOST-1): who is asking is settled next, before any other rule.
+3. `loan-not-found` (INV-LOST-11).
+4. If Tool Lost is already recorded for the loan, the request succeeds and records nothing
    (INV-LOST-10).
-4. `loan-ended`, if Tool Returned is recorded for the loan (INV-LOST-2).
+5. `loan-ended`, if Tool Returned is recorded for the loan (INV-LOST-2).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-LOST-12 |
 | `not-shed-manager` | Only the shed manager can record tools lost. | INV-LOST-1 |
 | `loan-not-found` | There is no such loan. | INV-LOST-11 |
 | `loan-ended` | This loan has ended. | INV-LOST-2 |
@@ -154,8 +161,7 @@ loss gets `loan-ended`, or succeeds as a repeat if the first was itself a loss).
 There are no external calls, retries or compensations in this slice. Nothing is emailed.
 
 ## Non-Functional Requirements
-- **Security / authz:** only the shed manager may record a tool lost (INV-LOST-1). How the shed
-  manager is recognised is the open identity question below.
+- **Security / authz:** only the shed manager may record a tool lost (INV-LOST-1). Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
 - **PII & compliance:** Tool Lost names a loan and a tool. It holds no name or email, and nothing
   about cost or blame.
 - **Performance / SLA:** none.
@@ -171,5 +177,4 @@ There are no external calls, retries or compensations in this slice. Nothing is 
   refuse the ended loan; Check Out Tool, Place Hold and Retire Tool treat the tool as retired.
 
 ## Open Questions
-- [ ] Identity: how the system recognises the shed manager (brief 10 A1). This slice follows its
-  answer; see the identity question in Add Tool.
+None.

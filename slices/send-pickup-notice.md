@@ -33,9 +33,10 @@ My Holds shows the neighbor that it was sent.
 - **The email:** to the address recorded on the event, giving the holder's name, the tool's name
   and the collect-by date recorded on it, and saying that the hold expires and the tool passes to
   the next neighbor if it isn't collected by then (INV-PKN-3, INV-PKN-7).
-- **The provider's contract** assumed here is the same as for overdue notices: it accepts a
-  hand-off with a key, sends at most one email per key, makes its own delivery attempts (3 over
-  about an hour), and reports a final failure quoting the key. A final failure is recorded by
+- **The email port's contract**, from the shed's house rules, is the same as for overdue
+  notices: the provider accepts a hand-off with a key, sends at most one email per key, makes
+  its own delivery attempts (3 over about an hour), and sends one final failure report quoting
+  the key, signed so the shed can trust it. A final failure is recorded by
   Record Pickup Notice Failure (slices/record-pickup-notice-failure.md). The hold still shows as
   ready for pickup, and the pickup window runs as usual.
 
@@ -247,7 +248,8 @@ recorded, one at a time per hold, so at most one Pickup Notice Sent is recorded 
 - **Security / authz:** Send Pickup Notice is internal. Only the Pickup Notice Gateway issues it;
   it is not exposed to neighbors or the shed manager.
 - **PII & compliance:** the email carries the holder's name, email address and the tool set aside
-  for them. Pickup Notice Sent records the same, as facts of the email that was sent.
+  for them. Pickup Notice Sent records the same, as facts of the email that was sent. Names and emails are
+  kept with the shed's loan and hold history and never erased.
 - **Performance / SLA:** the email is recorded within moments of Hold Fulfilled, and handed over
   as soon as the provider accepts it.
 
@@ -270,7 +272,4 @@ recorded, one at a time per hold, so at most one Pickup Notice Sent is recorded 
   report to the hold by the hand-off key, the hold ID.
 
 ## Open Questions
-- [ ] The email provider's contract (hand-off key, at most one email per key, its own delivery
-  attempts, a final failure report quoting the key) — brief 10 A5.
-- [ ] How long personal data is kept — brief 11 B7. Pickup Notice Sent records the holder's name
-  and email address.
+None.

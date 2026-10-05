@@ -50,8 +50,8 @@ email. These are bookkeeping, not rows, and are never returned.
 
 **Queries**
 - **List suspended neighbors.** Takes nothing. Returns every entry with neighborId, name, email
-  and suspendedAt. There is no paging. The order follows the shared list-order rule (open; see
-  Open Questions).
+  and suspendedAt. There is no paging. Entries are listed by name, then by suspendedAt, when the
+  entry was created (INV-SPN-10).
 
 ## Invariants / Business Rules
 - **INV-SPN-1:** A neighbor appears on Suspended Neighbors when Neighbor Suspended is recorded
@@ -73,11 +73,16 @@ email. These are bookkeeping, not rows, and are never returned.
   - Closed is final, so the shed manager is never offered Reinstate on a closed account.
 - **INV-SPN-6:** A neighbor appears on the list at most once.
   - A neighbor who is reinstated and later suspended again appears again, with the new date.
+- **INV-SPN-10:** Entries are listed by name, ignoring case, then by when the neighbor was
+  suspended.
+  - The same order as every list in the shed.
 - **INV-SPN-9:** Applying the same event twice leaves the list as if it had been applied once.
+- **INV-SPN-11:** Only the shed manager can read Suspended Neighbors.
+  - A signed-in caller without the shed-manager role is refused with `not-shed-manager`, and a
+    caller with no sign-in with `not-signed-in`. Nothing is returned to either.
 
-Only the shed manager sees Suspended Neighbors; neighbors never do. Only Neighbor Suspended,
-Neighbor Reinstated and Neighbor Account Closed add or remove entries; Neighbor Registered and
-Neighbor Email Changed supply names and emails.
+Only Neighbor Suspended, Neighbor Reinstated and Neighbor Account Closed add or remove entries;
+Neighbor Registered and Neighbor Email Changed supply names and emails.
 
 ## Scenarios (Given / When / Then)
 Unless a scenario says otherwise: Ana Ruiz registered with ana@example.org, and Ben Ito with
@@ -108,12 +113,30 @@ ben@example.org.
   - **Given:** Suspended Neighbors lists Ana once
   - **When:** the same Neighbor Suspended for Ana is applied again
   - **Then:** Ana is still listed once, suspended 7 October.
+- **Listing order (INV-SPN-10)**
+  - **Given:** Suspended Neighbors lists Ben Ito (suspended 1 October) and Ana Ruiz (suspended 7
+    October)
+  - **When:** the shed manager lists suspended neighbors
+  - **Then:** Ana Ruiz comes first, then Ben Ito.
 - **Listing suspended neighbors**
   - **Given:** Suspended Neighbors lists Ana and Ben
   - **When:** the shed manager's screen lists suspended neighbors
   - **Then:** both entries are returned with all their fields, with no paging.
+- **A neighbor tries to read the list (INV-SPN-11)**
+  - **Given:** Suspended Neighbors has entries
+  - **When:** a neighbor, signed in without the shed-manager role, asks for the suspended neighbors
+  - **Then:** refused with `not-shed-manager`: "Only the shed manager can see this screen."
+    Nothing is returned.
+- **No sign-in (INV-SPN-11)**
+  - **Given:** Suspended Neighbors has entries
+  - **When:** a caller with no sign-in asks for the suspended neighbors
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
 
 ## Alternate & Error Flows
+- **Read refusals:** the list query refuses a caller without the shed-manager role with
+  `not-shed-manager` ("Only the shed manager can see this screen."), and a caller with no
+  sign-in with `not-signed-in` ("Please sign in."). Nothing is returned on a refusal. These
+  mean the same conditions as in the shed manager's commands.
 - **Repeated events:** every event is applied idempotently (INV-SPN-9).
 - **Events after an entry is gone:** once an entry has been removed, a later Neighbor Reinstated
   or Neighbor Account Closed for that neighbor changes nothing. A later Neighbor Suspended starts
@@ -123,10 +146,11 @@ ben@example.org.
   own rules and refuses with its own reason; this view raises no errors of its own.
 
 ## Non-Functional Requirements
-- **Security / authz:** the Suspended Neighbors screen is the shed manager's alone. How the
-  system recognises the shed manager is the identity question (see Open Questions).
+- **Security / authz:** the Suspended Neighbors screen is the shed manager's alone. Sign-in, handled outside the shed's events, supplies the
+  shed-manager role; only a caller with it may read this view.
 - **PII & compliance:** shows suspended neighbors' names and current emails to the shed manager
-  only. An entry is removed on reinstatement or account closure.
+  only. An entry is removed on reinstatement or account closure. Names and emails are kept with
+  the shed's loan and hold history and never erased.
 - **Performance / SLA:** none beyond the freshness above.
 
 ## Dependencies & Read Models Affected
@@ -142,7 +166,4 @@ ben@example.org.
   Neighbor.
 
 ## Open Questions
-- [ ] How a person is recognised (the identity question) — brief 10 A1.
-- [ ] List order — brief 10 A4.
-- [ ] How long personal data is kept — brief 11 B7. This screen shows neighbors' names and
-  emails.
+None.

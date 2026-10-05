@@ -17,9 +17,7 @@ suspended, and the screen they change their email and close their account from.
 ## Trigger & Actor
 - **Actor:** a neighbor, opening their own My Account screen. A neighbor whose account is closed
   can still open it, read-only.
-- **Whose account it shows:** the account of the neighbor asking. How the system knows who is
-  asking is the open identity question below; this view answers for whichever neighbor ID that
-  supplies.
+- **Whose account it shows:** the account of the neighbor asking. Sign-in, handled outside the model, supplies the neighbor's ID, resolving a person to their newest account, or to their closed one only when they have no newer.
 - **Actions offered:** nothing on this screen records anything by itself. Its actions issue
   commands owned by other slices:
   - **Change Email** (Change Email slice) — offered while the account isn't closed (INV-MYAC-9).
@@ -42,10 +40,12 @@ recorded.
 | neighborId | NeighborId | Neighbor Registered.neighborId. |
 | name | Text | Neighbor Registered.name. Never changes. |
 | email | Text | Neighbor Registered.email, replaced by each Neighbor Email Changed.email for this account. Always the current one. |
-| registeredAt | Instant | Neighbor Registered.registeredAt. |
 | status | Text | One of `active`, `suspended`, `closed`. `Derived:` see the status rules below. |
 | canChangeEmail | Bool | `Derived:` yes unless status is `closed` (INV-MYAC-9). |
 | canCloseAccount | Bool | `Derived:` yes unless status is `closed` (INV-MYAC-11). |
+
+My Account doesn't show the neighbor's sign-up date; that is the shed manager's to see, on
+Neighbors.
 
 **Status rules.** An account's status is a test of its current facts, taken in this order. The
 first that holds wins:
@@ -55,8 +55,7 @@ first that holds wins:
 3. **active** — otherwise.
 
 **Queries**
-- **Get my account.** Takes the asking neighbor's neighborId. Returns that one account with
-  every field above, or not found if no account has that neighbor ID. It never returns another
+- **Get my account.** Takes the asking neighbor's neighborId. Returns that one account with every field above, or not found if no account has that neighbor ID. It never returns another
   account (INV-MYAC-1).
 
 ## Invariants / Business Rules
@@ -95,6 +94,8 @@ first that holds wins:
   - It is offered whether or not the neighbor has tools on loan. Close Account refuses a
     neighbor with tools on loan with its own reason (INV-CLS-7, Close Account): a refusal with a
     reason the neighbor sees means the action was offered.
+- **INV-MYAC-13:** A request with no sign-in is refused before anything else is checked.
+- **INV-MYAC-14:** My Account is answered only for the signed-in neighbor: a request for any other neighbor ID is refused.
 
 ## Scenarios (Given / When / Then)
 - **Neighbor registered (INV-MYAC-2, INV-MYAC-3, INV-MYAC-9, INV-MYAC-11)**
@@ -155,8 +156,26 @@ first that holds wins:
   - **Given:** no account has neighbor ID N9
   - **When:** My Account is asked for N9
   - **Then:** not found.
+- **Not signed in (INV-MYAC-13)**
+  - **Given:** nobody is signed in
+  - **When:** My Account is asked for
+  - **Then:** refused with `not-signed-in`: "Please sign in." Nothing is returned.
+- **Asked by the wrong person (INV-MYAC-14)**
+  - **Given:** Ben (N2) is signed in
+  - **When:** My Account is asked for N1, Ana's account
+  - **Then:** refused with `requester-mismatch`: "You can only see your own account." Nothing is returned.
 
 ## Alternate & Error Flows
+Reading this view is guarded like a command. A refused read returns nothing and one reason: the
+stable name, and the sentence shown on the screen. The checks run in this order:
+1. `not-signed-in` (INV-MYAC-13).
+2. `requester-mismatch` (INV-MYAC-14).
+
+| Reason | Sentence | Rule |
+|--------|----------|------|
+| `not-signed-in` | Please sign in. | INV-MYAC-13 |
+| `requester-mismatch` | You can only see your own account. | INV-MYAC-14 |
+
 - **Repeated events:** every event is applied idempotently (INV-MYAC-10). An event applied a
   second time leaves the account as it was after the first.
 - **Events for a closed account:** closed is final, so no Neighbor Suspended, Neighbor Reinstated
@@ -169,17 +188,14 @@ first that holds wins:
   its own rules and refuses with its own reason; this view raises no errors of its own.
 
 ## Non-Functional Requirements
-- **Security / authz:** a neighbor may read only their own account (INV-MYAC-1). How the system
-  knows which neighbor is asking is the open identity question below; until it is answered,
-  nothing stops a caller asking for another neighbor ID.
+- **Security / authz:** a neighbor may read only their own account (INV-MYAC-1). The query is always asked for the signed-in neighbor's own ID, which sign-in, handled outside the model, supplies; a request for any other neighbor ID is refused `requester-mismatch` (INV-MYAC-14), and one with no sign-in `not-signed-in` (INV-MYAC-13).
 - **PII & compliance:** holds and shows the neighbor's name and email, to that neighbor only.
-  Whether a closed account's details are kept for good is the open question in Register Neighbor
-  (slices/register-neighbor.md).
+  Names and emails are kept with the shed's history and never erased, including a closed account's.
 - **Performance / SLA:** none beyond the freshness above.
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Neighbor Registered (Register Neighbor): neighborId, name, email, registeredAt.
+  - Neighbor Registered (Register Neighbor): neighborId, name, email.
   - Neighbor Email Changed (Change Email): neighborId, email.
   - Neighbor Suspended (Suspend Neighbor): neighborId.
   - Neighbor Reinstated (Reinstate Neighbor): neighborId.
@@ -191,20 +207,4 @@ first that holds wins:
   Close Account.
 
 ## Open Questions
-- [ ] How does the system know which neighbor is asking, so My Account shows their account and no
-  one else's? (brief 10 A1)
-  - The same identity question is open in Add Tool and Register Neighbor. My Account depends on
-    it entirely: without it, the query can be asked for any neighbor ID.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
-    supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
-  - Whatever answers it must find a person's newest account: after signing up again, the
-    neighbor sees only the new account (INV-MYAC-8), though both accounts may share an email.
-    The closed account is shown only when the person has no newer one.
-  - Recommendation: (b), which adds nothing to the model.
-- [ ] Should My Account show the neighbor when they signed up?
-  - The view has the moment the account was registered (registeredAt), and it costs nothing to
-    show. Nothing on record says whether the neighbor sees it.
-  - Recommendation: no. The neighbor needs their details and status, not their sign-up date. If
-    the answer is no, registeredAt stays in the row anyway: it is the account's creation time,
-    which the shed-wide list-order question uses wherever accounts are listed. My Account just
-    doesn't display it.
+None.

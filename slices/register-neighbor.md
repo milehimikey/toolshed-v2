@@ -17,7 +17,7 @@ is active and can borrow straight away.
 ## Trigger & Actor
 A person who wants to join, from the Sign Up screen. They sign themselves up; the shed manager
 doesn't enroll neighbors. Someone whose earlier account is closed may sign up again here, as a
-new account. How a person is recognised once signed up is the open identity question below.
+new account. Once signed up, the neighbor signs in outside the model, and sign-in supplies their neighbor ID for every later action; it resolves a person to their newest account, or to their closed one only when they have no newer.
 
 ## Command / Input
 **Command:** `Register Neighbor`
@@ -28,8 +28,8 @@ A NeighborId is a UUID. Text fields have leading and trailing whitespace
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | neighborId | NeighborId | yes | A UUID chosen by the caller for the new account, so a retried request is recognised. Must not belong to a different account already registered (INV-REG-7). |
-| name | Text | yes | Trimmed. Must not then be empty (INV-REG-3). Need not be unique (INV-REG-9). |
-| email | Text | yes | Trimmed. Must not then be empty (INV-REG-3). Must not be held by another account under INV-REG-4. Format and comparison rules are open questions below. |
+| name | Text | yes | Trimmed. Must not then be empty (INV-REG-3), and at most 100 characters (INV-REG-10). Need not be unique (INV-REG-9). |
+| email | Text | yes | Trimmed. Must not then be empty (INV-REG-3), at most 254 characters (INV-REG-10), and shaped like an email address (INV-REG-11). Must not be held by another account under INV-REG-4, compared ignoring case. Kept as typed. |
 
 ## Trigger
 **Triggered by:** screen `Sign Up` @Neighbor
@@ -73,6 +73,8 @@ Check Out Tool lends to it under its usual rules.
   to a closed account that was suspended when it was closed.
   - An account's email is its current one: the email it registered with, or the latest Neighbor
     Email Changed for it. An email an account has changed away from belongs to no one.
+  - Emails are compared ignoring case: Ana@Example.org and ana@example.org are the same address.
+    The email is kept as typed.
   - Whether a closed account was suspended when it was closed is read from its Neighbor Account
     Closed (whileSuspended), never worked out from earlier suspensions and reinstatements.
   - One account per email. A closed account's email can be used again, so a neighbor who left
@@ -103,6 +105,12 @@ Check Out Tool lends to it under its usual rules.
 - **INV-REG-9:** Neighbor names need not be unique.
   - Two neighbors may both be called "Sam Lee". Accounts are told apart by neighbor ID, and only
     the email is checked for uniqueness.
+- **INV-REG-10:** A name is at most 100 characters, and an email at most 254, counted as
+  user-visible characters after trimming.
+  - A longer one is refused, never cut short.
+- **INV-REG-11:** An email must be shaped like an email address: an "@" with at least one
+  character before it and at least one after it.
+  - Nothing more is checked; the address isn't confirmed by sending to it (INV-REG-5).
 
 ## Scenarios (Given / When / Then)
 - **Happy path (INV-REG-3, INV-REG-5, INV-REG-8)**
@@ -129,12 +137,12 @@ Check Out Tool lends to it under its usual rules.
 - **Email used by an active account (INV-REG-4)**
   - **Given:** Ana's active account N1 uses ana@example.org
   - **When:** someone tries to sign up as N2 with ana@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used to sign up."
     No event is recorded.
 - **Email used by a suspended account (INV-REG-4)**
   - **Given:** Ben's account N2 uses ben@example.org and is suspended
   - **When:** someone tries to sign up as N3 with ben@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used to sign up."
     No event is recorded.
 - **Signing up again after closing (INV-REG-4, INV-REG-6, INV-REG-8)**
   - **Given:** Ana's account N1, using ana@example.org, was closed while active
@@ -144,7 +152,7 @@ Check Out Tool lends to it under its usual rules.
 - **Email of an account closed while suspended (INV-REG-4)**
   - **Given:** Ben's account N2, using ben@example.org, was closed while suspended
   - **When:** someone tries to sign up as N5 with ben@example.org
-  - **Then:** refused with `email-in-use`: "That email address is already used by an account."
+  - **Then:** refused with `email-in-use`: "That email address can't be used to sign up."
     No event is recorded.
 - **Suspended, reinstated, then closed (INV-REG-4)**
   - **Given:** Ben's account N2, using ben@example.org, was suspended, then reinstated, and then
@@ -167,6 +175,39 @@ Check Out Tool lends to it under its usual rules.
   - **Given:** Sam Lee's account N7 uses sam@example.org
   - **When:** another person signs up as N8, also named "Sam Lee", with sam.lee@example.org
   - **Then:** Neighbor Registered is recorded for N8. There are two accounts named "Sam Lee".
+- **Email that differs only in capital letters (INV-REG-4)**
+  - **Given:** Ana's active account N1 uses ana@example.org
+  - **When:** someone tries to sign up as N10 with Ana@Example.ORG
+  - **Then:** refused with `email-in-use`: "That email address can't be used to sign up." No event
+    is recorded.
+- **Email kept as typed (INV-REG-4)**
+  - **Given:** no account uses ana@example.org in any case
+  - **When:** Ana signs up as N1 with Ana@Example.org
+  - **Then:** Neighbor Registered is recorded with Ana@Example.org.
+- **Email not shaped like an address (INV-REG-11)**
+  - **Given:** the shed has no neighbors
+  - **When:** someone tries to sign up as "Ana Ruiz" with ana.example.org
+  - **Then:** refused with `email-invalid`: "Please enter a valid email address." No event is
+    recorded.
+- **Nothing before the "@" (INV-REG-11)**
+  - **Given:** the shed has no neighbors
+  - **When:** someone tries to sign up with @example.org
+  - **Then:** refused with `email-invalid`: "Please enter a valid email address." No event is
+    recorded.
+- **Longest name allowed (INV-REG-10)**
+  - **Given:** the shed has no neighbors
+  - **When:** someone signs up with a name of exactly 100 characters
+  - **Then:** Neighbor Registered is recorded with that name.
+- **Name too long (INV-REG-10)**
+  - **Given:** the shed has no neighbors
+  - **When:** someone tries to sign up with a name of 101 characters
+  - **Then:** refused with `name-too-long`: "Your name can be at most 100 characters." No event is
+    recorded.
+- **Email too long (INV-REG-10)**
+  - **Given:** the shed has no neighbors
+  - **When:** someone tries to sign up with an email of 255 characters
+  - **Then:** refused with `email-too-long`: "Your email address can be at most 254 characters." No
+    event is recorded.
 - **The same request arrives twice (INV-REG-7)**
   - **Given:** Neighbor Registered was recorded for N1, "Ana Ruiz", ana@example.org
   - **When:** the same Register Neighbor request for N1, "Ana Ruiz", ana@example.org, arrives
@@ -188,15 +229,27 @@ Every refusal records nothing and returns one reason: the stable name, and the s
 the person on the Sign Up screen. The name is the contract; the sentence is the required wording
 of the message.
 
+The checks run in this order, and the first that fails is the reason returned:
+1. The neighbor ID is already used (INV-REG-7): a repeat with the same details succeeds with
+   nothing recorded; otherwise `neighbor-id-in-use`.
+2. `name-missing`, then `name-too-long` (INV-REG-3, INV-REG-10).
+3. `email-missing`, then `email-too-long`, then `email-invalid` (INV-REG-3, INV-REG-10,
+   INV-REG-11).
+4. `email-in-use` (INV-REG-4).
+
 | Reason | Sentence | Rule |
 |--------|----------|------|
 | `name-missing` | Please enter your name. | INV-REG-3 |
+| `name-too-long` | Your name can be at most 100 characters. | INV-REG-10 |
 | `email-missing` | Please enter your email address. | INV-REG-3 |
-| `email-in-use` | That email address is already used by an account. | INV-REG-4 |
+| `email-too-long` | Your email address can be at most 254 characters. | INV-REG-10 |
+| `email-invalid` | Please enter a valid email address. | INV-REG-11 |
+| `email-in-use` | That email address can't be used to sign up. | INV-REG-4 |
 | `neighbor-id-in-use` | That neighbor ID is already used by another account. | INV-REG-7 |
 
-`email-in-use` is the same for every case in INV-REG-4, so a refused sign-up never reveals
-whether the other account is active, suspended, or closed while suspended.
+`email-in-use` is the same for every case in INV-REG-4, with a sentence that is true in each, so
+a refused sign-up never reveals whether the other account is active, suspended, or closed while
+suspended.
 
 `neighbor-id-in-use` can only come from a faulty caller, not from the screen.
 
@@ -204,7 +257,7 @@ A missing or malformed neighbor ID (not a UUID) is bad input, rejected before an
 checked. It is not a refusal and has no reason name.
 
 Idempotency: a repeated request with the same neighbor ID and the same name and email, compared
-after trimming, succeeds and records nothing new, even if the account has since been suspended,
+after trimming and with the email compared ignoring case, succeeds and records nothing new, even if the account has since been suspended,
 closed, or had its email changed. So a retry after a lost response never creates a second
 account. The repeat is recognised by its neighbor ID, and is checked before the email rule, so
 it is never refused as `email-in-use` by its own earlier registration.
@@ -216,15 +269,15 @@ Neighbor Registered happen as one step, so at most one is recorded. The other is
 There are no retries, compensations or external calls in this slice. No email is sent on sign-up.
 
 ## Non-Functional Requirements
-- **Security / authz:** anyone may sign up; signing up needs no existing account. How a
-  neighbor is recognised afterwards, so that later actions are theirs, is the open identity
-  question below.
+- **Security / authz:** anyone may sign up; signing up needs no existing account or sign-in.
+  Afterwards, sign-in, handled outside the model, supplies the neighbor's ID for their own
+  actions.
 - **PII & compliance:** Neighbor Registered holds the neighbor's name and email address. It is
   read by the shed manager's screens (Neighbors, Tool Inventory, Undelivered Notices, Flagged
   Neighbors, Suspended Neighbors), by the neighbor's own My Account, and by the two email to-do
-  lists. Whether any neighbor-facing screen shows another neighbor's name is the open question
-  in Tool Catalog (slices/tool-catalog.md) about showing who has a tool. Whether a closed
-  account's details are kept for good is an open question below.
+  lists. No neighbor-facing screen shows another neighbor's name: the Tool Catalog never shows who has
+  or holds a tool. Names and emails are kept with the shed's loan and hold history and never
+  erased, including a closed account's; there is no erasure on request.
 - **Performance / SLA:** none.
 
 ## Dependencies & Read Models Affected
@@ -242,43 +295,4 @@ There are no retries, compensations or external calls in this slice. No email is
   a neighbor refers to the account by its neighbor ID.
 
 ## Open Questions
-- [ ] How does anyone identify themselves to the system, the shed manager and neighbors alike? (brief 10 A1)
-  - Signing up creates an account, but nothing in the model says how that person is recognised
-    afterwards, so that a checkout or hold is theirs. The same question is open for the shed
-    manager in Add Tool.
-  - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the
-    model supplies the neighbor's ID or the shed-manager role, with no new events; (c) sign-in
-    and roles are modeled as events and slices.
-  - Recommendation: (b). Neighbors need to be recognised before a loan can be theirs, and (b)
-    adds nothing to the model.
-- [ ] What makes an email address acceptable at sign-up? (brief 11 B3)
-  - Options: (a) only that it is present; (b) a basic shape check (one "@", with text on both
-    sides and a dot in the part after it), refused as `email-invalid`: "Please enter a valid
-    email address."
-  - Recommendation: (b). A mistyped address otherwise only shows up later as an undelivered
-    notice.
-- [ ] Are two emails that differ only in capital letters the same address? (brief 11 B4)
-  - For example, Ana@Example.org and ana@example.org.
-  - Recommendation: yes for the one-account-per-email rule: compare without regard to case,
-    and keep the address as typed. Otherwise one person can hold two accounts with the same
-    mailbox.
-- [ ] Are there length limits on a neighbor's name and email? (brief 11 B5)
-  - Recommendation: name up to 100 characters, email up to 254. A longer one is refused with
-    the limit in the reason, never cut short. This matches the limits proposed for tool names.
-- [ ] Does the shed's existing baseline of keeping personal data with the loan and hold
-  history, with no erasure, carry over to neighbors' names and emails? (brief 11 B7)
-  - A closed account's email is needed to refuse a sign-up with the email of an account closed
-    while suspended (INV-REG-4), and the closed account stays on the shed manager's Neighbors
-    screen.
-  - Recommendation: yes, it carries over: details are kept and never erased. If a neighbor must
-    be able to have their details erased, that is a new event and slice.
-- [ ] What does a person see when they sign up with an email that can't be used? (brief 11 B6)
-  - INV-REG-4 refuses three cases with one reason, `email-in-use`, and the sentence "That email
-    address is already used by an account." For an email held by an account closed while
-    suspended, that sentence isn't true: the account is closed.
-  - Options: (a) one reason and one sentence for all three cases, reworded to be true in each:
-    "That email address can't be used to sign up."; (b) a separate reason for the
-    closed-while-suspended case, telling the person why.
-  - Recommendation: (a). It keeps one reason, never reveals another account's status, and stops
-    the sentence misleading.
-- [ ] Whether any neighbor-facing screen shows who has or holds a tool (brief 11 B1).
+None.
