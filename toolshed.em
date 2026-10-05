@@ -27,8 +27,8 @@ slice "Tool Catalog" {
 
 slice "Register Neighbor" {
   ui Sign Up @Neighbor
-  command Register Neighbor note "slices/register-neighbor.md"
-  event Neighbor Registered @Neighbors
+  command Register Neighbor { neighborId: NeighborId, name: Text, email: Text } note "slices/register-neighbor.md"
+  event Neighbor Registered { neighborId: NeighborId, name: Text, email: Text, registeredAt: Instant assigned } @Neighbors
 }
 slice "Tool Inventory — neighbor registered" {
   view Tool Inventory again from "Neighbor Registered"
