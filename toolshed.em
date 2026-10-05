@@ -8,6 +8,8 @@ context Loans
 context Holds
 context Neighbors
 
+type LateReturn { loanId: LoanId, toolName: Text, dueDate: Date, returnedOn: Date, flaggedAt: Instant }
+
 # Timeline order, left to right. Human-triggered State Change slices are ui -> command -> event.
 # Read models repeat right after the event that feeds them.
 
@@ -270,7 +272,7 @@ slice "Flag Neighbor" {
   event Neighbor Flagged { neighborId: NeighborId, loanIds: LoanId[], flaggedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
 }
 slice "Flagged Neighbors" {
-  view Flagged Neighbors from "Neighbor Flagged", "Neighbor Registered", "Tool Added", "Tool Checked Out", "Loan Extended", "Tool Returned", "Neighbor Email Changed" note "slices/flagged-neighbors.md"
+  view Flagged Neighbors from "Neighbor Flagged", "Neighbor Registered", "Tool Added", "Tool Checked Out", "Loan Extended", "Tool Returned", "Neighbor Email Changed" { neighborId: NeighborId, name: Text, email: Text, flagCount: Int derived, latestFlaggedAt: Instant derived from "Neighbor Flagged", lateReturns: LateReturn[] derived } note "slices/flagged-neighbors.md"
   ui Flagged Neighbors @Shed Manager
 }
 
@@ -316,8 +318,8 @@ slice "My Account — neighbor reinstated" {
 
 slice "Retire Tool" {
   ui Tool Inventory @Shed Manager
-  command Retire Tool note "slices/retire-tool.md"
-  event Tool Retired loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Tools
+  command Retire Tool { toolId: ToolId } note "slices/retire-tool.md"
+  event Tool Retired { toolId: ToolId, retiredAt: Instant assigned } loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Tools
 }
 slice "Tool Inventory — tool retired" {
   view Tool Inventory again from "Tool Retired"
