@@ -222,8 +222,8 @@ slice "My Holds — pickup notice sent" {
 
 slice "Record Pickup Notice Failure" {
   translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md"
-  command Record Pickup Notice Failure
-  event Pickup Notice Failed @Holds
+  command Record Pickup Notice Failure { holdId: HoldId, reason: Text }
+  event Pickup Notice Failed { holdId: HoldId, reason: Text, failedAt: Instant assigned } @Holds
 }
 slice "My Holds — pickup notice failed" {
   view My Holds again from "Pickup Notice Failed"
@@ -235,7 +235,7 @@ slice "Undelivered Notices — pickup notice failed" {
 }
 
 slice "Pickups To Expire" {
-  view Pickups To Expire from "Hold Fulfilled", "Tool Checked Out", "Hold Cancelled" note "slices/pickups-to-expire.md"
+  view Pickups To Expire from "Hold Fulfilled", "Tool Checked Out", "Hold Cancelled" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, dueToExpire: Bool derived } note "slices/pickups-to-expire.md"
 }
 
 slice "Expire Hold" {
