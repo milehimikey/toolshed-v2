@@ -20,7 +20,13 @@ Flagged Neighbors screen they suspend neighbors from. The system flags; the shed
     never suspends anyone by itself, and the neighbor is not told they were flagged.
   - A suspended neighbor is never flagged, so never appears here while suspended.
 - **INV-FLN-2:** Each entry shows the neighbor's name and email, the date of their latest flag,
-  and the late returns behind the flag.
+  and the late returns behind the flag, each with the tool's name.
+  - The neighbor's name comes from Neighbor Registered. The email is their current one:
+    Neighbor Registered sets it, Neighbor Email Changed replaces it.
+  - Each tool's name comes from Tool Added. Each late return's due date and return date come from
+    the loan's own events: Tool Checked Out, Loan Extended and Tool Returned.
+  - Flagged Neighbors hears all of these for that purpose. Neighbor Flagged carries no copies of
+    them.
 - **INV-FLN-3:** A neighbor has at most one entry. If they are flagged again while still listed,
   the entry shows how many times they have been flagged, and the latest flag date.
 - **INV-FLN-4:** A flagged neighbor stays on the list until they are suspended or close their
@@ -33,7 +39,8 @@ Flagged Neighbors screen they suspend neighbors from. The system flags; the shed
   - Closed is final, so the shed manager is never offered Suspend on a closed account.
 - **INV-FLN-7:** Only the shed manager sees Flagged Neighbors.
 - **INV-FLN-8:** Only Neighbor Flagged, Neighbor Suspended and Neighbor Account Closed change
-  Flagged Neighbors.
+  Flagged Neighbors. Neighbor Registered, Neighbor Email Changed and Tool Added supply names
+  and emails; Tool Checked Out, Loan Extended and Tool Returned supply the late returns' dates.
 
 ## Scenarios (Given / When / Then)
 - **Neighbor flagged**
@@ -60,3 +67,10 @@ Flagged Neighbors screen they suspend neighbors from. The system flags; the shed
     suspended her
   - **When:** a month passes with no Neighbor Suspended recorded for Ana
   - **Then:** Ana is still listed.
+- **Flagged neighbor changes their email**
+  - **Given:** Flagged Neighbors lists Ana Ruiz, ana@example.org
+  - **When:** Neighbor Email Changed is recorded for Ana, to ana.ruiz@example.net
+  - **Then:** Flagged Neighbors lists Ana Ruiz, ana.ruiz@example.net. Her flags are unchanged.
+
+## Open Questions
+None.

@@ -23,8 +23,8 @@ flags; a person decides.
     rolling window.
   - A tool recorded lost never counts as a late return.
 - **INV-FLG-3:** Flagging never suspends anyone.
-  - The shed manager decides whether to suspend a flagged neighbor. Automatic suspension at the
-    threshold was turned down.
+  - The shed manager decides whether to suspend a flagged neighbor. Reaching the threshold never
+    suspends a neighbor by itself.
 - **INV-FLG-4:** A flag uses up the late returns that caused it.
   - The neighbor is flagged again only after 3 new late returns within 90 days.
 - **INV-FLG-5:** A neighbor is flagged only while they are still due a flag.

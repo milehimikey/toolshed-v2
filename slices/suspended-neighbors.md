@@ -18,6 +18,12 @@ screen they reinstate neighbors from.
   for them, whether they were suspended from Flagged Neighbors or from the Neighbors screen.
 - **INV-SPN-2:** Each entry shows the neighbor's name and email and the date they were
   suspended.
+  - The name comes from Neighbor Registered. The email is the neighbor's current one: Neighbor
+    Registered sets it, Neighbor Email Changed replaces it. Suspended Neighbors hears both for
+    that purpose.
+  - A suspended neighbor can't change their email. The email shown is the one they had when
+    they were suspended, and it changes only after they are reinstated, by which time they have
+    left the list.
   - No reason or note is recorded with a suspension, so none is shown.
 - **INV-SPN-3:** A suspended neighbor stays on the list until they are reinstated or close their
   account.
@@ -30,7 +36,7 @@ screen they reinstate neighbors from.
   - A neighbor who is reinstated and later suspended again appears again.
 - **INV-SPN-7:** Only the shed manager sees Suspended Neighbors.
 - **INV-SPN-8:** Only Neighbor Suspended, Neighbor Reinstated and Neighbor Account Closed change
-  Suspended Neighbors.
+  Suspended Neighbors. Neighbor Registered and Neighbor Email Changed supply names and emails.
 
 ## Scenarios (Given / When / Then)
 - **Neighbor suspended**
@@ -50,3 +56,6 @@ screen they reinstate neighbors from.
   - **Given:** Ana was suspended on 7 October and reinstated on 1 November
   - **When:** Neighbor Suspended is recorded for Ana again on 3 February
   - **Then:** Suspended Neighbors lists Ana once, suspended 3 February.
+
+## Open Questions
+None.

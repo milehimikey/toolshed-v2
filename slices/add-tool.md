@@ -11,17 +11,16 @@ version: 1
 
 ## Intent
 Put a tool into the shed so neighbors can borrow it. The shed manager records the tool's name,
-an optional description, and its default checkout period. That period is the longest a checkout
-of the tool can run.
+an optional description, and its default checkout period. That period is the longest period a
+checkout of the tool can start with.
 
 ## Invariants / Business Rules
 - **INV-ADD-1:** Only the shed manager can add a tool.
   - Neighbors do not add tools.
 - **INV-ADD-2:** Every tool is added with a default checkout period.
-  - A checkout of this tool may choose a shorter period, never a longer one.
-- **INV-ADD-3:** A tool's default checkout period is a whole number of days, at least 1 and no
-  more than the shed's maximum.
-  - The maximum is still to be named (see Open Questions).
+  - A checkout of this tool may start with a shorter period, never a longer one. An extension
+    can later take a loan past it.
+- **INV-ADD-3:** A tool's default checkout period is a whole number of days, from 1 to 30.
 - **INV-ADD-4:** Every tool has a name. A description is optional.
 - **INV-ADD-5:** Each physical item is added as its own tool.
   - Two identical drills are two tools, each added separately. There is no quantity on a tool.
@@ -52,7 +51,16 @@ of the tool can run.
   - **When:** the shed manager adds a second, identical drill, also named "Cordless drill"
   - **Then:** Tool Added is recorded for a second, separate tool. Both drills are listed in Tool
     Inventory and Tool Catalog.
+- **Longest allowed period**
+  - **Given:** the shed has no tools
+  - **When:** the shed manager adds a tool named "Tile saw" with a default checkout period of 30
+    days
+  - **Then:** Tool Added is recorded with the 30-day period.
+- **Period over the maximum**
+  - **Given:** the shed has no tools
+  - **When:** the shed manager tries to add a tool named "Tile saw" with a default checkout period
+    of 31 days
+  - **Then:** the tool is refused, because the period is more than 30 days. No event is recorded.
 
 ## Open Questions
-- [ ] What is the maximum default checkout period, in days?
-  - A maximum exists, but its value has not been named.
+None.

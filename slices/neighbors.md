@@ -27,6 +27,8 @@ active, suspended, or closed.
 - **INV-NBRS-4:** Closed is final.
   - A suspended neighbor who closes their account shows as closed, not suspended.
 - **INV-NBRS-5:** Each entry shows the neighbor's name, email, date of sign-up, and status.
+  - The email is the neighbor's current one. It is set by Neighbor Registered and replaced by
+    each Neighbor Email Changed.
 - **INV-NBRS-6:** The shed manager can suspend any active neighbor from this screen, whether
   or not they have been flagged.
 
@@ -57,6 +59,11 @@ active, suspended, or closed.
   - **When:** Neighbor Registered is recorded for a new account of Ana's
   - **Then:** the Neighbors screen lists two entries for Ana. The old account is still shown as
     closed, and the new one as active.
+- **Email changed**
+  - **Given:** the Neighbors screen lists Ana with ana@example.org
+  - **When:** Neighbor Email Changed is recorded for Ana, to ana.ruiz@example.org
+  - **Then:** the Neighbors screen lists Ana with ana.ruiz@example.org. Her status and sign-up
+    date are unchanged.
 
 ## Open Questions
 None.

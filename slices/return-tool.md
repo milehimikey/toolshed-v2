@@ -23,7 +23,8 @@ back in the shed, for the next holder or for anyone to borrow.
 - **INV-RET-3:** Returning a tool records only Tool Returned.
   - Setting the tool aside for the first waiting hold is a separate system reaction to the
     return, recorded as Hold Fulfilled.
-- **INV-RET-4:** A return is late when it happens after the loan's due date.
+- **INV-RET-4:** A return is late when it happens after the loan's due date: from the start of
+  the day after the due date, in the shed's local time.
   - A return on the due date itself is on time. The due date is the one in force at the time,
     after any extensions.
   - Late returns count toward a neighbor being flagged.

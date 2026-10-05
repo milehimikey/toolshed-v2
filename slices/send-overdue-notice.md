@@ -21,24 +21,29 @@ and stops a second notice.
 - **INV-OVN-2:** At most one overdue notice is sent per loan.
   - Once Overdue Notice Sent is recorded for a loan, the loan leaves Overdue Loans To Notify and
     is never sent another notice. Notices do not repeat on a schedule.
-- **INV-OVN-3:** Overdue notices go by email only, to the email address the borrower signed up
-  with.
-- **INV-OVN-4:** Overdue Notice Sent means the notice was handed to the email provider.
-  - It does not mean the borrower received or read it.
-- **INV-OVN-5:** No notice is sent for a loan whose tool has been returned.
-  - A loan returned before its notice goes out leaves Overdue Loans To Notify and never gets one.
+- **INV-OVN-3:** Overdue notices go by email only, to the borrower's current email address.
+  - Neighbor Registered sets it, Neighbor Email Changed replaces it.
+- **INV-OVN-4:** Overdue Notice Sent is recorded when the notice is handed to the email provider,
+  every time a notice is handed over.
+  - It does not mean the borrower received or read it. Any failure the provider reports later
+    follows this Overdue Notice Sent.
+  - A hand-off call that errors is retried by the gateway until the provider accepts the notice.
+    It is not a failure of the notice.
+- **INV-OVN-5:** No notice is sent for a loan whose tool has been returned or recorded lost.
+  - A loan that ends before its notice goes out leaves Overdue Loans To Notify and never gets
+    one.
 - **INV-OVN-6:** The notice goes out as soon as the loan is overdue, with no quiet hours.
   - A loan is overdue from the start of the day after its due date, in the shed's local time.
 - **INV-OVN-7:** The notice gives the neighbor's name, the tool's name, the due date, a request
   to return the tool, and that an overdue loan blocks new checkouts and pickups.
   - Overdue Loans To Notify carries all of these with each loan.
-- **INV-OVN-8:** The email provider does the retrying, not the shed: 3 delivery attempts over
-  about an hour. If the notice is refused or bounces on all of them, the provider reports one
-  final failure. Overdue Notice Failed is then recorded, and the shed manager sees it on the
-  Undelivered Notices screen.
-  - The gateway hands each notice over once, and never resends.
+- **INV-OVN-8:** Delivery retries are the email provider's: 3 delivery attempts over about an
+  hour. If the notice is refused or bounces on all of them, the provider reports one final
+  failure, which is recorded as Overdue Notice Failed.
+  - Once the provider has accepted a notice, the gateway never hands it over again.
 - **INV-OVN-9:** After Overdue Notice Failed, no further notice is attempted for that loan.
-  - The loan leaves Overdue Loans To Notify. The shed manager follows up in person.
+  - The loan already left Overdue Loans To Notify at hand-off. The shed manager follows up in
+    person.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -55,9 +60,6 @@ and stops a second notice.
     out a week later
   - **When:** the overdue notice gateway checks Overdue Loans To Notify
   - **Then:** the drill loan is not on the list, and no further notice is sent.
-- **Notice can't be delivered**
-  - **Given:** Ana's drill loan is overdue, and the email provider refuses the notice on each of
-    its 3 attempts
-  - **When:** the provider reports a final failure
-  - **Then:** Overdue Notice Failed is recorded for the drill loan, and the shed manager's
-    Undelivered Notices screen shows it. No further notice is sent for the loan.
+
+## Open Questions
+None.

@@ -24,26 +24,27 @@ the neighbor wasn't told and can follow up in person.
     recovers from is never reported.
 - **INV-ONF-3:** Overdue Notice Failed is recorded for the loan the notice was about, with the
   date of the failure and whether the email was refused or bounced.
+  - Refused and bounced are the two reasons the provider's final report can give.
+- **INV-ONF-4:** Every Overdue Notice Failed follows an Overdue Notice Sent for the same loan.
+  - Overdue Notice Sent is recorded at hand-off, so the loan has already left Overdue Loans To
+    Notify. Recording the failure doesn't change that list.
+- **INV-ONF-5:** Every recorded failure is shown to the shed manager on the Undelivered Notices
+  screen.
 - **INV-ONF-6:** A loan has at most one Overdue Notice Failed. No further notice is attempted
   for it after a failure.
   - The shed manager follows up in person.
 - **INV-ONF-7:** A failure report that matches no overdue notice the shed sent is ignored, and
   nothing is recorded.
-- **INV-ONF-4:** Once Overdue Notice Failed is recorded, the loan leaves Overdue Loans To Notify.
-  - This applies whether or not Overdue Notice Sent was recorded first: a refusal at hand-off
-    records no Overdue Notice Sent, and a later bounce does.
-- **INV-ONF-5:** Every recorded failure is shown to the shed manager on the Undelivered Notices
-  screen.
 
 ## Scenarios (Given / When / Then)
-- **Refused at hand-off**
-  - **Given:** Ana's cordless drill loan is overdue and on Overdue Loans To Notify, and the email
-    provider has refused the notice on all 3 of its attempts
+- **Refused**
+  - **Given:** Overdue Notice Sent was recorded for Ana's cordless drill loan, and the email
+    provider refused the notice on all 3 of its attempts
   - **When:** the provider reports that the notice to ana@example.org was refused
   - **Then:** Overdue Notice Failed is recorded for Ana's drill loan, as refused, on today's
-    date. The loan leaves Overdue Loans To Notify, and the shed manager's Undelivered Notices
-    screen shows it.
-- **Bounced after it was sent**
+    date, and the shed manager's Undelivered Notices screen shows it. No further notice is sent
+    for the loan.
+- **Bounced**
   - **Given:** Overdue Notice Sent was recorded for Ana's drill loan, and the email bounced on
     all 3 of the provider's attempts
   - **When:** the provider reports that the notice to ana@example.org bounced
@@ -53,3 +54,6 @@ the neighbor wasn't told and can follow up in person.
   - **Given:** the shed has sent no overdue notice to cara@example.org
   - **When:** the provider reports that a notice to cara@example.org bounced
   - **Then:** nothing is recorded.
+
+## Open Questions
+None.

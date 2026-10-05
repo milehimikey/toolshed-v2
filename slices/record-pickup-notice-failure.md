@@ -25,9 +25,10 @@ neighbor wasn't told their tool is ready, and can let them know another way.
   of the failure and whether the email was refused or bounced.
 - **INV-PNF-4:** A set-aside has at most one Pickup Notice Failed. No further pickup email is
   attempted for it.
-- **INV-PNF-5:** Once Pickup Notice Failed is recorded, the hold leaves Pickup Notices To Send.
-  - This applies whether or not Pickup Notice Sent was recorded first: a refusal at hand-off
-    records no Pickup Notice Sent, and a later bounce does.
+- **INV-PNF-5:** Every Pickup Notice Failed follows a Pickup Notice Sent for the same hold.
+  - Pickup Notice Sent is recorded at hand-off, so the hold has already left Pickup Notices To
+    Send. Recording the failure doesn't change that list.
+  - Refused and bounced are the two reasons the provider's final report can give.
 - **INV-PNF-6:** A failed pickup email changes nothing about the hold.
   - The tool stays set aside for the holder until the end of the collect-by date, and the window
     is not extended.
@@ -35,7 +36,7 @@ neighbor wasn't told their tool is ready, and can let them know another way.
   screen, until the set-aside ends.
   - The entry shows the holder's name and email, the tool, and the collect-by date.
   - The entry drops off when the holder collects the tool, or the hold is cancelled, expires, or
-    ends because the tool is retired or lost, or the holder closes their account.
+    ends because the tool is retired or the holder closes their account.
 - **INV-PNF-8:** A failure report that matches no pickup email the shed sent is ignored, and
   nothing is recorded.
 - **INV-PNF-9:** A failure report that arrives after the set-aside has ended is ignored, and
@@ -43,7 +44,7 @@ neighbor wasn't told their tool is ready, and can let them know another way.
   - For example, the holder collected the tool during the hour the provider spent retrying.
 
 ## Scenarios (Given / When / Then)
-- **Bounced after it was sent**
+- **Bounced**
   - **Given:** the cordless drill was set aside for Ben Ito on 14 October, Pickup Notice Sent was
     recorded for his hold, and the email to ben@example.org bounced on all 3 of the provider's
     attempts
@@ -52,12 +53,12 @@ neighbor wasn't told their tool is ready, and can let them know another way.
     shed manager's Undelivered Notices screen shows Ben Ito, ben@example.org, the cordless
     drill, and 17 October. Ben's My Holds shows the email couldn't be delivered. The drill stays
     set aside for Ben, to collect by 17 October.
-- **Refused at hand-off**
-  - **Given:** Ben's hold on the drill is on Pickup Notices To Send, and the provider refused the
-    email on all 3 of its attempts
+- **Refused**
+  - **Given:** Pickup Notice Sent was recorded for Ben's hold on the drill, and the provider
+    refused the email on all 3 of its attempts
   - **When:** the provider reports that the pickup email to ben@example.org was refused
-  - **Then:** Pickup Notice Failed is recorded for Ben's hold, as refused. The hold leaves Pickup
-    Notices To Send, and Undelivered Notices shows it.
+  - **Then:** Pickup Notice Failed is recorded for Ben's hold, as refused, and Undelivered
+    Notices shows it. No further pickup email is sent for the set-aside.
 - **Report matching no email**
   - **Given:** the shed has sent no pickup email to cara@example.org
   - **When:** the provider reports that a pickup email to cara@example.org bounced
@@ -67,3 +68,6 @@ neighbor wasn't told their tool is ready, and can let them know another way.
     still retrying his pickup email
   - **When:** the provider reports that the pickup email to ben@example.org bounced
   - **Then:** nothing is recorded.
+
+## Open Questions
+None.

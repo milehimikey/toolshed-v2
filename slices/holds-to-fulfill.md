@@ -20,8 +20,9 @@ with a hold waiting, and which hold is next in line for it.
 - **INV-HTF-2:** Each item names the hold at the front of the tool's queue: the earliest-placed
   hold still waiting.
   - The front holder is never passed over, even when they are suspended or have an overdue loan
-    and can't collect. The tool is set aside for them. If they don't collect it within 3 days,
-    the hold expires and the tool comes back onto the list for the next hold.
+    and can't collect. The tool is set aside for them. If they don't collect it by the end of
+    the collect-by date (the set-aside date plus 3 days), the hold expires and the tool comes back
+    onto the list for the next hold.
 - **INV-HTF-3:** A tool leaves the list when one of its holds is fulfilled.
   - The tool is then set aside for that holder.
 - **INV-HTF-4:** A tool comes back onto the list when its set-aside ends without the holder
@@ -32,9 +33,14 @@ with a hold waiting, and which hold is next in line for it.
   before their hold is fulfilled.
   - That checkout ends their hold. The tool is on loan again, and the next hold waits for its
     return.
-- **INV-HTF-6:** When a waiting hold ends (cancelled, or the holder closes their account), the
-  next hold behind it moves to the front. If no hold is left, the tool leaves the list.
-- **INV-HTF-7:** A retired tool leaves the list. Retiring a tool ends all its holds.
+- **INV-HTF-6:** When a waiting hold ends, the next hold behind it moves to the front. If no hold
+  is left, the tool leaves the list.
+  - A hold ends when it is cancelled or expires, the holder checks the tool out, the tool is
+    retired or recorded lost, or the holder closes their account.
+- **INV-HTF-7:** Retiring a tool, or recording it lost, ends all its holds. A retired tool leaves
+  the list.
+  - A tool is recorded lost only while it is on loan, so it is never on the list at that moment.
+    Its holds end, and it never comes back onto the list.
 - **INV-HTF-8:** The list has no screen. Only the hold fulfiller reads it.
 
 ## Scenarios (Given / When / Then)
@@ -88,3 +94,10 @@ with a hold waiting, and which hold is next in line for it.
     Cara's at position 2
   - **When:** Tool Returned is recorded for the drill
   - **Then:** the drill is on the list, with Ben's hold at the front.
+- **Tool recorded lost while holds wait**
+  - **Given:** Ana has the drill on loan, and Ben's hold on it is at position 1
+  - **When:** Tool Lost is recorded for the drill
+  - **Then:** Ben's hold ends, and the drill never joins the list.
+
+## Open Questions
+None.

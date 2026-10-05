@@ -62,3 +62,6 @@ borrow or hold it.
   - **Given:** Tool Inventory shows the hedge trimmer as retired and out, with Ana
   - **When:** Ana returns the hedge trimmer
   - **Then:** the hedge trimmer drops off Tool Inventory. It does not come back into Tool Catalog.
+
+## Open Questions
+None.

@@ -16,7 +16,9 @@ holds.
 
 ## Invariants / Business Rules
 - **INV-HOLD-1:** A neighbor places a hold themselves, from the Tool Catalog.
-- **INV-HOLD-2:** A hold can be placed only on a tool that is checked out or set aside.
+- **INV-HOLD-2:** A hold can be placed on any tool that isn't available.
+  - That is a tool that is checked out, set aside for a holder, or back in the shed with holds
+    waiting but not yet set aside.
   - A hold on an available tool is refused. The neighbor checks it out instead.
 - **INV-HOLD-3:** A hold can't be placed on a retired tool.
   - Retiring a tool ends every hold on it.
@@ -24,12 +26,13 @@ holds.
   - Closing an account ends all of that neighbor's holds.
 - **INV-HOLD-5:** A new hold joins the back of the tool's queue. Holds on a tool are fulfilled in
   the order they were placed.
-- **INV-HOLD-6:** A hold stays waiting until it is fulfilled, cancelled, or ended because the tool
-  was retired or the holder closed their account.
-  - Once fulfilled, the tool is set aside for the holder for 3 days. The hold ends when the
-    holder checks the tool out, or expires if they don't.
-  - If the holder at the front of the queue checks the tool out before their hold is fulfilled,
-    that checkout also ends their hold.
+- **INV-HOLD-6:** A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends
+  when it is cancelled or expires, when the holder checks the tool out, when the tool is retired
+  or recorded lost, or when the holder closes their account.
+  - Once fulfilled, the tool is set aside for the holder until the end of the collect-by date:
+    the set-aside date plus 3 days. If the holder doesn't collect it by then, the hold expires.
+  - The holder at the front of the queue may check the tool out before their hold is fulfilled.
+    That checkout ends their hold too.
 - **INV-HOLD-7:** A neighbor can have only one hold on a given tool.
   - A second hold by the same neighbor on the same tool is refused, whether their first hold is
     waiting or set aside.
@@ -42,8 +45,8 @@ holds.
 - **INV-HOLD-11:** There is no limit on how many holds one neighbor can have at once.
 - **INV-HOLD-12:** A neighbor who isn't eligible to hold a tool is refused with a reason they can
   see.
-  - The Tool Catalog is the same for every neighbor, so it offers Place Hold on every checked-out
-    or set-aside tool. It can't hide the action from a neighbor who may not use it.
+  - The Tool Catalog is the same for every neighbor, so it offers Place Hold on every tool that
+    isn't available. It can't hide the action from a neighbor who may not use it.
   - The reasons are: they already hold this tool (INV-HOLD-7), they have it on loan
     (INV-HOLD-8), they are suspended (INV-HOLD-9), or their account is closed (INV-HOLD-4).
 
@@ -63,6 +66,11 @@ holds.
   - **When:** Cleo places a hold on the drill
   - **Then:** Hold Placed is recorded for Cleo on the drill, and her hold waits behind Ben's
     set-aside.
+- **Hold on a returned tool not yet set aside**
+  - **Given:** the drill has just been returned, Ben's hold on it is waiting, and Hold Fulfilled
+    has not yet been recorded
+  - **When:** Cleo places a hold on the drill
+  - **Then:** Hold Placed is recorded for Cleo on the drill, and her hold waits behind Ben's.
 - **Holder with an overdue loan**
   - **Given:** Ben has a ladder on loan that is overdue, and the cordless drill is checked out
     by Ana

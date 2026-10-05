@@ -18,17 +18,18 @@ not gone out yet, with everything the email needs.
   pickup email is sent.
 - **INV-PNS-2:** Each item carries what the email needs: the holder's name and email, the tool's
   name, and the date the tool was set aside.
-  - The name and email come from Neighbor Registered, the tool's name from Tool Added. The
+  - The name comes from Neighbor Registered, and the email is the holder's current one:
+    Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name comes from
+    Tool Added. The
     collect-by date is the set-aside date plus 3 days.
 - **INV-PNS-3:** Once Pickup Notice Sent is recorded for a hold, it leaves the list and never
   comes back.
 - **INV-PNS-4:** A hold leaves the list, unsent, when its set-aside ends first: the holder
-  collects the tool, the hold is cancelled, the tool is retired, or the holder closes their
-  account.
-- **INV-PNS-6:** Once Pickup Notice Failed is recorded for a hold, it leaves the list and never
-  comes back.
-  - A refusal at hand-off records no Pickup Notice Sent, so this is what keeps the email from
-    being handed over again.
+  collects the tool, the hold is cancelled or expires, the tool is retired, or the holder closes
+  their account.
+- **INV-PNS-6:** A failed pickup email doesn't change the list.
+  - Every Pickup Notice Failed follows a Pickup Notice Sent, which already took the hold off the
+    list.
 - **INV-PNS-5:** The list has no screen. Only the pickup notice gateway reads it.
 
 ## Scenarios (Given / When / Then)
@@ -58,11 +59,19 @@ not gone out yet, with everything the email needs.
   - **Given:** Ben's hold on the drill is on the list
   - **When:** Tool Checked Out is recorded for the drill and Ben
   - **Then:** Ben's hold leaves the list.
-- **Pickup email refused**
+- **Hold expired before the email**
   - **Given:** Ben's hold is on the list
-  - **When:** Pickup Notice Failed is recorded for it
+  - **When:** Hold Expired is recorded for it
   - **Then:** Ben's hold leaves the list.
 - **No set-aside, nothing to send**
   - **Given:** the list is empty
   - **When:** Neighbor Registered is recorded for Cara, and Tool Added for a ladder
   - **Then:** the list is still empty.
+- **Holder changes their email before the email goes out**
+  - **Given:** Ben's hold is on the list with ben@example.org
+  - **When:** Neighbor Email Changed is recorded for Ben, to ben.ito@example.net
+  - **Then:** Ben's hold stays on the list, now with ben.ito@example.net, and the pickup email
+    goes to that address.
+
+## Open Questions
+None.

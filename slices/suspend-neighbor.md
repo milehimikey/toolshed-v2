@@ -10,8 +10,9 @@ version: 1
 ![Diagram](./suspend-neighbor.svg)
 
 ## Intent
-Let the shed manager suspend a flagged neighbor, so someone who keeps returning tools late stops
-borrowing until the shed manager reinstates them. The system flags; the shed manager decides.
+Let the shed manager suspend any active neighbor, so someone who keeps returning tools late stops
+borrowing until the shed manager reinstates them. Usually the neighbor has been flagged for late
+returns. The system flags; the shed manager decides.
 
 ## Trigger & Actor
 The shed manager issues Suspend Neighbor from either of two screens:
@@ -24,16 +25,19 @@ The shed manager issues Suspend Neighbor from either of two screens:
   - On the Neighbors screen, Suspend is offered for any active neighbor, flagged or not. This
     covers a neighbor who closed their account while suspended and signed up again with a
     different email.
-  - The system never suspends anyone. Automatic suspension at the late-return threshold was
-    turned down.
+  - The system never suspends anyone. Reaching the late-return threshold never suspends a
+    neighbor by itself.
 - **INV-SUS-2:** Only an active neighbor can be suspended.
   - A neighbor who is already suspended can't be suspended again. A neighbor whose account is
     closed can't be suspended, because closed is final.
 - **INV-SUS-3:** A suspension lasts until the shed manager reinstates the neighbor.
   - It never lifts by itself after a set time, and it is never permanent.
-- **INV-SUS-4:** A suspended neighbor can't check out a tool, extend a loan, or place a new hold.
+- **INV-SUS-4:** A suspended neighbor can't check out a tool, extend a loan, place a new hold, or
+  change their email.
   - That includes collecting a tool set aside for them. A set-aside they can't collect expires
     after its 3 days, as any other.
+  - Each of these is refused with suspension as the reason. They can change their email again
+    once reinstated.
 - **INV-SUS-5:** A suspended neighbor keeps what they already have.
   - Their loans stay out, and they can return them. Their holds keep their places in the queue,
     and they can cancel them.
@@ -41,10 +45,9 @@ The shed manager issues Suspend Neighbor from either of two screens:
   Neighbors. The Neighbors screen and the neighbor's own My Account show them as suspended.
   - While suspended, the neighbor is never flagged.
 - **INV-SUS-7:** The neighbor isn't emailed about the suspension.
-  - They see it on My Account, and as the reason when a checkout, extension or new hold is
-    refused.
+  - They see it on My Account, and as the reason when a checkout, extension, new hold or email
+    change is refused.
 - **INV-SUS-8:** No reason or note is recorded with the suspension.
-  - The flag and its late returns are the reason.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**

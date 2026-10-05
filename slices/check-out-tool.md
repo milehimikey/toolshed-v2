@@ -21,14 +21,20 @@ chooses.
   returned.
 - **INV-CHK-3:** A tool set aside for a holder can be checked out only by that holder.
   - The holder's pickup is an ordinary checkout. There is no separate pickup event.
-  - A set-aside lasts 3 days. Once the hold expires, the former holder has no claim on the tool.
+  - A set-aside runs through the end of its collect-by date, the set-aside date plus 3 days.
+- **INV-CHK-3b:** A holder's claim on a set-aside tool ends at the start of the day after the
+  collect-by date, shed local time, whether or not Hold Expired has been recorded yet.
+  - From that moment the tool is treated as if the hold had expired: only the neighbor whose
+    hold is now at the front of the queue can check it out (INV-CHK-3a), or anyone if no hold is
+    waiting. The former holder is refused.
 - **INV-CHK-3a:** A returned tool with holds waiting can be checked out only by the neighbor whose
   hold is at the front of the queue, even before Hold Fulfilled is recorded.
-  - The same holds after a hold expires and before the next hold is fulfilled.
+  - The same applies after a set-aside ends, before the next hold is fulfilled.
 - **INV-CHK-4:** A retired tool can't be checked out.
 - **INV-CHK-5:** A neighbor with an overdue loan can't check out another tool.
-  - Overdue means the loan's due date has passed and the tool hasn't been returned. It is worked
-    out from the due date and today; nothing records it.
+  - A loan is overdue from the start of the day after its due date, in the shed's local time,
+    while the tool hasn't been returned. It is worked out from the due date and today; nothing
+    records it.
   - This also stops a holder collecting a tool set aside for them.
 - **INV-CHK-7:** A suspended neighbor can't check out a tool, and neither can a neighbor whose
   account is closed.
@@ -39,6 +45,10 @@ chooses.
   it had been fulfilled.
   - The tool is then on loan, so it is not set aside for anyone, and the next hold waits for its
     return.
+- **INV-CHK-10:** Check Out is offered on a reserved or set-aside tool to every neighbor, not
+  only to the holder whose turn it is. Anyone else who tries is refused with the reason.
+  - The Tool Catalog is the same for every neighbor and offers actions by the tool's state
+    alone.
 - **INV-CHK-6:** The due date is set at checkout: the checkout date plus the loan period.
   - The loan period is the tool's default checkout period, unless the neighbor chooses a shorter
     one. It is never longer than the default.
@@ -69,3 +79,17 @@ chooses.
   - **When:** Ben checks out the drill
   - **Then:** Tool Checked Out is recorded for the drill and Ben. Ben's hold ends without ever
     being fulfilled, and the drill is not set aside for anyone.
+- **Someone else tries to take a set-aside tool**
+  - **Given:** the drill is set aside for Ben
+  - **When:** Ana tries to check out the drill from the Tool Catalog
+  - **Then:** the checkout is refused, because the drill is set aside for another neighbor. No
+    event is recorded.
+- **Holder too late, before the expiry is recorded**
+  - **Given:** the drill was set aside for Ben on 14 October, to collect by 17 October, and
+    Cara's hold is waiting behind his. Hold Expired has not yet been recorded.
+  - **When:** Ben tries to check out the drill on 18 October
+  - **Then:** the checkout is refused, because his pickup window has ended. Cara can check the
+    drill out.
+
+## Open Questions
+None.

@@ -21,25 +21,38 @@ Catalog screen they check tools out and place holds from.
 - **INV-TCAT-2:** A checked-out tool shows as checked out, with its due date, until it is
   returned.
   - When the loan is extended, the catalog shows the new due date.
-- **INV-TCAT-3:** A tool that is back in the shed with holds waiting is never shown as available.
+- **INV-TCAT-3:** A tool that is back in the shed with holds waiting, but not yet set aside,
+  shows as reserved, never as available.
   - This covers the moment after a return before Hold Fulfilled lands, and the moment after a
-    hold expires before the next hold is fulfilled.
+    set-aside ends before the next hold is fulfilled.
+  - The catalog doesn't show who it is reserved for. It shows the holds waiting, and offers Check
+    Out and Place Hold (INV-TCAT-11, INV-TCAT-7).
 - **INV-TCAT-4:** A tool set aside for a holder shows as set aside, not available, until that
   holder checks it out or the set-aside ends.
-  - A set-aside lasts 3 days. It also ends early if the holder cancels the hold or closes their
-    account.
+  - A set-aside runs through the end of its collect-by date, the set-aside date plus 3 days, and
+    lapses at the start of the next day, shed local time. It also ends early if the holder
+    cancels the hold or closes their account.
+  - The catalog shows the set-aside until Hold Expired is recorded. The holder's claim ends at
+    the cut-off even if that is a little earlier; Check Out Tool enforces it.
   - However it ends, other than by the holder's checkout, the tool passes to the next hold, or
     becomes available if no holds are waiting.
 - **INV-TCAT-5:** The catalog is the same for every neighbor.
   - It never shows a neighbor that a tool is set aside for them. That is shown on My Holds.
 - **INV-TCAT-6:** Each tool shows how many holds are waiting on it.
-  - A hold is waiting from Hold Placed until it is fulfilled, cancelled, ended because the
-    holder closed their account, or ended because the holder checked the tool out first.
-- **INV-TCAT-7:** The catalog offers Place Hold only on a tool that is checked out or set aside.
+  - A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when it is
+    cancelled or expires, the holder checks the tool out, the tool is retired or recorded lost,
+    or the holder closes their account.
+- **INV-TCAT-7:** The catalog offers Place Hold on any tool that isn't available: checked out,
+  reserved, or set aside.
   - A neighbor who wants an available tool checks it out instead.
   - The action is offered by the tool's state alone, the same to every neighbor. A neighbor who
     can't place the hold (they already hold the tool, have it on loan, or are suspended) still
     sees it, and Place Hold refuses them with the reason.
+- **INV-TCAT-11:** The catalog offers Check Out on an available tool, and on a reserved or
+  set-aside tool. It doesn't offer Check Out on a tool that is checked out.
+  - The action is offered by the tool's state alone, the same to every neighbor. On a reserved
+    or set-aside tool, only the holder whose turn it is can check it out; Check Out Tool refuses
+    anyone else with the reason.
 - **INV-TCAT-8:** A retired tool drops off the catalog, including one retired while on loan.
   - Retiring a tool also ends its holds.
 - **INV-TCAT-10:** A tool marked lost drops off the catalog.
@@ -80,18 +93,19 @@ Catalog screen they check tools out and place holds from.
 - **Tool returned, holds waiting**
   - **Given:** the catalog shows the drill as checked out, with 2 holds waiting
   - **When:** Tool Returned is recorded for the drill
-  - **Then:** the catalog does not show the drill as available. It still shows 2 holds waiting.
+  - **Then:** the catalog shows the drill as reserved, with 2 holds waiting, and offers Check Out
+    and Place Hold on it.
 - **Hold fulfilled**
   - **Given:** the drill has been returned, with 2 holds waiting
   - **When:** Hold Fulfilled is recorded for the drill
-  - **Then:** the catalog shows the drill as set aside, with 1 hold waiting. Every neighbor sees
-    the same entry, including the holder it is set aside for.
+  - **Then:** the catalog shows the drill as set aside, with 1 hold waiting, and offers Check Out
+    and Place Hold on it. Every neighbor sees the same entry, including the holder it is set
+    aside for.
 - **Hold expired, another hold waiting**
   - **Given:** the catalog shows the drill as set aside, with 1 hold waiting
   - **When:** Hold Expired is recorded for the set-aside hold
-  - **Then:** the catalog does not show the drill as available. It shows 1 hold waiting until
-    Hold Fulfilled is recorded for that hold, and then shows the drill as set aside, with no holds
-    waiting.
+  - **Then:** the catalog shows the drill as reserved, with 1 hold waiting. Once Hold Fulfilled
+    is recorded for that hold, it shows the drill as set aside, with no holds waiting.
 - **Hold expired, no holds waiting**
   - **Given:** the catalog shows the drill as set aside, with no holds waiting
   - **When:** Hold Expired is recorded for the set-aside hold
@@ -103,8 +117,8 @@ Catalog screen they check tools out and place holds from.
 - **Set-aside hold cancelled, another hold waiting**
   - **Given:** the catalog shows the drill as set aside, with 1 hold waiting
   - **When:** Hold Cancelled is recorded for the set-aside hold
-  - **Then:** the catalog does not show the drill as available. Once Hold Fulfilled is recorded
-    for the waiting hold, it shows the drill as set aside, with no holds waiting.
+  - **Then:** the catalog shows the drill as reserved, with 1 hold waiting. Once Hold Fulfilled
+    is recorded for the waiting hold, it shows the drill as set aside, with no holds waiting.
 - **Set-aside holder closes their account, no holds waiting**
   - **Given:** the catalog shows the drill as set aside, with no holds waiting
   - **When:** Neighbor Account Closed is recorded for the holder
@@ -132,3 +146,6 @@ Catalog screen they check tools out and place holds from.
   - **Given:** the catalog shows the drill as checked out, due 12 October, with 1 hold waiting
   - **When:** Tool Lost is recorded for the drill
   - **Then:** the drill drops off the catalog. Other tools are unchanged.
+
+## Open Questions
+None.

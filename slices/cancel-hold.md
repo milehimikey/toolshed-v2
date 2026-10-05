@@ -20,8 +20,8 @@ neighbor in the queue instead of waiting on them.
   pickup.
   - A suspended neighbor may cancel their own hold. Cancelling only gives up their own claim.
 - **INV-CNH-3:** A hold that has already ended can't be cancelled.
-  - A hold ends when it is cancelled or expires, when the holder checks the tool out, when the
-    tool is retired, or when the holder closes their account.
+  - A hold ends when it is cancelled or expires, the holder checks the tool out, the tool is
+    retired or recorded lost, or the holder closes their account.
 - **INV-CNH-4:** Cancelling a waiting hold moves every hold behind it on that tool up one place.
 - **INV-CNH-5:** Cancelling a hold that is ready for pickup ends the set-aside. The tool passes
   to the next hold, or becomes available if no holds are waiting.
@@ -53,3 +53,6 @@ neighbor in the queue instead of waiting on them.
     at position 2
   - **When:** Ben cancels his hold from My Holds
   - **Then:** Hold Cancelled is recorded for Ben's hold, and Cara's hold moves to position 1.
+
+## Open Questions
+None.

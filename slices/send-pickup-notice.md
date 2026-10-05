@@ -22,24 +22,29 @@ Holds shows the neighbor that it was sent.
   - Once Pickup Notice Sent is recorded for a hold, it leaves Pickup Notices To Send and is never
     emailed again.
 - **INV-PKN-3:** Pickup emails go by email only, through the same provider as overdue notices, to
-  the email address the holder signed up with.
-- **INV-PKN-4:** Pickup Notice Sent means the email was handed to the email provider.
-  - It does not mean the holder received or read it.
+  the holder's current email address.
+  - Neighbor Registered sets it, Neighbor Email Changed replaces it.
+- **INV-PKN-4:** Pickup Notice Sent is recorded when the email is handed to the email provider,
+  every time an email is handed over.
+  - It does not mean the holder received or read it. Any failure the provider reports later
+    follows this Pickup Notice Sent.
+  - A hand-off call that errors is retried by the gateway until the provider accepts the email.
+    It is not a failure of the email.
 - **INV-PKN-5:** No pickup email is sent for a set-aside that has already ended.
-  - If the holder has already collected the tool, the hold is cancelled, the tool is retired, or
-    the holder closes their account before the email goes out, the hold leaves Pickup Notices To
-    Send and no email is sent.
+  - If, before the email goes out, the holder collects the tool, the hold is cancelled or
+    expires, the tool is retired, or the holder closes their account, the hold leaves Pickup
+    Notices To Send and no email is sent.
 - **INV-PKN-6:** The email goes out as soon as the tool is set aside, with no quiet hours.
   - The 3-day pickup window starts at the set-aside, not when the email is sent.
 - **INV-PKN-7:** The email gives the holder's name, the tool's name, the collect-by date, and
   that the hold expires and the tool passes to the next neighbor if it isn't collected by then.
   - The collect-by date is the set-aside date plus 3 days. The set-aside lapses at the start of
     the following day, shed local time.
-- **INV-PKN-8:** The email provider does the retrying: 3 delivery attempts over about an hour. If
-  the email is refused or bounces on all of them, Pickup Notice Failed is recorded, and the shed
-  manager sees it on the Undelivered Notices screen.
-  - No further pickup email is attempted for that set-aside. The hold still shows as ready for
-    pickup on My Holds, and the 3-day window runs as usual.
+- **INV-PKN-8:** Delivery retries are the email provider's: 3 delivery attempts over about an
+  hour. If the email is refused or bounces on all of them, the provider reports one final
+  failure, which is recorded as Pickup Notice Failed.
+  - Once the provider has accepted an email, the gateway never hands it over again. The hold
+    still shows as ready for pickup, and the pickup window runs as usual.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -60,10 +65,11 @@ Holds shows the neighbor that it was sent.
     has been sent
   - **When:** Ben checks out the drill
   - **Then:** the hold leaves Pickup Notices To Send, and no pickup email is sent.
-- **Pickup email can't be delivered**
-  - **Given:** Pickup Notice Sent was recorded for Ben's hold on the drill, and the email bounced
-    on all 3 of the provider's attempts
-  - **When:** the provider reports a final failure
-  - **Then:** Pickup Notice Failed is recorded for Ben's hold, and the shed manager's Undelivered
-    Notices screen shows it. Ben's My Holds still shows the drill as ready for pickup, to collect
-    by 17 October.
+- **Hold expired before the email went out**
+  - **Given:** Hold Fulfilled was recorded for Ben's hold on the drill on 14 October, to collect
+    by 17 October, and no pickup email has been sent
+  - **When:** Hold Expired is recorded for Ben's hold
+  - **Then:** the hold leaves Pickup Notices To Send, and no pickup email is sent.
+
+## Open Questions
+None.

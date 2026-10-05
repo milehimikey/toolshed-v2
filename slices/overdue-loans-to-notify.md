@@ -37,13 +37,10 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
     Added. The gateway looks nothing up elsewhere.
 - **INV-OLN-7:** A loan is ready for its notice as soon as it joins the list. There are no quiet
   hours.
-- **INV-OLN-8:** When a notice fails, its loan leaves the list if it is still on it, and never
-  comes back.
-  - A notice the provider refuses at hand-off leaves no Overdue Notice Sent, so Overdue Notice
-    Failed is what takes that loan off the list. A notice that bounces later has already left
-    the list.
-  - No further attempt is made after a failure. The shed manager sees it on Undelivered Notices
-    and follows up.
+- **INV-OLN-8:** A loan leaves the list only when an overdue notice is sent for it, when the
+  tool is returned, or when the tool is recorded lost.
+  - A notice that later fails to deliver doesn't put the loan back on the list. The failure is
+    shown to the shed manager on Undelivered Notices, and no further attempt is made.
 
 ## Scenarios (Given / When / Then)
 - **Loan not yet overdue**
@@ -74,11 +71,6 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
   - **Given:** Overdue Notice Sent has been recorded for Ana's drill loan, so it is off the list
   - **When:** Overdue Notice Failed is recorded for that notice
   - **Then:** the drill loan stays off the list.
-- **Notice refused at hand-off**
-  - **Given:** Ana's overdue drill loan is on the list, and no Overdue Notice Sent has been
-    recorded for it
-  - **When:** Overdue Notice Failed is recorded for that loan
-  - **Then:** the drill loan leaves the list, and no further notice is tried.
 - **Tool recorded lost**
   - **Given:** Ana's overdue drill loan is on the list
   - **When:** Tool Lost is recorded for the drill

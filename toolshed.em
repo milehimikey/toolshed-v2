@@ -57,12 +57,8 @@ slice "Tool Catalog — checked out" {
   ui Tool Catalog @Neighbor
 }
 slice "My Loans" {
-  view My Loans from "Tool Checked Out" note "slices/my-loans.md"
+  view My Loans from "Tool Added", "Tool Checked Out" note "slices/my-loans.md"
   ui My Loans @Neighbor
-}
-slice "My Holds" {
-  view My Holds from "Tool Checked Out" note "slices/my-holds.md"
-  ui My Holds @Neighbor
 }
 
 slice "Extend Loan" {
@@ -88,13 +84,13 @@ slice "Place Hold" {
   command Place Hold note "slices/place-hold.md"
   event Hold Placed @Holds
 }
+slice "My Holds" {
+  view My Holds from "Hold Placed", "Tool Checked Out", "Tool Added" note "slices/my-holds.md"
+  ui My Holds @Neighbor
+}
 slice "Tool Catalog — hold placed" {
   view Tool Catalog again from "Hold Placed"
   ui Tool Catalog @Neighbor
-}
-slice "My Holds — hold placed" {
-  view My Holds again from "Hold Placed"
-  ui My Holds @Neighbor
 }
 slice "My Loans — hold placed" {
   view My Loans again from "Hold Placed"
@@ -137,10 +133,32 @@ slice "My Loans — overdue notice sent" {
 slice "Record Overdue Notice Failure" {
   translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md"
   command Record Overdue Notice Failure
-  event Overdue Notice Failed loops-to "Overdue Loans To Notify" @Loans
+  event Overdue Notice Failed @Loans
+}
+slice "My Loans — overdue notice failed" {
+  view My Loans again from "Overdue Notice Failed"
+  ui My Loans @Neighbor
 }
 slice "Undelivered Notices" {
-  view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Hold Cancelled" note "slices/undelivered-notices.md"
+  view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Hold Cancelled", "Neighbor Registered", "Tool Added", "Loan Extended" note "slices/undelivered-notices.md"
+  ui Undelivered Notices @Shed Manager
+}
+
+slice "Change Email" {
+  ui My Account @Neighbor
+  command Change Email note "slices/change-email.md"
+  event Neighbor Email Changed loops-to "Overdue Loans To Notify" @Neighbors
+}
+slice "My Account — email changed" {
+  view My Account again from "Neighbor Email Changed"
+  ui My Account @Neighbor
+}
+slice "Neighbors — email changed" {
+  view Neighbors again from "Neighbor Email Changed"
+  ui Neighbors @Shed Manager
+}
+slice "Undelivered Notices — email changed" {
+  view Undelivered Notices again from "Neighbor Email Changed"
   ui Undelivered Notices @Shed Manager
 }
 
@@ -165,9 +183,6 @@ slice "My Loans — tool returned" {
   view My Loans again from "Tool Returned"
   ui My Loans @Neighbor
 }
-slice "Neighbors To Flag" {
-  view Neighbors To Flag from "Tool Returned" note "slices/neighbors-to-flag.md"
-}
 
 slice "Holds To Fulfill" {
   view Holds To Fulfill from "Hold Placed", "Tool Returned", "Hold Cancelled", "Tool Checked Out" note "slices/holds-to-fulfill.md"
@@ -177,6 +192,10 @@ slice "Fulfill Hold" {
   processor Hold Fulfiller from "Holds To Fulfill" note "slices/fulfill-hold.md"
   command Fulfill Hold
   event Hold Fulfilled loops-to "Holds To Fulfill" @Holds
+}
+slice "Undelivered Notices — hold fulfilled" {
+  view Undelivered Notices again from "Hold Fulfilled"
+  ui Undelivered Notices @Shed Manager
 }
 slice "Tool Catalog — hold fulfilled" {
   view Tool Catalog again from "Hold Fulfilled"
@@ -188,7 +207,7 @@ slice "My Holds — hold fulfilled" {
 }
 
 slice "Pickup Notices To Send" {
-  view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Tool Added", "Hold Cancelled", "Tool Checked Out" note "slices/pickup-notices-to-send.md"
+  view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Tool Added", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" note "slices/pickup-notices-to-send.md"
 }
 
 slice "Send Pickup Notice" {
@@ -204,7 +223,7 @@ slice "My Holds — pickup notice sent" {
 slice "Record Pickup Notice Failure" {
   translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md"
   command Record Pickup Notice Failure
-  event Pickup Notice Failed loops-to "Pickup Notices To Send" @Holds
+  event Pickup Notice Failed @Holds
 }
 slice "My Holds — pickup notice failed" {
   view My Holds again from "Pickup Notice Failed"
@@ -224,6 +243,10 @@ slice "Expire Hold" {
   command Expire Hold
   event Hold Expired loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Holds
 }
+slice "My Loans — hold expired" {
+  view My Loans again from "Hold Expired"
+  ui My Loans @Neighbor
+}
 slice "My Holds — hold expired" {
   view My Holds again from "Hold Expired"
   ui My Holds @Neighbor
@@ -237,13 +260,17 @@ slice "Undelivered Notices — hold expired" {
   ui Undelivered Notices @Shed Manager
 }
 
+slice "Neighbors To Flag" {
+  view Neighbors To Flag from "Tool Returned", "Tool Checked Out", "Loan Extended" note "slices/neighbors-to-flag.md"
+}
+
 slice "Flag Neighbor" {
   processor Late Return Flagger from "Neighbors To Flag" note "slices/flag-neighbor.md"
   command Flag Neighbor
   event Neighbor Flagged loops-to "Neighbors To Flag" @Neighbors
 }
 slice "Flagged Neighbors" {
-  view Flagged Neighbors from "Neighbor Flagged" note "slices/flagged-neighbors.md"
+  view Flagged Neighbors from "Neighbor Flagged", "Neighbor Registered", "Tool Added", "Tool Checked Out", "Loan Extended", "Tool Returned", "Neighbor Email Changed" note "slices/flagged-neighbors.md"
   ui Flagged Neighbors @Shed Manager
 }
 
@@ -257,7 +284,7 @@ slice "Flagged Neighbors — neighbor suspended" {
   ui Flagged Neighbors @Shed Manager
 }
 slice "Suspended Neighbors" {
-  view Suspended Neighbors from "Neighbor Suspended" note "slices/suspended-neighbors.md"
+  view Suspended Neighbors from "Neighbor Suspended", "Neighbor Registered", "Neighbor Email Changed" note "slices/suspended-neighbors.md"
   ui Suspended Neighbors @Shed Manager
 }
 slice "Neighbors — neighbor suspended" {
@@ -316,7 +343,7 @@ slice "Undelivered Notices — tool retired" {
 slice "Record Tool Lost" {
   ui Tool Inventory @Shed Manager
   command Record Tool Lost note "slices/record-tool-lost.md"
-  event Tool Lost loops-to "Overdue Loans To Notify", "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Tools
+  event Tool Lost loops-to "Overdue Loans To Notify", "Holds To Fulfill" @Tools
 }
 slice "Tool Inventory — tool lost" {
   view Tool Inventory again from "Tool Lost"

@@ -23,27 +23,34 @@ extend and return loans from.
     way.
 - **INV-MYL-3:** When a loan is extended, its due date on My Loans becomes the extended due date.
   - An extension adds one of the tool's default checkout periods to the current due date.
-- **INV-MYL-4:** A loan shows as overdue once today is past its due date, and not before.
+- **INV-MYL-4:** A loan shows as overdue from the start of the day after its due date, in the
+  shed's local time, and not before.
   - Overdue is worked out by comparing the due date with today. No event marks a loan overdue,
     so the screen shows it overdue on the day after the due date with nothing recorded.
   - An overdue loan can't be extended, so once a loan is overdue it stays overdue until it is
     returned.
 - **INV-MYL-5:** Once an overdue notice is sent for a loan, My Loans shows that the borrower was
   notified.
+  - If the notice later fails to deliver, My Loans shows instead that the overdue notice couldn't
+    be delivered.
 - **INV-MYL-6:** A returned loan drops off My Loans, and so does a loan ended by the shed manager
   recording the tool lost.
   - My Loans shows only what the neighbor has out now. It keeps no borrowing history.
 - **INV-MYL-7:** Each loan shows the tool, the checkout date, the due date, whether it is
-  overdue, and whether an overdue notice has been sent.
+  overdue, and whether an overdue notice has been sent or couldn't be delivered.
   - There is no "due soon" state. Overdue is the only state a loan shows besides on loan.
-- **INV-MYL-8:** A loan's entry changes only through its own checkout, extension, overdue notice
-  and return, and through holds placed on or ended for its tool.
-  - That is: Tool Checked Out, Loan Extended, Overdue Notice Sent, Tool Returned, Hold Placed,
-    Hold Cancelled, Tool Retired, Tool Lost, and Neighbor Account Closed of a holder.
+- **INV-MYL-8:** A loan's entry changes only through its own checkout, extension, overdue notice,
+  return or loss, and through holds starting or ending on its tool.
+  - That is: Tool Checked Out, Loan Extended, Overdue Notice Sent, Overdue Notice Failed, Tool
+    Returned, Tool Lost, Hold Placed, Hold Cancelled, Hold Expired, Tool Retired, and Neighbor
+    Account Closed of a holder.
+  - The tool's name comes from Tool Added.
 - **INV-MYL-9:** While any hold is waiting on a loan's tool, My Loans shows that the loan can't
   be extended because someone is waiting.
-  - A hold on a tool out on loan is waiting from Hold Placed until it is cancelled, or ended
-    because the tool was retired or the holder closed their account. When no hold is waiting
+  - A hold is waiting from Hold Placed until it ends. A hold ends when it is cancelled or
+    expires, when the holder checks the tool out, when the tool is retired or recorded lost, or
+    when the holder closes their account.
+  - This includes holds that were already waiting when the loan began. When no hold is waiting
     any more, the loan can be extended again.
 - **INV-MYL-10:** An overdue loan, and a loan whose tool has been retired, are marked as not
   extendable.
@@ -73,6 +80,12 @@ extend and return loans from.
   - **When:** Overdue Notice Sent is recorded for that loan
   - **Then:** Ana's My Loans shows the cordless drill as overdue, with a note that she has been
     notified.
+- **Overdue notice couldn't be delivered**
+  - **Given:** Ana's My Loans shows the cordless drill as overdue, with a note that she has been
+    notified
+  - **When:** Overdue Notice Failed is recorded for that notice
+  - **Then:** Ana's My Loans shows the cordless drill as overdue, with a note that the overdue
+    notice couldn't be delivered.
 - **Tool returned**
   - **Given:** Ana's My Loans lists the cordless drill and a ladder
   - **When:** Tool Returned is recorded for the cordless drill
@@ -101,6 +114,17 @@ extend and return loans from.
   - **Given:** Ana's My Loans lists the ladder, overdue
   - **When:** Tool Lost is recorded for the ladder
   - **Then:** the ladder drops off Ana's My Loans.
+- **Loan starts with a hold already waiting**
+  - **Given:** the drill was returned with Ben's hold at position 1 and Cara's at position 2.
+    It was set aside for Ben.
+  - **When:** Tool Checked Out is recorded for Ben collecting the drill
+  - **Then:** Ben's hold ends with his checkout. Ben's My Loans lists the drill and shows it
+    can't be extended, because Cara's hold is still waiting.
+- **Next loan after an expired hold**
+  - **Given:** Ben placed a hold on the drill while Ana had it. Ana returned it, it was set aside
+    for Ben, and Hold Expired was recorded for Ben's hold. No other hold is waiting.
+  - **When:** Tool Checked Out is recorded for Dan borrowing the drill
+  - **Then:** Dan's My Loans lists the drill with no hold waiting, and the loan can be extended.
 - **Other neighbors' loans**
   - **Given:** Ana has the cordless drill on loan
   - **When:** Tool Checked Out is recorded for Ben borrowing a ladder

@@ -26,7 +26,8 @@ and never coming back.
     it never comes back.
   - A tool recorded lost is retired by that, so it drops off too.
 - **INV-TINV-3:** The inventory changes only when a tool is added, checked out, extended, returned,
-  retired or recorded lost.
+  retired or recorded lost, or when a neighbor registers.
+  - Neighbor Registered supplies the borrower names shown on tools that are out.
   - Holds and overdue notices leave it unchanged. Hold state is shown to neighbors
     on the Tool Catalog, not here.
   - A tool's details never change after it is added. A mistake is corrected by retiring the
@@ -63,6 +64,11 @@ and never coming back.
   - **When:** Tool Checked Out is recorded for Ana borrowing the drill, due 12 October
   - **Then:** the Tool Inventory shows the drill as out on loan to Ana, due 12 October, and offers
     "mark lost" on it.
+- **Borrower's name comes from their registration**
+  - **Given:** Neighbor Registered was recorded for Ana Ruiz, and the drill is in the shed
+  - **When:** Tool Checked Out is recorded for Ana borrowing the drill, due 12 October
+  - **Then:** the Tool Inventory shows the drill out on loan to Ana Ruiz, the name she
+    registered with.
 - **Loan extended**
   - **Given:** the Tool Inventory shows the drill out on loan to Ana, due 12 October
   - **When:** Loan Extended is recorded for Ana's drill loan, moving the due date to 19 October

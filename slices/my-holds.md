@@ -18,7 +18,9 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
 - **INV-MYHD-2:** Holds on a tool queue in the order they were placed. Each waiting hold shows
   the neighbor's position in that tool's queue.
   - Position 1 is the next hold to be fulfilled. A hold moves up as holds ahead of it are
-    fulfilled, cancelled or ended.
+    fulfilled or end.
+  - A hold ends when it is cancelled or expires, the holder checks the tool out, the tool is
+    retired or recorded lost, or the holder closes their account.
 - **INV-MYHD-3:** Once a neighbor's hold is fulfilled, My Holds shows the tool as ready for
   pickup, with the date to collect it by.
   - The collect-by date is the date the tool was set aside plus 3 days.
@@ -48,23 +50,26 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - They can't collect a tool while suspended, and can't place a new hold. They may still cancel
     a hold.
 - **INV-MYHD-12:** A front holder who can't collect, because they are suspended or have an
-  overdue loan, still has the tool set aside for them, and the 3-day window runs regardless.
+  overdue loan, still has the tool set aside for them, and the pickup window runs regardless.
   - If they can't collect in time, the hold expires and the tool passes to the next hold.
 - **INV-MYHD-13:** When a tool is set aside for a neighbor, they are emailed that it is ready for
   pickup, and My Holds shows that the email was sent.
   - If the email can't be delivered, My Holds shows that instead. The tool stays ready for
     pickup, with the same collect-by date.
 - **INV-MYHD-10:** A neighbor has at most one hold on any one tool.
+- **INV-MYHD-14:** Each hold shows the tool's name.
+  - The name comes from Tool Added, which My Holds hears for that purpose.
 - **INV-MYHD-11:** Only Hold Placed, Hold Cancelled, Hold Fulfilled, Pickup Notice Sent, Pickup
   Notice Failed, Hold Expired, Tool Checked Out by a holder of that tool, Tool Retired, Tool
-  Lost and Neighbor Account Closed change My Holds.
+  Lost and Neighbor Account Closed change My Holds. Tool Added supplies tool names.
   - A checkout by anyone else leaves every neighbor's My Holds unchanged.
 
 ## Scenarios (Given / When / Then)
 - **Hold placed**
-  - **Given:** the cordless drill is checked out, and nobody has a hold on it
+  - **Given:** Tool Added was recorded for a tool named "Cordless drill", the drill is checked
+    out, and nobody has a hold on it
   - **When:** Hold Placed is recorded for Ben on the drill
-  - **Then:** Ben's My Holds lists the drill, waiting, at position 1.
+  - **Then:** Ben's My Holds lists "Cordless drill", waiting, at position 1.
 - **A second hold placed**
   - **Given:** Ben holds position 1 on the drill
   - **When:** Hold Placed is recorded for Cara on the drill
@@ -94,8 +99,8 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - **Given:** Ben is suspended, his hold on the drill is at the front, and Cara's is behind it
   - **When:** the drill is returned and Hold Fulfilled is recorded for Ben's hold
   - **Then:** Ben's My Holds shows the drill as ready for pickup, to collect by 3 days from
-    today. If Ben is still suspended when the 3 days are up, Hold Expired is recorded, the drill
-    drops off his My Holds, and it passes to Cara.
+    today. If Ben is still suspended when his collect-by date has passed, Hold Expired is
+    recorded, the drill drops off his My Holds, and it passes to Cara.
 - **Holder collects the tool**
   - **Given:** Ben's My Holds shows the drill as ready for pickup
   - **When:** Tool Checked Out is recorded for the drill and Ben
@@ -136,3 +141,6 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - **Given:** Ana has no holds, and the hammer is available
   - **When:** Tool Checked Out is recorded for the hammer and Ana
   - **Then:** no neighbor's My Holds changes.
+
+## Open Questions
+None.

@@ -22,8 +22,8 @@ due date later by one of the tool's default checkout periods.
   - It adds the tool's default period even if the borrower chose a shorter period at checkout.
 - **INV-EXT-4:** An extension is refused while any hold is waiting on the tool.
 - **INV-EXT-5:** An extension is refused once the loan is overdue.
-  - Overdue means today is past the due date. On the due date itself, the loan can still be
-    extended.
+  - A loan is overdue from the start of the day after its due date, in the shed's local time.
+    On the due date itself, the loan can still be extended.
   - Only the overdue loan itself is refused. The same borrower can still extend their other
     loans that are not overdue.
 - **INV-EXT-6:** There is no limit on how many times a loan can be extended, as long as each

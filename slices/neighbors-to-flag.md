@@ -16,8 +16,9 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
 
 ## Invariants / Business Rules
 - **INV-NTF-1:** Only late returns count toward the threshold.
-  - A return is late when it happens after the loan's due date in force, after any extensions.
-    A return on the due date is on time.
+  - A return is late when it happens after the loan's due date in force, after any extensions:
+    from the start of the day after the due date, in the shed's local time. A return on the due
+    date is on time.
   - A loan that is still out doesn't count, even if it is overdue, until it is returned late.
   - A tool recorded lost never counts as a late return, even if the loan was overdue.
 - **INV-NTF-2:** A neighbor joins the list when they have 3 late returns within 90 days that
@@ -34,8 +35,8 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
 - **INV-NTF-5:** Reinstatement starts a neighbor's late-return count again from zero.
   - Late returns from before Neighbor Reinstated never count toward a later flag.
 - **INV-NTF-6:** A neighbor whose account is closed is never flagged.
-  - Once Neighbor Account Closed is recorded, the neighbor leaves the list if they are on it,
-    and later late returns don't put them back.
+  - Once Neighbor Account Closed is recorded, the neighbor leaves the list if they are on it. An
+    account can't be closed while tools are on loan, so no late return follows a closure.
 - **INV-NTF-7:** A suspended neighbor is never flagged.
   - Once Neighbor Suspended is recorded, the neighbor leaves the list if they are on it, and late
     returns while they are suspended don't put them on it. Reinstatement then starts their count
@@ -73,11 +74,10 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
   - **Given:** Ana has two late returns within 90 days that have not counted toward a flag
   - **When:** Neighbor Reinstated is recorded for Ana
   - **Then:** Ana has no late returns counting toward a flag.
-- **Closed account**
-  - **Given:** Ana has two late returns within 90 days
-  - **When:** Neighbor Account Closed is recorded for Ana, and a late Tool Returned is then
-    recorded for her
-  - **Then:** Ana is not on the list.
+- **Account closed while on the list**
+  - **Given:** Ana is on the list, waiting to be flagged
+  - **When:** Neighbor Account Closed is recorded for Ana
+  - **Then:** Ana leaves the list, and Neighbor Flagged is never recorded for her.
 - **Suspended neighbor**
   - **Given:** Ana is suspended
   - **When:** a late Tool Returned is recorded for Ana
