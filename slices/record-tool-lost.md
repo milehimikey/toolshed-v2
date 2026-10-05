@@ -20,6 +20,8 @@ tool out of the shed for good.
     borrower's behalf instead.
 - **INV-LOST-2:** A tool can be recorded lost only while it is out on loan, and the loss is
   recorded against that loan.
+  - It can be recorded at any time while the tool is out, before or after the loan is overdue.
+  - A tool retired while out on loan can still be recorded lost.
 - **INV-LOST-3:** Recording a tool lost ends its loan.
   - The loan drops off the borrower's My Loans and leaves Overdue Loans To Notify, so no overdue
     notice goes out for it afterwards. An overdue loan ended this way no longer blocks the
@@ -31,6 +33,13 @@ tool out of the shed for good.
 - **INV-LOST-6:** Recording a tool lost ends every hold on it.
   - The holds drop off their holders' My Holds. As for any retired tool, the holders aren't
     told.
+- **INV-LOST-7:** The borrower isn't emailed when their loan ends because the tool was recorded
+  lost.
+  - The loan simply drops off their My Loans.
+- **INV-LOST-8:** Nothing is recorded about cost, replacement, or what happened.
+  - A replacement is added as a new tool.
+- **INV-LOST-9:** A tool recorded lost that turns up later is added again as a new tool.
+  - The lost tool itself stays retired.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -46,20 +55,13 @@ tool out of the shed for good.
     broke beyond repair
   - **When:** the shed manager records the hedge trimmer lost from Tool Inventory
   - **Then:** Tool Lost is recorded against Ana's loan, which ends. The hedge trimmer drops off
-    Tool Inventory and the Tool Catalog.
+    Tool Inventory and the Tool Catalog, and off Ana's My Loans. Ana is not emailed.
+- **Lost after being retired while out**
+  - **Given:** the shed manager retired the drill while Ben had it on loan, so Tool Inventory shows
+    it marked retired and out on loan to Ben
+  - **When:** the shed manager records the drill lost from Tool Inventory
+  - **Then:** Tool Lost is recorded against Ben's loan, which ends. The drill drops off Tool
+    Inventory and off Ben's My Loans.
 
 ## Open Questions
-- [ ] Can a tool be recorded lost before its loan is overdue?
-  - The second scenario assumes yes. A borrower who breaks a tool would then not have to wait
-    for the due date.
-  - Recommendation: yes, any time while it is out.
-- [ ] Is the borrower told, by email or on screen, that their loan was ended because the tool
-  was recorded lost?
-  - Recommendation: no email. The loan simply drops off My Loans, and the shed manager will
-    usually have talked to them already.
-- [ ] Is anything recorded about cost or replacement, or a note on what happened?
-  - Recommendation: no. Nothing on record asks for charges or notes. A replacement is added as
-    a new tool.
-- [ ] If a tool recorded lost turns up later, how does it come back?
-  - Recommendation: the shed manager adds it again as a new tool, the same way a mistake in a
-    tool's details is corrected.
+None.

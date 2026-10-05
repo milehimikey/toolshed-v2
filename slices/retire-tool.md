@@ -18,8 +18,12 @@ borrow or hold it.
 - **INV-RTR-1:** Only the shed manager can retire a tool, from the Tool Inventory screen.
 - **INV-RTR-2:** A tool that is already retired can't be retired again.
 - **INV-RTR-3:** Retiring is final. A retired tool is never lent or held again.
-  - It drops off Tool Inventory and Tool Catalog. A tool retired to correct a mistake in its
-    details is added again as a new tool.
+  - It drops off Tool Catalog at once. It drops off Tool Inventory at once if it is in the shed.
+    A tool retired to correct a mistake in its details is added again as a new tool.
+- **INV-RTR-9:** A tool retired while on loan stays on Tool Inventory, shown as retired and out,
+  with the borrower and due date, until it is returned or marked lost. It then drops off.
+  - This keeps the "mark lost" action within the shed manager's reach for a retired tool that
+    never comes back.
 - **INV-RTR-4:** Retiring a tool ends every hold on it, waiting or set aside, whether or not the
   tool is on loan.
   - The ended holds drop off their holders' My Holds. No hold is passed on, and nothing is left
@@ -33,7 +37,7 @@ borrow or hold it.
   - Their hold drops off My Holds.
 - **INV-RTR-8:** A tool lost or broken by a borrower, and never returned, is not retired here.
   - The shed manager marks it lost against the loan, which ends the loan and retires the tool in
-    one step.
+    one step. A lost tool that later turns up is added again as a new tool.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
@@ -51,18 +55,10 @@ borrow or hold it.
   - **Given:** Ana has the hedge trimmer on loan, due 20 October, and Ben's hold on it is waiting
   - **When:** the shed manager retires the hedge trimmer
   - **Then:** Tool Retired is recorded for the hedge trimmer. Ben's hold ends and drops off his My
-    Holds, and he is not told. The hedge trimmer drops off Tool Catalog. Ana's loan carries on,
-    due 20 October, and My Loans marks it as unable to be extended.
-
-## Open Questions
-- [ ] A tool retired while on loan drops off Tool Inventory. If it then never comes back, how
-  does the shed manager mark it lost?
-  - Marking a tool lost is an action on Tool Inventory, offered on tools that are out. A tool
-    retired while on loan has already left Tool Inventory, so the action can't be reached, and
-    the borrower's loan stays out, and eventually overdue, for good.
-  - (a) A tool retired while on loan stays on Tool Inventory, shown as retired and out, until it
-    is returned or marked lost. (b) Marking lost is also allowed on a retired tool, from wherever
-    it remains visible. (c) Retiring while on loan is enough: the shed manager is expected to
-    mark the tool lost instead if it won't come back.
-  - Recommendation: (a). Tool Inventory already shows which tools are out, and the shed manager
-    keeps sight of the tool until its loan ends.
+    Holds, and he is not told. The hedge trimmer drops off Tool Catalog. Tool Inventory shows it
+    as retired and out, with Ana and 20 October. Ana's loan carries on, due 20 October, and My
+    Loans marks it as unable to be extended.
+- **Retired tool comes back**
+  - **Given:** Tool Inventory shows the hedge trimmer as retired and out, with Ana
+  - **When:** Ana returns the hedge trimmer
+  - **Then:** the hedge trimmer drops off Tool Inventory. It does not come back into Tool Catalog.

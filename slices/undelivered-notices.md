@@ -22,12 +22,15 @@ overdue, or that a tool is waiting for them, doesn't stay unnoticed.
     about an hour and reported a final failure. The shed manager never sees a notice that is
     still being tried.
   - A failure report that matches no notice the shed sent is ignored, and shows nothing here.
+  - A pickup-notice failure report that arrives after the set-aside has ended is ignored too.
 - **INV-UDN-2:** Each entry shows the failure date, and whether the provider refused the email or
   it bounced.
   - A bounce usually means a wrong email address, which the shed manager can raise with the
     neighbor.
 - **INV-UDN-3:** An overdue-notice entry shows the borrower's name and email, the tool's name,
   and the due date.
+- **INV-UDN-3a:** A pickup-notice entry shows the holder's name and email, the tool's name, and
+  the collect-by date.
 - **INV-UDN-4:** An overdue-notice entry drops off when the tool is returned, or when the shed
   manager records it lost.
   - Either way the loan has ended, and there is nothing left to follow up.
@@ -49,9 +52,9 @@ overdue, or that a tool is waiting for them, doesn't stay unnoticed.
   - **Given:** the hedge trimmer is set aside for Ben, collect by 16 October
   - **When:** Pickup Notice Failed is recorded on 13 October for Ben's pickup notice, because the
     provider refused it
-  - **Then:** Undelivered Notices lists the failed pickup notice for Ben and the hedge trimmer,
-    with the failure date 13 October and that the provider refused it. Ana's entry is
-    unchanged.
+  - **Then:** Undelivered Notices lists the failed pickup notice for Ben, with his email, the
+    hedge trimmer, the collect-by date 16 October, the failure date 13 October, and that the
+    provider refused it. Ana's entry is unchanged.
 - **Tool returned**
   - **Given:** Undelivered Notices lists the failed overdue notice for Ana's drill loan
   - **When:** Tool Returned is recorded for the drill
@@ -64,9 +67,10 @@ overdue, or that a tool is waiting for them, doesn't stay unnoticed.
   - **Given:** Undelivered Notices lists the failed pickup notice for Ben's hedge trimmer
   - **When:** Tool Checked Out is recorded for the hedge trimmer and Ben
   - **Then:** Ben's entry drops off Undelivered Notices.
+- **Pickup failure reported after the set-aside ended**
+  - **Given:** the hedge trimmer was set aside for Ben, and Ben has since collected it
+  - **When:** a failure report for Ben's pickup notice arrives
+  - **Then:** nothing is added to Undelivered Notices.
 
 ## Open Questions
-- [ ] What does a pickup-notice entry show besides the failure date and refused or bounced?
-  - Recommendation: the holder's name and email, the tool's name, and the collect-by date, to
-    match what the pickup email itself carries. The shed manager then knows who to reach and by
-    when.
+None.

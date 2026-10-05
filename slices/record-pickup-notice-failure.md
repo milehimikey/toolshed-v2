@@ -33,10 +33,14 @@ neighbor wasn't told their tool is ready, and can let them know another way.
     is not extended.
 - **INV-PNF-7:** Every recorded failure is shown to the shed manager on the Undelivered Notices
   screen, until the set-aside ends.
+  - The entry shows the holder's name and email, the tool, and the collect-by date.
   - The entry drops off when the holder collects the tool, or the hold is cancelled, expires, or
     ends because the tool is retired or lost, or the holder closes their account.
 - **INV-PNF-8:** A failure report that matches no pickup email the shed sent is ignored, and
   nothing is recorded.
+- **INV-PNF-9:** A failure report that arrives after the set-aside has ended is ignored, and
+  nothing is recorded.
+  - For example, the holder collected the tool during the hour the provider spent retrying.
 
 ## Scenarios (Given / When / Then)
 - **Bounced after it was sent**
@@ -45,8 +49,9 @@ neighbor wasn't told their tool is ready, and can let them know another way.
     attempts
   - **When:** the provider reports that the pickup email to ben@example.org bounced
   - **Then:** Pickup Notice Failed is recorded for Ben's hold, as bounced, on 14 October. The
-    shed manager's Undelivered Notices screen shows it. The drill stays set aside for Ben, to
-    collect by 17 October.
+    shed manager's Undelivered Notices screen shows Ben Ito, ben@example.org, the cordless
+    drill, and 17 October. Ben's My Holds shows the email couldn't be delivered. The drill stays
+    set aside for Ben, to collect by 17 October.
 - **Refused at hand-off**
   - **Given:** Ben's hold on the drill is on Pickup Notices To Send, and the provider refused the
     email on all 3 of its attempts
@@ -57,11 +62,8 @@ neighbor wasn't told their tool is ready, and can let them know another way.
   - **Given:** the shed has sent no pickup email to cara@example.org
   - **When:** the provider reports that a pickup email to cara@example.org bounced
   - **Then:** nothing is recorded.
-
-## Open Questions
-- [ ] What if the final failure report arrives after the set-aside has already ended, for
-  example because the holder collected the tool within the hour the provider spent retrying?
-  - (a) Record it anyway. The Undelivered Notices entry would drop off at once, since the
-    set-aside is over. (b) Ignore it, as if it matched no email.
-  - Recommendation: (b). The failure no longer matters to anyone, and recording it would leave a
-    fact with nothing to show for it.
+- **Report arrives after the holder collected**
+  - **Given:** the drill was set aside for Ben, and Ben checked it out while the provider was
+    still retrying his pickup email
+  - **When:** the provider reports that the pickup email to ben@example.org bounced
+  - **Then:** nothing is recorded.

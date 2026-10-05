@@ -30,6 +30,10 @@ slice "Register Neighbor" {
   command Register Neighbor note "slices/register-neighbor.md"
   event Neighbor Registered @Neighbors
 }
+slice "Tool Inventory — neighbor registered" {
+  view Tool Inventory again from "Neighbor Registered"
+  ui Tool Inventory @Shed Manager
+}
 slice "Neighbors" {
   view Neighbors from "Neighbor Registered" note "slices/neighbors.md"
   ui Neighbors @Shed Manager
@@ -65,6 +69,10 @@ slice "Extend Loan" {
   ui My Loans @Neighbor
   command Extend Loan note "slices/extend-loan.md"
   event Loan Extended @Loans
+}
+slice "Tool Inventory — loan extended" {
+  view Tool Inventory again from "Loan Extended"
+  ui Tool Inventory @Shed Manager
 }
 slice "My Loans — loan extended" {
   view My Loans again from "Loan Extended"
@@ -197,6 +205,10 @@ slice "Record Pickup Notice Failure" {
   translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md"
   command Record Pickup Notice Failure
   event Pickup Notice Failed loops-to "Pickup Notices To Send" @Holds
+}
+slice "My Holds — pickup notice failed" {
+  view My Holds again from "Pickup Notice Failed"
+  ui My Holds @Neighbor
 }
 slice "Undelivered Notices — pickup notice failed" {
   view Undelivered Notices again from "Pickup Notice Failed"

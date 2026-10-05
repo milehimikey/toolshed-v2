@@ -52,10 +52,12 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - If they can't collect in time, the hold expires and the tool passes to the next hold.
 - **INV-MYHD-13:** When a tool is set aside for a neighbor, they are emailed that it is ready for
   pickup, and My Holds shows that the email was sent.
+  - If the email can't be delivered, My Holds shows that instead. The tool stays ready for
+    pickup, with the same collect-by date.
 - **INV-MYHD-10:** A neighbor has at most one hold on any one tool.
-- **INV-MYHD-11:** Only Hold Placed, Hold Cancelled, Hold Fulfilled, Pickup Notice Sent, Hold
-  Expired, Tool Checked Out by a holder of that tool, Tool Retired, Tool Lost and Neighbor
-  Account Closed change My Holds.
+- **INV-MYHD-11:** Only Hold Placed, Hold Cancelled, Hold Fulfilled, Pickup Notice Sent, Pickup
+  Notice Failed, Hold Expired, Tool Checked Out by a holder of that tool, Tool Retired, Tool
+  Lost and Neighbor Account Closed change My Holds.
   - A checkout by anyone else leaves every neighbor's My Holds unchanged.
 
 ## Scenarios (Given / When / Then)
@@ -82,6 +84,12 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - **When:** Pickup Notice Sent is recorded for Ben's hold
   - **Then:** Ben's My Holds shows the drill as ready for pickup, and that he was emailed about
     it.
+- **Pickup email couldn't be delivered**
+  - **Given:** Ben's My Holds shows the drill as ready for pickup, to collect by 17 October, and
+    that he was emailed about it
+  - **When:** Pickup Notice Failed is recorded for Ben's hold
+  - **Then:** Ben's My Holds shows the drill as ready for pickup, to collect by 17 October, and
+    that the pickup email couldn't be delivered.
 - **Suspended holder can't collect in time**
   - **Given:** Ben is suspended, his hold on the drill is at the front, and Cara's is behind it
   - **When:** the drill is returned and Hold Fulfilled is recorded for Ben's hold
@@ -128,12 +136,3 @@ tool's queue, and when a tool has been set aside for them and is ready for picku
   - **Given:** Ana has no holds, and the hammer is available
   - **When:** Tool Checked Out is recorded for the hammer and Ana
   - **Then:** no neighbor's My Holds changes.
-
-## Open Questions
-- [ ] When the pickup email can't be delivered, what does My Holds show?
-  - As written, My Holds shows that the email was sent, and nothing changes when Pickup Notice
-    Failed is recorded. The holder would see "emailed" for an email they never got.
-  - (a) My Holds shows the email couldn't be delivered. It then also hears Pickup Notice Failed,
-    which is a model change. (b) My Holds keeps showing that the email was sent.
-  - Recommendation: (a). The holder is looking at My Holds anyway, and it is the one place they
-    can learn their email address needs fixing.
