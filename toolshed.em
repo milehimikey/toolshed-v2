@@ -116,7 +116,7 @@ slice "My Loans — hold cancelled" {
 }
 
 slice "Overdue Loans To Notify" {
-  view Overdue Loans To Notify from "Tool Added", "Neighbor Registered", "Tool Checked Out", "Loan Extended" note "slices/overdue-loans-to-notify.md"
+  view Overdue Loans To Notify from "Tool Added", "Neighbor Registered", "Tool Checked Out", "Loan Extended" { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, dueDate: Date, toolName: Text derived from "Tool Added", borrowerName: Text derived from "Neighbor Registered", borrowerEmail: Text derived from "Neighbor Registered", overdue: Bool derived } note "slices/overdue-loans-to-notify.md"
 }
 
 # Internally triggered translation: the gateway watches the to-do view and hands notices to the provider.
@@ -132,8 +132,8 @@ slice "My Loans — overdue notice sent" {
 
 slice "Record Overdue Notice Failure" {
   translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md"
-  command Record Overdue Notice Failure
-  event Overdue Notice Failed @Loans
+  command Record Overdue Notice Failure { loanId: LoanId, reason: Text }
+  event Overdue Notice Failed { loanId: LoanId, reason: Text, failedAt: Instant assigned } @Loans
 }
 slice "My Loans — overdue notice failed" {
   view My Loans again from "Overdue Notice Failed"
@@ -146,8 +146,8 @@ slice "Undelivered Notices" {
 
 slice "Change Email" {
   ui My Account @Neighbor
-  command Change Email note "slices/change-email.md"
-  event Neighbor Email Changed loops-to "Overdue Loans To Notify" @Neighbors
+  command Change Email { neighborId: NeighborId, email: Text } note "slices/change-email.md"
+  event Neighbor Email Changed { neighborId: NeighborId, email: Text, changedAt: Instant assigned } loops-to "Overdue Loans To Notify" @Neighbors
 }
 slice "My Account — email changed" {
   view My Account again from "Neighbor Email Changed"
