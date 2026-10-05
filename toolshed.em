@@ -66,6 +66,10 @@ slice "My Loans — loan extended" {
   view My Loans again from "Loan Extended"
   ui My Loans @Neighbor
 }
+slice "Tool Catalog — loan extended" {
+  view Tool Catalog again from "Loan Extended"
+  ui Tool Catalog @Neighbor
+}
 
 slice "Place Hold" {
   ui Tool Catalog @Neighbor
@@ -79,6 +83,20 @@ slice "Tool Catalog — hold placed" {
 slice "My Holds — hold placed" {
   view My Holds again from "Hold Placed"
   ui My Holds @Neighbor
+}
+
+slice "Cancel Hold" {
+  ui My Holds @Neighbor
+  command Cancel Hold note "slices/cancel-hold.md"
+  event Hold Cancelled @Holds
+}
+slice "My Holds — hold cancelled" {
+  view My Holds again from "Hold Cancelled"
+  ui My Holds @Neighbor
+}
+slice "Tool Catalog — hold cancelled" {
+  view Tool Catalog again from "Hold Cancelled"
+  ui Tool Catalog @Neighbor
 }
 
 slice "Overdue Loans To Notify" {
@@ -114,7 +132,7 @@ slice "Neighbors To Flag" {
 }
 
 slice "Holds To Fulfill" {
-  view Holds To Fulfill from "Hold Placed", "Tool Returned" note "slices/holds-to-fulfill.md"
+  view Holds To Fulfill from "Hold Placed", "Tool Returned", "Hold Cancelled" note "slices/holds-to-fulfill.md"
 }
 
 slice "Fulfill Hold" {
@@ -129,6 +147,24 @@ slice "Tool Catalog — hold fulfilled" {
 slice "My Holds — hold fulfilled" {
   view My Holds again from "Hold Fulfilled"
   ui My Holds @Neighbor
+}
+
+slice "Pickups To Expire" {
+  view Pickups To Expire from "Hold Fulfilled", "Tool Checked Out" note "slices/pickups-to-expire.md"
+}
+
+slice "Expire Hold" {
+  processor Pickup Expirer from "Pickups To Expire" note "slices/expire-hold.md"
+  command Expire Hold
+  event Hold Expired loops-to "Holds To Fulfill", "Pickups To Expire" @Holds
+}
+slice "My Holds — hold expired" {
+  view My Holds again from "Hold Expired"
+  ui My Holds @Neighbor
+}
+slice "Tool Catalog — hold expired" {
+  view Tool Catalog again from "Hold Expired"
+  ui Tool Catalog @Neighbor
 }
 
 slice "Flag Neighbor" {
@@ -158,6 +194,10 @@ slice "Neighbors — neighbor suspended" {
   view Neighbors again from "Neighbor Suspended"
   ui Neighbors @Shed Manager
 }
+slice "My Account — neighbor suspended" {
+  view My Account again from "Neighbor Suspended"
+  ui My Account @Neighbor
+}
 
 slice "Reinstate Neighbor" {
   ui Suspended Neighbors @Shed Manager
@@ -172,11 +212,15 @@ slice "Neighbors — neighbor reinstated" {
   view Neighbors again from "Neighbor Reinstated"
   ui Neighbors @Shed Manager
 }
+slice "My Account — neighbor reinstated" {
+  view My Account again from "Neighbor Reinstated"
+  ui My Account @Neighbor
+}
 
 slice "Retire Tool" {
   ui Tool Inventory @Shed Manager
   command Retire Tool note "slices/retire-tool.md"
-  event Tool Retired @Tools
+  event Tool Retired loops-to "Holds To Fulfill", "Pickups To Expire" @Tools
 }
 slice "Tool Inventory — tool retired" {
   view Tool Inventory again from "Tool Retired"
@@ -186,11 +230,15 @@ slice "Tool Catalog — tool retired" {
   view Tool Catalog again from "Tool Retired"
   ui Tool Catalog @Neighbor
 }
+slice "My Holds — tool retired" {
+  view My Holds again from "Tool Retired"
+  ui My Holds @Neighbor
+}
 
 slice "Close Account" {
   ui My Account @Neighbor
   command Close Account note "slices/close-account.md"
-  event Neighbor Account Closed @Neighbors
+  event Neighbor Account Closed loops-to "Holds To Fulfill", "Pickups To Expire" @Neighbors
 }
 slice "My Account — account closed" {
   view My Account again from "Neighbor Account Closed"
@@ -199,4 +247,12 @@ slice "My Account — account closed" {
 slice "Neighbors — account closed" {
   view Neighbors again from "Neighbor Account Closed"
   ui Neighbors @Shed Manager
+}
+slice "My Holds — account closed" {
+  view My Holds again from "Neighbor Account Closed"
+  ui My Holds @Neighbor
+}
+slice "Tool Catalog — account closed" {
+  view Tool Catalog again from "Neighbor Account Closed"
+  ui Tool Catalog @Neighbor
 }
