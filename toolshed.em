@@ -125,7 +125,7 @@ slice "My Loans — overdue notice sent" {
 slice "Record Overdue Notice Failure" {
   translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md"
   command Record Overdue Notice Failure
-  event Overdue Notice Failed @Loans
+  event Overdue Notice Failed loops-to "Overdue Loans To Notify" @Loans
 }
 slice "Undelivered Notices" {
   view Undelivered Notices from "Overdue Notice Failed" note "slices/undelivered-notices.md"
@@ -188,7 +188,7 @@ slice "Pickups To Expire" {
 slice "Expire Hold" {
   processor Pickup Expirer from "Pickups To Expire" note "slices/expire-hold.md"
   command Expire Hold
-  event Hold Expired loops-to "Holds To Fulfill", "Pickups To Expire" @Holds
+  event Hold Expired loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Holds
 }
 slice "My Holds — hold expired" {
   view My Holds again from "Hold Expired"
@@ -275,6 +275,14 @@ slice "Close Account" {
   ui My Account @Neighbor
   command Close Account note "slices/close-account.md"
   event Neighbor Account Closed loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send", "Neighbors To Flag" @Neighbors
+}
+slice "Flagged Neighbors — account closed" {
+  view Flagged Neighbors again from "Neighbor Account Closed"
+  ui Flagged Neighbors @Shed Manager
+}
+slice "Suspended Neighbors — account closed" {
+  view Suspended Neighbors again from "Neighbor Account Closed"
+  ui Suspended Neighbors @Shed Manager
 }
 slice "My Account — account closed" {
   view My Account again from "Neighbor Account Closed"
