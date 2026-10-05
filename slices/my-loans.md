@@ -260,12 +260,13 @@ is bookkeeping, not part of the row, and is never returned.
 
 ## Open Questions
 - [ ] How does the system know which neighbor is asking, so My Loans shows their loans and no one
-  else's?
+  else's? (brief 10 A1)
   - The same identity question is open in Add Tool, Register Neighbor and My Account.
   - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
     supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
   - Recommendation: (b), which adds nothing to the model.
-- [ ] In what order are loans listed?
+- [ ] In what order are loans listed? (brief 10 A4)
   - This is the shed-wide question of one order for every list view: by name, then by when the
     item was created. For this view that means by tool name, then by checkedOutAt.
   - Recommendation: yes, that order.
+- [ ] Whether any neighbor-facing screen shows who has or holds a tool (brief 11 B1).

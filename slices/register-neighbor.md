@@ -242,7 +242,7 @@ There are no retries, compensations or external calls in this slice. No email is
   a neighbor refers to the account by its neighbor ID.
 
 ## Open Questions
-- [ ] How does anyone identify themselves to the system, the shed manager and neighbors alike?
+- [ ] How does anyone identify themselves to the system, the shed manager and neighbors alike? (brief 10 A1)
   - Signing up creates an account, but nothing in the model says how that person is recognised
     afterwards, so that a checkout or hold is theirs. The same question is open for the shed
     manager in Add Tool.
@@ -251,28 +251,28 @@ There are no retries, compensations or external calls in this slice. No email is
     and roles are modeled as events and slices.
   - Recommendation: (b). Neighbors need to be recognised before a loan can be theirs, and (b)
     adds nothing to the model.
-- [ ] What makes an email address acceptable at sign-up?
+- [ ] What makes an email address acceptable at sign-up? (brief 11 B3)
   - Options: (a) only that it is present; (b) a basic shape check (one "@", with text on both
     sides and a dot in the part after it), refused as `email-invalid`: "Please enter a valid
     email address."
   - Recommendation: (b). A mistyped address otherwise only shows up later as an undelivered
     notice.
-- [ ] Are two emails that differ only in capital letters the same address?
+- [ ] Are two emails that differ only in capital letters the same address? (brief 11 B4)
   - For example, Ana@Example.org and ana@example.org.
   - Recommendation: yes for the one-account-per-email rule: compare without regard to case,
     and keep the address as typed. Otherwise one person can hold two accounts with the same
     mailbox.
-- [ ] Are there length limits on a neighbor's name and email?
+- [ ] Are there length limits on a neighbor's name and email? (brief 11 B5)
   - Recommendation: name up to 100 characters, email up to 254. A longer one is refused with
     the limit in the reason, never cut short. This matches the limits proposed for tool names.
 - [ ] Does the shed's existing baseline of keeping personal data with the loan and hold
-  history, with no erasure, carry over to neighbors' names and emails?
+  history, with no erasure, carry over to neighbors' names and emails? (brief 11 B7)
   - A closed account's email is needed to refuse a sign-up with the email of an account closed
     while suspended (INV-REG-4), and the closed account stays on the shed manager's Neighbors
     screen.
   - Recommendation: yes, it carries over: details are kept and never erased. If a neighbor must
     be able to have their details erased, that is a new event and slice.
-- [ ] What does a person see when they sign up with an email that can't be used?
+- [ ] What does a person see when they sign up with an email that can't be used? (brief 11 B6)
   - INV-REG-4 refuses three cases with one reason, `email-in-use`, and the sentence "That email
     address is already used by an account." For an email held by an account closed while
     suspended, that sentence isn't true: the account is closed.
@@ -281,3 +281,4 @@ There are no retries, compensations or external calls in this slice. No email is
     closed-while-suspended case, telling the person why.
   - Recommendation: (a). It keeps one reason, never reveals another account's status, and stops
     the sentence misleading.
+- [ ] Whether any neighbor-facing screen shows who has or holds a tool (brief 11 B1).

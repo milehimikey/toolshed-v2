@@ -200,12 +200,14 @@ marked optional can be absent.
   Tool and Record Tool Lost.
 
 ## Open Questions
-- [ ] Should a tool that is out show when its loan is overdue?
+- [ ] Should a tool that is out show when its loan is overdue? (brief 10 A3)
   - The inventory already has the due date. Overdue would be worked out when the inventory is
     read, from dueDate and today's date in the shed's local time zone, so it needs no model
     change. It would be a bare `derived` field.
   - Recommendation: yes. It is what tells the shed manager a tool may be lost.
-- [ ] In what order are tools listed?
+- [ ] In what order are tools listed? (brief 10 A4)
   - This is the shed-wide question of one order for every list view: by name, then by when the
     item was created. For this view that means by name, then by addedAt.
   - Recommendation: yes, that order.
+- [ ] Identity: how the system recognises who is asking (brief 10 A1). This slice follows its
+  answer; see the identity question in Add Tool.

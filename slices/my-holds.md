@@ -282,13 +282,14 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
 
 ## Open Questions
 - [ ] How does the system know which neighbor is asking, so My Holds shows their holds and no one
-  else's?
+  else's? (brief 10 A1)
   - The same identity question is open in Add Tool, Register Neighbor, My Account, My Loans and
     Place Hold.
   - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
     supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
   - Recommendation: (b), which adds nothing to the model.
-- [ ] In what order are holds listed?
+- [ ] In what order are holds listed? (brief 10 A4)
   - This is the shed-wide question of one order for every list view: by name, then by when the
     item was created. For this view that means by tool name, then by when the hold was placed.
   - Recommendation: yes, that order.
+- [ ] Whether any neighbor-facing screen shows who has or holds a tool (brief 11 B1).

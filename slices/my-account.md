@@ -192,7 +192,7 @@ first that holds wins:
 
 ## Open Questions
 - [ ] How does the system know which neighbor is asking, so My Account shows their account and no
-  one else's?
+  one else's? (brief 10 A1)
   - The same identity question is open in Add Tool and Register Neighbor. My Account depends on
     it entirely: without it, the query can be asked for any neighbor ID.
   - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model

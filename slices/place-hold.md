@@ -309,7 +309,7 @@ email.
   Extend Loan refuses while a hold is waiting.
 
 ## Open Questions
-- [ ] How does the system know which neighbor is placing the hold?
+- [ ] How does the system know which neighbor is placing the hold? (brief 10 A1)
   - The same identity question is open in Add Tool, Register Neighbor, My Account and My Loans.
   - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
     supplies the neighbor's ID; (c) sign-in is modeled as events and slices.

@@ -122,8 +122,8 @@ slice "Overdue Loans To Notify" {
 # Internally triggered translation: the gateway watches the to-do view and hands notices to the provider.
 slice "Send Overdue Notice" {
   translation Overdue Notice Gateway from "Overdue Loans To Notify" note "slices/send-overdue-notice.md"
-  command Send Overdue Notice
-  event Overdue Notice Sent loops-to "Overdue Loans To Notify" @Loans
+  command Send Overdue Notice { loanId: LoanId, sentTo: Text, borrowerName: Text, toolName: Text, dueDate: Date }
+  event Overdue Notice Sent { loanId: LoanId, sentTo: Text, borrowerName: Text, toolName: Text, dueDate: Date, sentAt: Instant assigned } loops-to "Overdue Loans To Notify" @Loans
 }
 slice "My Loans — overdue notice sent" {
   view My Loans again from "Overdue Notice Sent"
@@ -164,8 +164,8 @@ slice "Undelivered Notices — email changed" {
 
 slice "Return Tool" {
   ui My Loans @Neighbor
-  command Return Tool note "slices/return-tool.md"
-  event Tool Returned loops-to "Overdue Loans To Notify" @Loans
+  command Return Tool { neighborId: NeighborId, loanId: LoanId } note "slices/return-tool.md"
+  event Tool Returned { loanId: LoanId, toolId: ToolId assigned, returnedAt: Instant assigned, returnedOn: Date assigned, late: Bool assigned } loops-to "Overdue Loans To Notify" @Loans
 }
 slice "Undelivered Notices — tool returned" {
   view Undelivered Notices again from "Tool Returned"

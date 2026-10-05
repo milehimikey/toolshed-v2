@@ -236,15 +236,17 @@ email changes.
   email). Register Neighbor and later Change Email requests check the new email as held.
 
 ## Open Questions
-- [ ] How does the system know the request comes from the neighbor whose account it names?
+- [ ] How does the system know the request comes from the neighbor whose account it names? (brief 10 A1)
   - The same identity question is open in Add Tool, Register Neighbor and the neighbor screens.
   - Options: (a) callers say who they are, and nothing checks it; (b) a sign-in outside the model
     supplies the neighbor's ID; (c) sign-in is modeled as events and slices.
   - Recommendation: (b), which adds nothing to the model. If sign-in is by email, it must follow
     the account's current email after a change.
 - [ ] What makes a new email acceptable, and are two emails that differ only in capital letters
-  the same?
+  the same? (brief 11 B3, B4)
   - These are the same open questions as at sign-up (Register Neighbor). Whatever is ruled there
     applies here too, with the same reason names.
   - Recommendation: as in Register Neighbor: a basic shape check, and compare without regard to
     case.
+- [ ] The wording of the `email-in-use` refusal (brief 11 B6).
+- [ ] Whether earlier email addresses are kept for good (brief 11 B7).

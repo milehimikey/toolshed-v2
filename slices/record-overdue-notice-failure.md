@@ -176,4 +176,5 @@ job, in person.
 - **Downstream read models / slices affected:** My Loans and Undelivered Notices (the failure).
 
 ## Open Questions
-None.
+- [ ] How the provider's failure reports are secured: part of the email port contract (brief 10
+  A5).
