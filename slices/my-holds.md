@@ -86,7 +86,7 @@ A neighbor has at most one hold on any one tool, because Place Hold refuses a se
 (INV-HOLD-7, Place Hold). A suspended neighbor can't place a new hold (INV-HOLD-9) or collect a
 set-aside tool (INV-CHK-7), but may still cancel. An expired hold sends no message, doesn't count
 against the neighbor, and the neighbor may place a new hold on the tool at the back of the queue
-(Expire Hold, INV-EXP-7 to INV-EXP-9). A suspended neighbor keeps their holds and their place in
+(Expire Hold). A suspended neighbor keeps their holds and their place in
 each queue. A front holder who can't collect, because they are suspended or have an overdue loan,
 still has the tool set aside for them, and the pickup window runs regardless (Fulfill Hold,
 INV-FUL-8). These rules are owned by those slices; this view just reflects the events they

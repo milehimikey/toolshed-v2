@@ -240,8 +240,8 @@ slice "Pickups To Expire" {
 
 slice "Expire Hold" {
   processor Pickup Expirer from "Pickups To Expire" note "slices/expire-hold.md"
-  command Expire Hold
-  event Hold Expired loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Holds
+  command Expire Hold { holdId: HoldId }
+  event Hold Expired { holdId: HoldId, expiredAt: Instant assigned } loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Holds
 }
 slice "My Loans — hold expired" {
   view My Loans again from "Hold Expired"
