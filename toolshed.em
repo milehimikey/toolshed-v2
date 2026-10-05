@@ -140,7 +140,7 @@ slice "My Loans — overdue notice failed" {
   ui My Loans @Neighbor
 }
 slice "Undelivered Notices" {
-  view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Hold Cancelled", "Neighbor Registered", "Tool Added", "Loan Extended" note "slices/undelivered-notices.md"
+  view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Hold Cancelled", "Neighbor Registered", "Tool Added", "Loan Extended" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text derived from "Neighbor Registered", neighborEmail: Text derived from "Neighbor Registered", toolId: ToolId, toolName: Text derived from "Tool Added", dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
   ui Undelivered Notices @Shed Manager
 }
 

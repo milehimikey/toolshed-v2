@@ -384,4 +384,4 @@ There are no external calls, retries or compensations in this slice.
   Lost act on the loan by its loan ID.
 
 ## Open Questions
-None.
+- [ ] How a person is recognised (the identity question) — brief 10 A1. The requester checks here follow its answer.

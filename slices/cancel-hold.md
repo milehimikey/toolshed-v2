@@ -200,4 +200,4 @@ There are no external calls, retries or compensations in this slice. Cancelling 
   new hold from the same neighbor on the same tool once this one is cancelled.
 
 ## Open Questions
-None.
+- [ ] How a person is recognised (the identity question) — brief 10 A1. The requester checks here follow its answer.
