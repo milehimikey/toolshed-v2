@@ -261,7 +261,7 @@ slice "Undelivered Notices — hold expired" {
 }
 
 slice "Neighbors To Flag" {
-  view Neighbors To Flag from "Tool Returned", "Tool Checked Out", "Loan Extended" note "slices/neighbors-to-flag.md"
+  view Neighbors To Flag from "Tool Returned", "Tool Checked Out" { neighborId: NeighborId, loanId: LoanId, returnedOn: Date, inWindow: Bool derived } note "slices/neighbors-to-flag.md"
 }
 
 slice "Flag Neighbor" {
