@@ -45,8 +45,8 @@ slice "My Account" {
 
 slice "Check Out Tool" {
   ui Tool Catalog @Neighbor
-  command Check Out Tool note "slices/check-out-tool.md"
-  event Tool Checked Out @Loans
+  command Check Out Tool { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int } note "slices/check-out-tool.md"
+  event Tool Checked Out { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
 }
 slice "Tool Inventory — tool checked out" {
   view Tool Inventory again from "Tool Checked Out"
@@ -57,7 +57,7 @@ slice "Tool Catalog — checked out" {
   ui Tool Catalog @Neighbor
 }
 slice "My Loans" {
-  view My Loans from "Tool Added", "Tool Checked Out" note "slices/my-loans.md"
+  view My Loans from "Tool Added", "Tool Checked Out" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text derived from "Tool Added", checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
   ui My Loans @Neighbor
 }
 
@@ -81,8 +81,8 @@ slice "Tool Catalog — loan extended" {
 
 slice "Place Hold" {
   ui Tool Catalog @Neighbor
-  command Place Hold note "slices/place-hold.md"
-  event Hold Placed @Holds
+  command Place Hold { holdId: HoldId, toolId: ToolId, neighborId: NeighborId } note "slices/place-hold.md"
+  event Hold Placed { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, placedAt: Instant assigned } @Holds
 }
 slice "My Holds" {
   view My Holds from "Hold Placed", "Tool Checked Out", "Tool Added" note "slices/my-holds.md"
