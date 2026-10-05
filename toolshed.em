@@ -3,19 +3,24 @@ model "toolshed"
 persona Neighbor
 persona Shed Manager
 
+context Tools
+context Loans
+context Holds
+context Neighbors
+
 # Timeline order, left to right. Human-triggered State Change slices are ui -> command -> event.
-# Read models repeat right after the event that feeds them. Events stay on the default lane.
+# Read models repeat right after the event that feeds them.
 
 slice "Add Tool" {
   ui Tool Inventory @Shed Manager
   command Add Tool
-  event Tool Added
+  event Tool Added @Tools
 }
-slice "Tool Inventory — tool added" {
+slice "Tool Inventory" {
   view Tool Inventory from "Tool Added"
   ui Tool Inventory @Shed Manager
 }
-slice "Tool Catalog — tool added" {
+slice "Tool Catalog" {
   view Tool Catalog from "Tool Added"
   ui Tool Catalog @Neighbor
 }
@@ -23,13 +28,13 @@ slice "Tool Catalog — tool added" {
 slice "Register Neighbor" {
   ui Sign Up @Neighbor
   command Register Neighbor
-  event Neighbor Registered
+  event Neighbor Registered @Neighbors
 }
-slice "Neighbors — neighbor registered" {
+slice "Neighbors" {
   view Neighbors from "Neighbor Registered"
   ui Neighbors @Shed Manager
 }
-slice "My Account — neighbor registered" {
+slice "My Account" {
   view My Account from "Neighbor Registered"
   ui My Account @Neighbor
 }
@@ -37,17 +42,17 @@ slice "My Account — neighbor registered" {
 slice "Check Out Tool" {
   ui Tool Catalog @Neighbor
   command Check Out Tool
-  event Tool Checked Out
+  event Tool Checked Out @Loans
 }
 slice "Tool Catalog — checked out" {
   view Tool Catalog again from "Tool Checked Out"
   ui Tool Catalog @Neighbor
 }
-slice "My Loans — checked out" {
+slice "My Loans" {
   view My Loans from "Tool Checked Out"
   ui My Loans @Neighbor
 }
-slice "My Holds — checked out by holder" {
+slice "My Holds" {
   view My Holds from "Tool Checked Out"
   ui My Holds @Neighbor
 }
@@ -55,7 +60,7 @@ slice "My Holds — checked out by holder" {
 slice "Extend Loan" {
   ui My Loans @Neighbor
   command Extend Loan
-  event Loan Extended
+  event Loan Extended @Loans
 }
 slice "My Loans — loan extended" {
   view My Loans again from "Loan Extended"
@@ -65,7 +70,7 @@ slice "My Loans — loan extended" {
 slice "Place Hold" {
   ui Tool Catalog @Neighbor
   command Place Hold
-  event Hold Placed
+  event Hold Placed @Holds
 }
 slice "Tool Catalog — hold placed" {
   view Tool Catalog again from "Hold Placed"
@@ -80,11 +85,11 @@ slice "Overdue Loans To Notify" {
   view Overdue Loans To Notify from "Tool Checked Out", "Loan Extended"
 }
 
-# Automation: the to-do view sits in an earlier slice; the processor, its command and the event share this slice.
+# Internally triggered translation: the gateway watches the to-do view and hands notices to the provider.
 slice "Send Overdue Notice" {
-  processor Overdue Notifier from "Overdue Loans To Notify"
+  translation Overdue Notice Gateway from "Overdue Loans To Notify"
   command Send Overdue Notice
-  event Overdue Notice Sent loops-to "Overdue Loans To Notify"
+  event Overdue Notice Sent loops-to "Overdue Loans To Notify" @Loans
 }
 slice "My Loans — overdue notice sent" {
   view My Loans again from "Overdue Notice Sent"
@@ -94,7 +99,7 @@ slice "My Loans — overdue notice sent" {
 slice "Return Tool" {
   ui My Loans @Neighbor
   command Return Tool
-  event Tool Returned loops-to "Overdue Loans To Notify"
+  event Tool Returned loops-to "Overdue Loans To Notify" @Loans
 }
 slice "Tool Catalog — tool returned" {
   view Tool Catalog again from "Tool Returned"
@@ -115,7 +120,7 @@ slice "Holds To Fulfill" {
 slice "Fulfill Hold" {
   processor Hold Fulfiller from "Holds To Fulfill"
   command Fulfill Hold
-  event Hold Fulfilled loops-to "Holds To Fulfill"
+  event Hold Fulfilled loops-to "Holds To Fulfill" @Holds
 }
 slice "Tool Catalog — hold fulfilled" {
   view Tool Catalog again from "Hold Fulfilled"
@@ -129,9 +134,9 @@ slice "My Holds — hold fulfilled" {
 slice "Flag Neighbor" {
   processor Late Return Flagger from "Neighbors To Flag"
   command Flag Neighbor
-  event Neighbor Flagged loops-to "Neighbors To Flag"
+  event Neighbor Flagged loops-to "Neighbors To Flag" @Neighbors
 }
-slice "Flagged Neighbors — neighbor flagged" {
+slice "Flagged Neighbors" {
   view Flagged Neighbors from "Neighbor Flagged"
   ui Flagged Neighbors @Shed Manager
 }
@@ -139,13 +144,13 @@ slice "Flagged Neighbors — neighbor flagged" {
 slice "Suspend Neighbor" {
   ui Flagged Neighbors @Shed Manager
   command Suspend Neighbor
-  event Neighbor Suspended
+  event Neighbor Suspended @Neighbors
 }
 slice "Flagged Neighbors — neighbor suspended" {
   view Flagged Neighbors again from "Neighbor Suspended"
   ui Flagged Neighbors @Shed Manager
 }
-slice "Suspended Neighbors — neighbor suspended" {
+slice "Suspended Neighbors" {
   view Suspended Neighbors from "Neighbor Suspended"
   ui Suspended Neighbors @Shed Manager
 }
@@ -157,7 +162,7 @@ slice "Neighbors — neighbor suspended" {
 slice "Reinstate Neighbor" {
   ui Suspended Neighbors @Shed Manager
   command Reinstate Neighbor
-  event Neighbor Reinstated
+  event Neighbor Reinstated @Neighbors
 }
 slice "Suspended Neighbors — neighbor reinstated" {
   view Suspended Neighbors again from "Neighbor Reinstated"
@@ -171,7 +176,7 @@ slice "Neighbors — neighbor reinstated" {
 slice "Retire Tool" {
   ui Tool Inventory @Shed Manager
   command Retire Tool
-  event Tool Retired
+  event Tool Retired @Tools
 }
 slice "Tool Inventory — tool retired" {
   view Tool Inventory again from "Tool Retired"
@@ -185,7 +190,7 @@ slice "Tool Catalog — tool retired" {
 slice "Close Account" {
   ui My Account @Neighbor
   command Close Account
-  event Neighbor Account Closed
+  event Neighbor Account Closed @Neighbors
 }
 slice "My Account — account closed" {
   view My Account again from "Neighbor Account Closed"
