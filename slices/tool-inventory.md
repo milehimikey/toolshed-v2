@@ -88,7 +88,7 @@ marked optional can be absent.
     shown on it.
 - **INV-TINV-6:** The inventory offers "mark lost" only on a tool that is out on loan.
   - Recording a tool lost ends its loan, retires the tool and ends its holds. It never counts
-    as a late return for the borrower (Record Tool Lost, INV-LOST-3 to INV-LOST-6).
+    as a late return for the borrower (Record Tool Lost).
 - **INV-TINV-7:** The inventory offers "retire" on every listed tool that is not already retired.
   - A tool retired while out on loan stays listed but is not offered "retire" again.
 - **INV-TINV-8:** Applying the same event twice leaves the inventory as if it had been applied

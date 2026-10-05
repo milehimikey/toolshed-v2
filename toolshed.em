@@ -344,8 +344,8 @@ slice "Undelivered Notices — tool retired" {
 
 slice "Record Tool Lost" {
   ui Tool Inventory @Shed Manager
-  command Record Tool Lost note "slices/record-tool-lost.md"
-  event Tool Lost loops-to "Overdue Loans To Notify", "Holds To Fulfill" @Tools
+  command Record Tool Lost { loanId: LoanId } note "slices/record-tool-lost.md"
+  event Tool Lost { loanId: LoanId, toolId: ToolId assigned, lostAt: Instant assigned } loops-to "Overdue Loans To Notify", "Holds To Fulfill" @Tools
 }
 slice "Tool Inventory — tool lost" {
   view Tool Inventory again from "Tool Lost"
