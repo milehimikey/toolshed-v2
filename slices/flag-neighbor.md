@@ -26,6 +26,9 @@ flags; a person decides.
   - The shed manager decides whether to suspend a flagged neighbor. Reaching the threshold never
     suspends a neighbor by itself.
 - **INV-FLG-4:** A flag uses up the late returns that caused it.
+  - Neighbor Flagged names the late returns, by loan, that it uses up: every late return that
+    counted toward the threshold when the flag was recorded. It carries the loans, not copies of
+    names or dates.
   - The neighbor is flagged again only after 3 new late returns within 90 days.
 - **INV-FLG-5:** A neighbor is flagged only while they are still due a flag.
   - A neighbor whose account is closed is never flagged, and nor is a suspended neighbor. A
@@ -47,7 +50,8 @@ flags; a person decides.
   - **Given:** Ana returned tools late on 1 September, 20 September and 5 October, none of which
     have counted toward a flag, so she is on Neighbors To Flag
   - **When:** the late-return flagger acts on Ana
-  - **Then:** Neighbor Flagged is recorded for Ana, and the three late returns are used up. Ana
+  - **Then:** Neighbor Flagged is recorded for Ana, naming the three loans returned late, which
+    are used up. Ana
     leaves Neighbors To Flag and appears on the shed manager's Flagged Neighbors.
 - **Flagged again on new late returns**
   - **Given:** Ana was flagged on 5 October, and the shed manager hasn't acted on it. Since then

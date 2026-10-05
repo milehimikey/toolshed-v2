@@ -20,8 +20,8 @@ late-return record.
   - An active neighbor has nothing to lift. A neighbor whose account is closed can't be
     reinstated, because closed is final, even if they were suspended when they closed it.
 - **INV-REI-3:** A reinstated neighbor is active again.
-  - They can check out tools, extend loans, place holds and collect set-aside tools, subject to
-    the usual rules.
+  - They can check out tools, extend loans, place holds, collect set-aside tools and change their
+    email, subject to the usual rules.
   - A neighbor can be reinstated while they still have an overdue loan. The overdue loan goes on
     blocking checkouts and pickups until the tool is returned.
   - Holds they kept while suspended carry on from their place in the queue.

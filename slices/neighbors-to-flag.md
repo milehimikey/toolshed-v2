@@ -19,6 +19,8 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
   - A return is late when it happens after the loan's due date in force, after any extensions:
     from the start of the day after the due date, in the shed's local time. A return on the due
     date is on time.
+  - The due date comes from Tool Checked Out, moved by any Loan Extended. Lateness is worked out
+    by comparing the return date with it.
   - A loan that is still out doesn't count, even if it is overdue, until it is returned late.
   - A tool recorded lost never counts as a late return, even if the loan was overdue.
 - **INV-NTF-2:** A neighbor joins the list when they have 3 late returns within 90 days that
@@ -27,6 +29,10 @@ of these neighbors on Flagged Neighbors and decides whether to suspend them.
     A late return older than 90 days no longer counts.
 - **INV-NTF-3:** Once Neighbor Flagged is recorded for a neighbor, they leave the list. The late
   returns that caused the flag are used up.
+  - Neighbor Flagged names the late returns, by loan, that it uses up: every late return that
+    counted toward the threshold when the flag was recorded. This list and Flagged Neighbors
+    both read that set.
+  - A used-up late return never counts again.
   - The neighbor is flagged again only after 3 new late returns within 90 days.
   - A flag the shed manager doesn't act on stays on Flagged Neighbors. It doesn't put the
     neighbor back on this list.

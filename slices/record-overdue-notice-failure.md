@@ -35,6 +35,9 @@ the neighbor wasn't told and can follow up in person.
   - The shed manager follows up in person.
 - **INV-ONF-7:** A failure report that matches no overdue notice the shed sent is ignored, and
   nothing is recorded.
+- **INV-ONF-8:** A failure report that arrives after the loan has ended, because the tool was
+  returned or recorded lost, is ignored, and nothing is recorded.
+  - For example, the borrower returned the tool during the hour the provider spent retrying.
 
 ## Scenarios (Given / When / Then)
 - **Refused**
@@ -53,6 +56,11 @@ the neighbor wasn't told and can follow up in person.
 - **Report matching no notice**
   - **Given:** the shed has sent no overdue notice to cara@example.org
   - **When:** the provider reports that a notice to cara@example.org bounced
+  - **Then:** nothing is recorded.
+- **Report arrives after the tool was returned**
+  - **Given:** Overdue Notice Sent was recorded for Ana's drill loan, and Ana returned the drill
+    while the provider was still retrying the notice
+  - **When:** the provider reports that the notice to ana@example.org bounced
   - **Then:** nothing is recorded.
 
 ## Open Questions

@@ -35,7 +35,7 @@ The shed manager issues Suspend Neighbor from either of two screens:
 - **INV-SUS-4:** A suspended neighbor can't check out a tool, extend a loan, place a new hold, or
   change their email.
   - That includes collecting a tool set aside for them. A set-aside they can't collect expires
-    after its 3 days, as any other.
+    at the end of its collect-by date (the set-aside date plus 3 days), as any other.
   - Each of these is refused with suspension as the reason. They can change their email again
     once reinstated.
 - **INV-SUS-5:** A suspended neighbor keeps what they already have.

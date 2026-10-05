@@ -25,8 +25,8 @@ Flagged Neighbors screen they suspend neighbors from. The system flags; the shed
     Neighbor Registered sets it, Neighbor Email Changed replaces it.
   - Each tool's name comes from Tool Added. Each late return's due date and return date come from
     the loan's own events: Tool Checked Out, Loan Extended and Tool Returned.
-  - Flagged Neighbors hears all of these for that purpose. Neighbor Flagged carries no copies of
-    them.
+  - Neighbor Flagged names the late returns it uses up, as the loans they belong to. It carries
+    no copies of names or dates; the view looks those loans up in the loan events it hears.
 - **INV-FLN-3:** A neighbor has at most one entry. If they are flagged again while still listed,
   the entry shows how many times they have been flagged, and the latest flag date.
 - **INV-FLN-4:** A flagged neighbor stays on the list until they are suspended or close their

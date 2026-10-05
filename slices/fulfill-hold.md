@@ -26,8 +26,8 @@ person decides it.
   - If the tool has been checked out, retired, or set aside since it joined the list, or the
     hold has ended, nothing is fulfilled.
 - **INV-FUL-4:** A tool is set aside for one holder at a time.
-- **INV-FUL-5:** Once a hold is fulfilled, the tool is set aside for that holder for 3 days, and
-  only they may check it out.
+- **INV-FUL-5:** Once a hold is fulfilled, the tool is set aside for that holder until the end of
+  its collect-by date, the set-aside date plus 3 days, and only they may check it out.
   - Their My Holds shows the tool as ready for pickup, with a collect-by date of the set-aside
     date plus 3 days. The Tool Catalog shows the tool as set aside, the same for every neighbor.
   - The holder collects it with an ordinary checkout.
@@ -41,8 +41,8 @@ person decides it.
     Pickup Notice Sent. Fulfilling the hold doesn't wait for it.
 - **INV-FUL-8:** The tool is set aside for the front holder even if they can't collect it right
   now, because they are suspended or have an overdue loan.
-  - They keep their place. If they can't collect within the 3 days, the hold expires and the
-    tool passes to the next hold.
+  - They keep their place. If they can't collect by the end of the collect-by date, the hold
+    expires and the tool passes to the next hold.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: tool returned with holds waiting**
@@ -68,8 +68,8 @@ person decides it.
   - **Given:** the drill is on Holds To Fulfill with Ben's hold at the front, and Ben is
     suspended
   - **When:** the hold fulfiller acts on the drill
-  - **Then:** Hold Fulfilled is recorded for Ben's hold. If Ben is still unable to collect after
-    3 days, his hold expires and the drill passes to the next hold.
+  - **Then:** Hold Fulfilled is recorded for Ben's hold. If Ben still can't collect by the end of
+    the collect-by date, his hold expires and the drill passes to the next hold.
 
 ## Open Questions
 None.

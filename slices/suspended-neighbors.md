@@ -56,6 +56,11 @@ screen they reinstate neighbors from.
   - **Given:** Ana was suspended on 7 October and reinstated on 1 November
   - **When:** Neighbor Suspended is recorded for Ana again on 3 February
   - **Then:** Suspended Neighbors lists Ana once, suspended 3 February.
+- **Email changed before suspension**
+  - **Given:** Ana Ruiz signed up with ana@example.org and later changed her email to
+    ana.ruiz@example.net
+  - **When:** Neighbor Suspended is recorded for Ana
+  - **Then:** Suspended Neighbors lists Ana Ruiz, ana.ruiz@example.net.
 
 ## Open Questions
 None.

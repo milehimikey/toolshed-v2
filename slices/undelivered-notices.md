@@ -102,7 +102,7 @@ overdue, or that a tool is waiting for them, doesn't stay unnoticed.
   - **Then:** nothing is added to Undelivered Notices.
 - **Neighbor corrects their email**
   - **Given:** Undelivered Notices lists the failed overdue notice for Ana's drill loan, showing
-    ana@exmaple.org, the address that bounced
+    ana@oldmail.example, the address that bounced
   - **When:** Neighbor Email Changed is recorded for Ana, to ana@example.org
   - **Then:** Ana's entry shows ana@example.org. The entry stays until the drill is returned or
     recorded lost.

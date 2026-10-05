@@ -33,8 +33,10 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
 - **INV-OLN-5:** The list has no screen. Only the overdue notice gateway reads it.
 - **INV-OLN-6:** Each loan on the list carries everything the notice needs: the borrower's name
   and email, the tool's name, and the due date.
-  - The borrower's name and email come from Neighbor Registered, and the tool's name from Tool
-    Added. The gateway looks nothing up elsewhere.
+  - The borrower's name comes from Neighbor Registered, and the email is the borrower's current
+    one: Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name comes
+    from Tool Added, and the due date from Tool Checked Out, moved by any Loan Extended. The
+    gateway looks nothing up elsewhere.
 - **INV-OLN-7:** A loan is ready for its notice as soon as it joins the list. There are no quiet
   hours.
 - **INV-OLN-8:** A loan leaves the list only when an overdue notice is sent for it, when the
@@ -67,10 +69,11 @@ notice gateway works through it, so each borrower with an overdue loan is emaile
   - **When:** Tool Returned is recorded for the drill before any notice is sent
   - **Then:** the drill loan leaves the list, and no notice is sent for it.
 
-- **Notice fails to deliver**
-  - **Given:** Overdue Notice Sent has been recorded for Ana's drill loan, so it is off the list
-  - **When:** Overdue Notice Failed is recorded for that notice
-  - **Then:** the drill loan stays off the list.
+- **Borrower changes their email**
+  - **Given:** Ana's overdue drill loan is on the list, carrying ana@oldmail.example
+  - **When:** Neighbor Email Changed is recorded for Ana, to ana@example.org
+  - **Then:** the drill loan stays on the list, now carrying ana@example.org, so the notice goes
+    to the new address.
 - **Tool recorded lost**
   - **Given:** Ana's overdue drill loan is on the list
   - **When:** Tool Lost is recorded for the drill

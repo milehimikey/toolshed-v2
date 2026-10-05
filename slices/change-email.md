@@ -41,7 +41,7 @@ outdated address can be put right and overdue and pickup emails reach them.
 
 ## Scenarios (Given / When / Then)
 - **Happy path**
-  - **Given:** Ana is active with ana@exmaple.org, and no other account uses ana@example.org
+  - **Given:** Ana is active with ana@oldmail.example, and no other account uses ana@example.org
   - **When:** Ana changes her email to ana@example.org from My Account
   - **Then:** Neighbor Email Changed is recorded for Ana, with ana@example.org. My Account and the
     shed manager's Neighbors screen show ana@example.org.
