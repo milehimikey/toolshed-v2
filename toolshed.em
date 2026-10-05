@@ -185,13 +185,13 @@ slice "My Loans — tool returned" {
 }
 
 slice "Holds To Fulfill" {
-  view Holds To Fulfill from "Hold Placed", "Tool Returned", "Hold Cancelled", "Tool Checked Out" note "slices/holds-to-fulfill.md"
+  view Holds To Fulfill from "Hold Placed", "Tool Returned", "Hold Cancelled", "Tool Checked Out" { toolId: ToolId, holdId: HoldId derived, neighborId: NeighborId derived } note "slices/holds-to-fulfill.md"
 }
 
 slice "Fulfill Hold" {
   processor Hold Fulfiller from "Holds To Fulfill" note "slices/fulfill-hold.md"
-  command Fulfill Hold
-  event Hold Fulfilled loops-to "Holds To Fulfill" @Holds
+  command Fulfill Hold { holdId: HoldId }
+  event Hold Fulfilled { holdId: HoldId, toolId: ToolId assigned, neighborId: NeighborId assigned, collectByDate: Date assigned, fulfilledAt: Instant assigned } loops-to "Holds To Fulfill" @Holds
 }
 slice "Undelivered Notices — hold fulfilled" {
   view Undelivered Notices again from "Hold Fulfilled"
@@ -207,7 +207,7 @@ slice "My Holds — hold fulfilled" {
 }
 
 slice "Pickup Notices To Send" {
-  view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Tool Added", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" note "slices/pickup-notices-to-send.md"
+  view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Tool Added", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Neighbor Registered", holderEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolName: Text derived from "Tool Added" } note "slices/pickup-notices-to-send.md"
 }
 
 slice "Send Pickup Notice" {
