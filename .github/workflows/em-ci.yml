@@ -44,8 +44,8 @@ jobs:
           status=0
           for f in $changed; do
             echo "::group::em validate $f"
-            npx @milehimikey/em@1.13.0 validate "$f" || status=1
-            npx @milehimikey/em@1.13.0 validate "$f" --list-issues
+            npx @milehimikey/em@1.13.1 validate "$f" || status=1
+            npx @milehimikey/em@1.13.1 validate "$f" --list-issues
             echo "::endgroup::"
           done
           exit $status
@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: 20
       - name: Check README Slices table is current
-        run: npx @milehimikey/em@1.13.0 slice index "toolshed.em" --check
+        run: npx @milehimikey/em@1.13.1 slice index "toolshed.em" --check
 
   coverage:
     name: "em coverage --strict (invariant citations)"
@@ -72,10 +72,10 @@ jobs:
         with:
           node-version: 20
       - name: Check invariant test coverage
-        # Counts INV-* IDs in `implemented` slice docs only (MIL-207) — a ready-to-implement
+        # Counts INV-* IDs in `implemented` slice docs only (MIL-207) - a ready-to-implement
         # doc has nothing yet to cite it, so this job is green on a fresh scaffold and on a
         # doc-only ratification PR. Pass --include-ready for the older, forward-looking report.
-        run: npx @milehimikey/em@1.13.0 coverage "toolshed.em" --tests "src/test/kotlin" --strict
+        run: npx @milehimikey/em@1.13.1 coverage "toolshed.em" --tests "src/test/kotlin" --strict
 
   ledger:
     name: em ledger (slice doc version/content agreement)
@@ -89,7 +89,7 @@ jobs:
         with:
           node-version: 20
       - name: Check slice doc version/content agreement
-        run: npx @milehimikey/em@1.13.0 ledger "toolshed.em" --from "${{ github.event.pull_request.base.sha }}"
+        run: npx @milehimikey/em@1.13.1 ledger "toolshed.em" --from "${{ github.event.pull_request.base.sha }}"
 
   skill-check:
     name: em skill check (vendored skill drift)
@@ -103,13 +103,13 @@ jobs:
       - name: Check vendored skill matches installed em
         run: |
           if [ -d .claude/skills/event-modeling ]; then
-            npx @milehimikey/em@1.13.0 skill check
+            npx @milehimikey/em@1.13.1 skill check
           else
-            echo "no vendored skill at .claude/skills/event-modeling — skipping (run `em skill install` to opt in)"
+            echo "no vendored skill at .claude/skills/event-modeling - skipping (run em skill install to opt in)"
           fi
 
   upgrade-check:
-    name: "em upgrade --check (advisory — hard incompatibilities only, MIL-219)"
+    name: "em upgrade --check (advisory - hard incompatibilities only, MIL-219)"
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -121,9 +121,9 @@ jobs:
           node-version: 20
       - name: Check for hard upgrade incompatibilities
         # Advisory: exits non-zero ONLY on a hard incompatibility (an unparseable state file, an
-        # old .em shape em migrate itself refuses) — never on the ordinary "some mechanical
+        # old .em shape em migrate itself refuses) - never on the ordinary "some mechanical
         # steps are applicable" case. See docs/upgrading.md.
-        run: npx @milehimikey/em@1.13.0 upgrade "toolshed.em" --check
+        run: npx @milehimikey/em@1.13.1 upgrade "toolshed.em" --check
 
   glossary:
     name: "em glossary --fail-on-conflicts (cross-model vocabulary)"
@@ -135,10 +135,12 @@ jobs:
         with:
           node-version: 20
       - name: Check glossary consistency across models
-        run: npx @milehimikey/em@1.13.0 glossary $(git ls-files '*.em') --fail-on-conflicts
+        run: |
+          mapfile -t models < <(git ls-files '*.em')
+          npx @milehimikey/em@1.13.1 glossary "${models[@]}" --fail-on-conflicts
 
   status-badge:
-    name: rebuild status badge (advisory — publish only, never a gate)
+    name: rebuild status badge (advisory - publish only, never a gate)
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -149,7 +151,7 @@ jobs:
         with:
           node-version: 20
       - name: Rebuild status badge
-        run: npx @milehimikey/em@1.13.0 status "toolshed.em" --tests "src/test/kotlin" --badge -o status-badge.svg
+        run: npx @milehimikey/em@1.13.1 status "toolshed.em" --tests "src/test/kotlin" --badge -o status-badge.svg
       - name: Commit badge if changed
         run: |
           if git diff --quiet -- status-badge.svg; then
