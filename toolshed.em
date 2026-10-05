@@ -212,8 +212,8 @@ slice "Pickup Notices To Send" {
 
 slice "Send Pickup Notice" {
   translation Pickup Notice Gateway from "Pickup Notices To Send" note "slices/send-pickup-notice.md"
-  command Send Pickup Notice
-  event Pickup Notice Sent loops-to "Pickup Notices To Send" @Holds
+  command Send Pickup Notice { holdId: HoldId, sentTo: Text, holderName: Text, toolName: Text, collectByDate: Date }
+  event Pickup Notice Sent { holdId: HoldId, sentTo: Text, holderName: Text, toolName: Text, collectByDate: Date, sentAt: Instant assigned } loops-to "Pickup Notices To Send" @Holds
 }
 slice "My Holds — pickup notice sent" {
   view My Holds again from "Pickup Notice Sent"
