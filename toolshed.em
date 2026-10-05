@@ -63,8 +63,8 @@ slice "My Loans" {
 
 slice "Extend Loan" {
   ui My Loans @Neighbor
-  command Extend Loan note "slices/extend-loan.md"
-  event Loan Extended @Loans
+  command Extend Loan { neighborId: NeighborId, loanId: LoanId, fromDueDate: Date } note "slices/extend-loan.md"
+  event Loan Extended { loanId: LoanId, fromDueDate: Date, dueDate: Date assigned, extendedAt: Instant assigned } @Loans
 }
 slice "Tool Inventory — loan extended" {
   view Tool Inventory again from "Loan Extended"
@@ -85,7 +85,7 @@ slice "Place Hold" {
   event Hold Placed { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, placedAt: Instant assigned } @Holds
 }
 slice "My Holds" {
-  view My Holds from "Hold Placed", "Tool Checked Out", "Tool Added" note "slices/my-holds.md"
+  view My Holds from "Hold Placed", "Tool Checked Out", "Tool Added" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text derived from "Tool Added", placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
   ui My Holds @Neighbor
 }
 slice "Tool Catalog — hold placed" {
@@ -99,8 +99,8 @@ slice "My Loans — hold placed" {
 
 slice "Cancel Hold" {
   ui My Holds @Neighbor
-  command Cancel Hold note "slices/cancel-hold.md"
-  event Hold Cancelled @Holds
+  command Cancel Hold { neighborId: NeighborId, holdId: HoldId } note "slices/cancel-hold.md"
+  event Hold Cancelled { holdId: HoldId, cancelledAt: Instant assigned } @Holds
 }
 slice "My Holds — hold cancelled" {
   view My Holds again from "Hold Cancelled"

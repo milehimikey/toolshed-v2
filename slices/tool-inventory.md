@@ -191,9 +191,9 @@ marked optional can be absent.
   - Neighbor Registered (Register Neighbor): neighborId, name.
   - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, dueDate.
   - Loan Extended (Extend Loan): loanId, dueDate.
-  - Tool Returned (Return Tool): loanId.
+  - Tool Returned (Return Tool): loanId, toolId.
   - Tool Retired (Retire Tool): toolId.
-  - Tool Lost (Record Tool Lost): loanId.
+  - Tool Lost (Record Tool Lost): loanId, toolId.
   - All but Tool Added are specified in slices not yet written in depth. These names are this
     view's assumptions; each of those slices is checked against them when it is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Add Tool, Retire

@@ -64,7 +64,8 @@ eventually consistent.
 
 ## Invariants / Business Rules
 - **INV-CHK-1:** A neighbor checks a tool out themselves, for themselves.
-  - The request must come from the neighbor named as the borrower. The shed manager does not
+  - The command names the acting neighbor in neighborId, and the request must come from that
+    neighbor (`requester-mismatch` otherwise). The shed manager does not
     record checkouts. How the requester is recognised is the open identity question.
 - **INV-CHK-2:** A tool that is already checked out can't be checked out again until it is
   returned or recorded lost.
@@ -292,7 +293,7 @@ October.
 - **Someone checks out a tool for another neighbor (INV-CHK-1)**
   - **Given:** the drill is available
   - **When:** a request to check out the drill for Ana comes from someone other than Ana
-  - **Then:** refused with `not-the-borrower`: "You can only check out tools for yourself." No
+  - **Then:** refused with `requester-mismatch`: "You can only check out tools for yourself." No
     event is recorded.
 
 ## Alternate & Error Flows
@@ -301,7 +302,7 @@ the neighbor on the Tool Catalog screen. The name is the contract; the sentence 
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `not-the-borrower` (INV-CHK-1).
+1. `requester-mismatch` (INV-CHK-1).
 2. The loan ID is already used (INV-CHK-12): a repeat with the same details succeeds with nothing
    recorded; otherwise `loan-id-in-use`.
 3. `tool-not-found`, then `neighbor-not-found` (INV-CHK-11).
@@ -322,7 +323,7 @@ The checks run in this order, and the first that fails is the reason returned:
 | Reason | Sentence | Rule |
 |--------|----------|------|
 | `loan-id-in-use` | That loan ID is already used by another loan. | INV-CHK-12 |
-| `not-the-borrower` | You can only check out tools for yourself. | INV-CHK-1 |
+| `requester-mismatch` | You can only check out tools for yourself. | INV-CHK-1 |
 | `tool-not-found` | There is no such tool. | INV-CHK-11 |
 | `neighbor-not-found` | There is no such neighbor. | INV-CHK-11 |
 | `tool-retired` | This tool has been retired. | INV-CHK-4 |

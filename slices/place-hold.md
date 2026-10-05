@@ -190,8 +190,8 @@ neighbor can see.
 - **A hold for someone else (INV-HOLD-1)**
   - **Given:** T1 is checked out by Ana
   - **When:** a request from Ben asks to place a hold on T1 for Cleo
-  - **Then:** refused with `not-the-holder`: "You can only place holds for yourself." No event is
-    recorded.
+  - **Then:** refused with `requester-mismatch`: "You can only place holds for yourself." No
+    event is recorded.
 - **Unknown tool (INV-HOLD-14)**
   - **Given:** no tool has ID T9
   - **When:** Ben asks to place a hold on T9
@@ -232,7 +232,7 @@ the neighbor on the Tool Catalog screen. The name is the contract; the sentence 
 wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
-1. `not-the-holder` (INV-HOLD-1): who is asking is settled before anything else.
+1. `requester-mismatch` (INV-HOLD-1): who is asking is settled before anything else.
 2. The hold ID is already used (INV-HOLD-13): a repeat with the same details succeeds with
    nothing recorded; otherwise `hold-id-in-use`.
 3. `tool-not-found`, then `neighbor-not-found` (INV-HOLD-14).
@@ -245,7 +245,7 @@ The checks run in this order, and the first that fails is the reason returned:
 | Reason | Sentence | Rule |
 |--------|----------|------|
 | `hold-id-in-use` | That hold ID is already used by another hold. | INV-HOLD-13 |
-| `not-the-holder` | You can only place holds for yourself. | INV-HOLD-1 |
+| `requester-mismatch` | You can only place holds for yourself. | INV-HOLD-1 |
 | `tool-not-found` | There is no such tool. | INV-HOLD-14 |
 | `neighbor-not-found` | There is no such neighbor. | INV-HOLD-14 |
 | `tool-retired` | This tool has been retired. | INV-HOLD-3 |
