@@ -206,5 +206,6 @@ marked optional can be absent.
     change. It would be a bare `derived` field.
   - Recommendation: yes. It is what tells the shed manager a tool may be lost.
 - [ ] In what order are tools listed?
-  - Recommendation: by name, with tools that share a name in the order they were added
-    (addedAt).
+  - This is the shed-wide question of one order for every list view: by name, then by when the
+    item was created. For this view that means by name, then by addedAt.
+  - Recommendation: yes, that order.
