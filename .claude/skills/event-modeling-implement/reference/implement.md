@@ -157,6 +157,12 @@ undocumented ordering, a contradiction with adjacent code. The discipline:
   your recommendation. The human resolves it — at the model, where the resolution lands as an
   answered open question or a small ratified delta alongside your fix, so the decision is
   recorded instead of buried in an implementation diff.
+- **How a delta is ratified on a doc that never shipped** (it is `ready-to-implement` with
+  `ratifiedBy` set): once the human has answered, the doc changes by `em slice reratify
+  <model>.em <slice-key>` (bumps `version:`, clears the old sign-off, leaves `status` alone),
+  the answer is written into the doc, and the human re-signs with `em slice ratify <model>.em
+  <slice-key> --by <name>`. That is the human's step, not yours — you never run `ratify`, and
+  the doc is not ratified again until they do; resume the build after that.
 - **Never edit the ratified doc to record your own answer**, and never quietly pick a behavior
   a business person could have an opinion on. Silent divergence is the failure mode the whole
   conformance loop exists to catch — don't manufacture it.
@@ -183,8 +189,14 @@ or seem small — see §10.
 - The PR description cites exactly one slice doc (plus its `covers:` keys, if any) and lists
   that doc's invariants alongside the tests that cover them.
 - Every `INV-<MNEMONIC>-n` invariant has at least one test that cites its ID — checked mechanically by
-  `em coverage <model>.em --tests <dir>` (MIL-130); run it (add `--strict` in CI) rather than
-  eyeballing citations by hand.
+  `em coverage <model>.em --slice <slice-key> --tests <dir> --strict` (MIL-130, MIL-255); run it
+  before merge rather than eyeballing citations by hand. `--slice` is what makes this check the
+  slice under build: the default form, `em coverage <model>.em --tests <dir>`, counts only slices
+  already flipped to `implemented` (MIL-207), and your slice is still `ready-to-implement` until
+  the §6 flip — so the default form reports it `inScope: false`, checks nothing, and exits 0. It
+  is a regression check for shipped slices, not the definition-of-done check. (`--include-ready`
+  is no substitute: it counts every ratified slice, so `--strict` fails on slices nobody has
+  started.) A continuation key resolves to its originating slice's doc. If it exits 1 with "not in scope", the slice's doc is not `ready-to-implement`/`implemented` — nothing was checked, so stop and surface it rather than treating the run as a pass.
 - Every scenario in `## Scenarios (Given / When / Then)` exists as a passing test; rejection
   scenarios assert the doc's named rejection reason.
 - Alternate/error flows (idempotency included) are covered by tests.

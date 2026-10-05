@@ -1,6 +1,6 @@
 ---
 name: event-modeling-design
-em-version: 1.13.0
+em-version: 1.13.1
 description: >-
   Use when structuring a draft event model into swimlanes and the four patterns (State Change,
   State View, Automation, Translation), evaluating a model's structural completeness, or writing
@@ -115,7 +115,16 @@ For each slice:
    anything unresolved rather than guessing. If the slice lives in an existing codebase, Grep/Read
    adjacent real sources (OpenAPI specs, DB migrations, existing DTOs/event classes in sibling
    contexts) before finalizing field names/types or invariants — don't guess a shape that's
-   already defined elsewhere.
+   already defined elsewhere. Before finalizing an invariant, also compare it with the slices in
+   **this same model** — never another `.em` model — that make the same kind of change (other
+   `Archive*` or `Create*` state changes on different entities, say). If one of them already
+   states an analogous rule, either state the same rule here — written out in this doc under
+   this slice's own `INV-<MNEMONIC>-n` ID, not by pointing at the sibling's — or record why this
+   slice's case differs. If this slice has a rule those siblings lack, raise that with the user
+   as an open question against each of them; a ratified sibling changes only through its own
+   re-ratification, never as a side effect of this slice. Repeating a rule across slice docs is
+   correct: each doc is a self-contained spec, and whether the code behind those rules is shared
+   is the constitution's call, not this doc's.
 2. **First-time authoring:** scaffold the doc mechanically rather than hand-writing the
    frontmatter — `em slice new "<slice name>" --pattern <state-change|state-view|automation|
    translation> --swimlane "<Persona> → <Context>" --wire <model>.em` writes `slices/<slice-name>.md`
@@ -144,7 +153,12 @@ For each slice:
    doc's authored body) — run `em slice reratify <model>.em <slice-key>` instead: it bumps
    `version` and flips `status` back to `ready-to-implement` in the existing frontmatter,
    clearing any stale `ratifiedBy:`/`ratifiedOn:` from the prior version so a follow-up
-   `em slice ratify --by <name>` (if the team records that) applies cleanly.
+   `em slice ratify --by <name>` (if the team records that) applies cleanly. The same command
+   changes a ratified doc that **never shipped** (`ready-to-implement` with `ratifiedBy` set — a
+   gap answered mid-build, MIL-258): it bumps `version` and clears the sign-off but leaves
+   `status` alone. Either way the doc is not ratified until `em slice ratify --by <name>` records
+   the new sign-off. A `ready-to-implement` doc with no `ratifiedBy` is already awaiting that
+   sign-off and refuses a second `reratify`; a `draft`/`reviewed` doc is simply edited.
 3. Render the slice's own diagram: `em render <model>.em --slice "<slice name>" -o
    slices/<slice-name>.svg` (kebab-case, matching the doc's filename and the `![Diagram]` stub
    `em slice new` already wrote) — redraws just this slice in its own canonical pattern shape.
