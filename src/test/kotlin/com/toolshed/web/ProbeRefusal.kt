@@ -2,6 +2,7 @@ package com.toolshed.web
 
 import com.toolshed.axon.CommandRejected
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
+import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
@@ -20,6 +21,7 @@ data class ProbeEcho(
 
 class ProbeRejected : CommandRejected("INV-PROBE-1", "probe-refused", "Probe refused.")
 
+@Profile("probes")
 @Component
 class ProbeHandlers {
     @CommandHandler
@@ -29,6 +31,7 @@ class ProbeHandlers {
     fun echo(command: ProbeEcho): String = "pong"
 }
 
+@Profile("probes")
 @RestController
 class ProbeController(
     private val dispatcher: CommandDispatcher,
