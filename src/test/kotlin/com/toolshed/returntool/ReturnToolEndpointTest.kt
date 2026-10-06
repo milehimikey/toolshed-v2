@@ -22,7 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
@@ -98,7 +98,7 @@ class ReturnToolEndpointTest {
         neighbor: UUID,
         loan: UUID,
         signedInAs: UUID = neighbor,
-    ) = mockMvc.post("/api/neighbors/$neighbor/loans/$loan/return") {
+    ) = mockMvc.put("/api/neighbors/$neighbor/loans/$loan/return") {
         header("X-Toolshed-Neighbor-Id", signedInAs.toString())
         accept = org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON
     }

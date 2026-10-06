@@ -6,7 +6,7 @@ import com.toolshed.web.Caller
 import com.toolshed.web.CommandDispatcher
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
@@ -20,7 +20,7 @@ import java.util.UUID
 class ReturnToolController(
     private val dispatcher: CommandDispatcher,
 ) {
-    @PostMapping
+    @PutMapping
     fun returnTool(
         @PathVariable neighborId: UUID,
         @PathVariable loanId: UUID,
