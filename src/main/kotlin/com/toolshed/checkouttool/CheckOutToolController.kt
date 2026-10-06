@@ -8,7 +8,8 @@ import com.toolshed.web.CommandDispatcher
 import com.toolshed.web.Refusal
 import com.toolshed.web.requireNeighbor
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
@@ -16,19 +17,21 @@ import java.net.URI
 import java.util.UUID
 
 /**
- * Check Out Tool over REST: `POST /loans`. The loan ID is chosen by the caller, so a retried
- * request is recognised. A repeat that succeeds records nothing and still answers `201`.
+ * Check Out Tool over REST: `PUT /api/neighbors/{neighborId}/loans/{loanId}`. The loan ID is chosen by the caller,
+ * so PUT is the repeat-safe create: a repeat with the same details succeeds, records nothing, and answers `201`.
  */
 @RestController
 class CheckOutToolController(
     private val dispatcher: CommandDispatcher,
 ) {
-    @PostMapping("/loans")
+    @PutMapping("/api/neighbors/{neighborId}/loans/{loanId}")
     fun checkOut(
         caller: Caller,
+        @PathVariable neighborId: UUID,
+        @PathVariable loanId: UUID,
         @RequestBody request: CheckOutToolRequest,
     ): ResponseEntity<Void> {
-        val neighbor = NeighborId(request.neighborId)
+        val neighbor = NeighborId(neighborId)
         caller.requireNeighbor(
             neighborId = neighbor,
             notSignedIn = Refusal("INV-CHK-1", "Please sign in."),
@@ -36,20 +39,19 @@ class CheckOutToolController(
         )
         dispatcher.send(
             CheckOutTool(
-                loanId = LoanId(request.loanId),
+                loanId = LoanId(loanId),
                 toolId = ToolId(request.toolId),
                 neighborId = neighbor,
                 loanPeriodDays = request.loanPeriodDays,
             ),
             Any::class.java,
         )
-        return ResponseEntity.created(URI.create("/loans/${request.loanId}")).build()
+        return ResponseEntity.created(URI.create("/api/neighbors/$neighborId/loans/$loanId")).build()
     }
 }
 
+/** The body names the tool and the optional period; the loan and the neighbor are in the path. */
 data class CheckOutToolRequest(
-    val loanId: UUID,
     val toolId: UUID,
-    val neighborId: UUID,
     val loanPeriodDays: BigDecimal? = null,
 )

@@ -27,7 +27,7 @@ import java.time.LocalDate
 
 /**
  * What a checkout decision needs to know, evolved from the events it reads. Plain Kotlin
- * types only, so [CheckOutDecider] stays free of framework types.
+ * types only, so [CheckOutToolDecider] stays free of framework types.
  */
 @EventSourced(idType = CheckoutScope::class)
 class CheckOutState

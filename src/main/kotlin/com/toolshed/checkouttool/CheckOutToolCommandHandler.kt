@@ -25,7 +25,7 @@ class CheckOutToolCommandHandler(
         val today = now.atZone(clock.zone).toLocalDate()
         val events =
             try {
-                context.decideAndAppend { CheckOutDecider.decide(command, state, today, now) }
+                context.decideAndAppend { CheckOutToolDecider.decide(command, state, today, now) }
             } catch (refused: CheckOutRefused) {
                 logger.info { "check out refused loan=${command.loanId.value} tool=${command.toolId.value} reason=${refused.reason}" }
                 throw refused

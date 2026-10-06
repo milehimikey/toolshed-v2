@@ -80,7 +80,7 @@ class CheckOutToolDeciderTest {
         s: CheckOutState,
         command: CheckOutTool,
         on: LocalDate = today,
-    ) = CheckOutDecider.decide(command, s, on, now)
+    ) = CheckOutToolDecider.decide(command, s, on, now)
 
     private fun refusal(block: () -> Unit): CheckOutRefused = assertFailsWith<CheckOutRefused>(block = block)
 

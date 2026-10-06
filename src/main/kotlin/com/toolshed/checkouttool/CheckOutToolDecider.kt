@@ -16,7 +16,7 @@ class CheckOutRefused(
  * The checkout decision, pure: no framework types. Checks run in the doc's order and the first
  * failure is the refusal. A repeat of an already-recorded loan returns no events.
  */
-object CheckOutDecider {
+object CheckOutToolDecider {
     fun decide(
         command: CheckOutTool,
         state: CheckOutState,
