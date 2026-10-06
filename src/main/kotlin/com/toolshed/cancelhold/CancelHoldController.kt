@@ -3,7 +3,7 @@ package com.toolshed.cancelhold
 import com.toolshed.axon.HoldId
 import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import com.toolshed.web.CommandDispatcher
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -18,7 +18,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors/{neighborId}/holds/{holdId}")
 class CancelHoldController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     @DeleteMapping
     fun cancel(
@@ -28,7 +28,7 @@ class CancelHoldController(
     ): ResponseEntity<Void> {
         val command = CancelHold(NeighborId(neighborId), HoldId(holdId))
         caller.requireCanceller(command)
-        commandGateway.sendAndWait(command)
+        dispatcher.send(command, Any::class.java)
         return ResponseEntity.noContent().build()
     }
 }
