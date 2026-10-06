@@ -2,7 +2,9 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Shed Manager → Tools
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
 reviewedOn: 2026-10-05
 version: 1

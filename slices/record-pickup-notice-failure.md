@@ -2,7 +2,9 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Holds
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
 reviewedOn: 2026-10-05
 version: 1

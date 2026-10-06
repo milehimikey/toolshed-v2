@@ -2,7 +2,9 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Shed Manager → Loans
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
 reviewedOn: 2026-10-05
 version: 1
