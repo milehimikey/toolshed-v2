@@ -5,24 +5,21 @@ import com.toolshed.closeaccount.NeighborAccountClosed
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: each boundary, and the order the first failure is reported in. */
 class RegisterNeighborDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = RegisterNeighborCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val n1 = NeighborId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
     private val n2 = NeighborId(UUID.fromString("00000000-0000-0000-0000-000000000002"))
 
     private fun decide(
         name: String?,
         email: String?,
-        state: RegisterNeighborCommandHandler.State = RegisterNeighborCommandHandler.State(),
+        state: NeighborRegistryState = NeighborRegistryState(),
         id: NeighborId = n2,
-    ) = handler.decide(RegisterNeighbor(id, name, email), state, now)
+    ) = RegisterNeighborDecider.decide(RegisterNeighbor(id, name, email), state, now)
 
     private fun refusedWith(
         reason: String,
@@ -124,8 +121,8 @@ class RegisterNeighborDeciderTest {
         assertThat(decide("Ana Ruiz", "ana@example.org", state)).hasSize(1)
     }
 
-    private fun stateWith(vararg events: Any): RegisterNeighborCommandHandler.State {
-        val state = RegisterNeighborCommandHandler.State()
+    private fun stateWith(vararg events: Any): NeighborRegistryState {
+        val state = NeighborRegistryState()
         events.forEach { event ->
             when (event) {
                 is NeighborRegistered -> state.evolve(event)

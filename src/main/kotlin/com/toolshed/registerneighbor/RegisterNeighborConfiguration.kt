@@ -17,7 +17,7 @@ object RegisterNeighborConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 NeighborRegistry::class.java,
-                RegisterNeighborCommandHandler.State::class.java,
+                NeighborRegistryState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule
