@@ -1,7 +1,7 @@
 package com.toolshed.registerneighbor
 
 import com.toolshed.axon.NeighborId
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import com.toolshed.web.CommandDispatcher
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,7 +15,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors")
 class RegisterNeighborController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     /** PUT, because the caller names the account: repeating the same request records nothing new. */
     @PutMapping("/{neighborId}")
@@ -23,7 +23,7 @@ class RegisterNeighborController(
         @PathVariable neighborId: UUID,
         @RequestBody body: RegisterNeighborRequest,
     ): ResponseEntity<Void> {
-        commandGateway.sendAndWait(RegisterNeighbor(NeighborId(neighborId), body.name, body.email))
+        dispatcher.send(RegisterNeighbor(NeighborId(neighborId), body.name, body.email), Any::class.java)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 }
