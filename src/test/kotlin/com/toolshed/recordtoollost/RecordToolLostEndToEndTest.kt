@@ -6,10 +6,17 @@ import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.registerneighbor.NeighborRegistered
+import com.toolshed.retiretool.ToolRetired
 import com.toolshed.web.CallerArgumentResolver
 import io.axoniq.framework.testcontainer.AxonServerContainer
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
+import org.axonframework.messaging.eventhandling.EventMessage
+import org.axonframework.messaging.eventhandling.conversion.EventConverter
 import org.axonframework.messaging.eventhandling.gateway.EventGateway
+import org.axonframework.messaging.eventstreaming.StreamableEventSource
+import org.axonframework.messaging.eventstreaming.StreamingCondition
+import org.axonframework.messaging.eventstreaming.TrackingTokenSource
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -20,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.put
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -49,6 +57,15 @@ class RecordToolLostEndToEndTest {
 
     @Autowired
     lateinit var unitOfWorkFactory: UnitOfWorkFactory
+
+    @Autowired
+    lateinit var eventSource: StreamableEventSource
+
+    @Autowired
+    lateinit var tokenSource: TrackingTokenSource
+
+    @Autowired
+    lateinit var eventConverter: EventConverter
 
     private val now = Instant.now()
 
@@ -85,7 +102,43 @@ class RecordToolLostEndToEndTest {
             status { isCreated() }
             header { string("Location", "/api/tools/${tool.value}/loans/${loan.value}/lost") }
         }
+        val lost = recorded(ToolLost::class.java) { it.loanId == loan }
+        assertThat(lost).hasSize(1)
+        assertThat(lost.single().toolId).isEqualTo(tool)
+        // INV-LOST-3: recording a loss records only Tool Lost, so no Tool Retired is recorded for the tool.
+        assertThat(recorded(ToolRetired::class.java) { it.toolId == tool }).isEmpty()
         lost(tool.value.toString(), loan.value.toString()).andExpect { status { isCreated() } }
+        // INV-LOST-10: the repeat records nothing new.
+        assertThat(recorded(ToolLost::class.java) { it.loanId == loan }).hasSize(1)
+    }
+
+    /** Reads the store from the start for a few seconds and returns the [type] events that match [keep]. */
+    private fun <T : Any> recorded(
+        type: Class<T>,
+        keep: (T) -> Boolean,
+    ): List<T> {
+        val found = mutableListOf<T>()
+        val deadline = Instant.now().plus(Duration.ofSeconds(5))
+        unitOfWorkFactory
+            .create()
+            .executeWithResult { ctx ->
+                tokenSource.firstToken(ctx).thenApply { first ->
+                    val stream = eventSource.open(StreamingCondition.startingFrom(first), ctx)
+                    while (Instant.now().isBefore(deadline)) {
+                        stream.next().ifPresent { entry ->
+                            val message: EventMessage = entry.message()
+                            if (message.type().name() == type.name) {
+                                eventConverter
+                                    .convertPayload<EventMessage, T>(message, type)
+                                    ?.takeIf(keep)
+                                    ?.let { found.add(it) }
+                            }
+                        }
+                    }
+                    stream.close()
+                }
+            }.join()
+        return found
     }
 
     @Test
