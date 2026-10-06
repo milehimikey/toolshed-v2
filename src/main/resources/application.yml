@@ -1,5 +1,7 @@
 toolshed:
   timezone: America/Denver
+  email:
+    provider: logging
 
 axon:
   axonserver:

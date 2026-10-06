@@ -7,6 +7,7 @@ import java.time.Clock
 import java.time.ZoneId
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 /**
@@ -34,5 +35,11 @@ class SharedPortsTest {
     fun `the logging email stub accepts a hand-off`() {
         assertIs<LoggingEmailGateway>(emailGateway)
         assertEquals(HandOffResult.ACCEPTED, emailGateway.handOff(EmailKey.ForLoan(LoanId(UUID.randomUUID())), "a@example.com", "s", "b"))
+    }
+
+    @Test
+    fun `the email provider is selected by name and an unknown one is refused`() {
+        assertIs<LoggingEmailGateway>(SharedPorts().selectEmailGateway("logging"))
+        assertFailsWith<IllegalArgumentException> { SharedPorts().selectEmailGateway("nope") }
     }
 }
