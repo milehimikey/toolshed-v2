@@ -3,6 +3,8 @@ package com.toolshed.registerneighbor
 import com.toolshed.axon.NeighborId
 import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.reinstateneighbor.NeighborReinstated
+import com.toolshed.suspendneighbor.NeighborSuspended
 import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.test.fixture.AxonTestFixture
@@ -131,6 +133,7 @@ class RegisterNeighborAxonFixtureTest {
         fixture
             .given()
             .event(registered(n2, "Ben Cole", "ben@example.org"))
+            .event(NeighborSuspended(n2, now))
             .`when`()
             .command(signUp(n3(), "Someone Else", "ben@example.org"))
             .then()
@@ -171,6 +174,8 @@ class RegisterNeighborAxonFixtureTest {
         fixture
             .given()
             .event(registered(n2, "Ben Cole", "ben@example.org"))
+            .event(NeighborSuspended(n2, now))
+            .event(NeighborReinstated(n2, now))
             .event(NeighborAccountClosed(n2, false, now))
             .`when`()
             .command(signUp(n9, "Ben Cole", "ben@example.org"))

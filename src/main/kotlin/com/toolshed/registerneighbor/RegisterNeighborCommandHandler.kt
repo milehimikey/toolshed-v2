@@ -4,17 +4,21 @@ import com.toolshed.axon.CommandRejected
 import com.toolshed.axon.NeighborId
 import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
+import org.axonframework.extension.spring.stereotype.EventSourced
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.eventhandling.gateway.EventAppender
 import org.axonframework.messaging.eventstreaming.EventCriteria
 import org.axonframework.modelling.annotation.InjectEntity
 import org.springframework.stereotype.Component
+import java.text.BreakIterator
 import java.time.Clock
 import java.time.Instant
+
+private val logger = KotlinLogging.logger {}
 
 /** The consistency boundary for sign-ups: one id for the whole neighborhood. Not an account. */
 object NeighborRegistry
@@ -42,7 +46,16 @@ class RegisterNeighborCommandHandler(
         @InjectEntity state: State,
         eventAppender: EventAppender,
     ) {
-        eventAppender.append(decide(command, state, clock.instant()))
+        val recorded =
+            try {
+                decide(command, state, clock.instant())
+            } catch (refused: RegisterNeighborRejected) {
+                logger.info { "register-neighbor neighborId=${command.neighborId.value} outcome=refused reason=${refused.reason}" }
+                throw refused
+            }
+        eventAppender.append(recorded)
+        val outcome = if (recorded.isEmpty()) "repeat" else "recorded"
+        logger.info { "register-neighbor neighborId=${command.neighborId.value} outcome=$outcome" }
     }
 
     /** Pure decision. Checks run in the doc's order; the first failure is the one returned. */
@@ -65,11 +78,11 @@ class RegisterNeighborCommandHandler(
         }
 
         if (name == null) refuse("INV-REG-3", "name-missing", "Please enter your name.")
-        if (codePoints(name) > 100) {
+        if (userVisibleLength(name) > 100) {
             refuse("INV-REG-10", "name-too-long", "Your name can be at most 100 characters.")
         }
         if (email == null) refuse("INV-REG-3", "email-missing", "Please enter your email address.")
-        if (codePoints(email) > 254) {
+        if (userVisibleLength(email) > 254) {
             refuse("INV-REG-10", "email-too-long", "Your email address can be at most 254 characters.")
         }
         if (!looksLikeEmail(email)) {
@@ -88,7 +101,18 @@ class RegisterNeighborCommandHandler(
         sentence: String,
     ): Nothing = throw RegisterNeighborRejected(invariant, reason, sentence)
 
-    private fun codePoints(text: String): Int = text.codePointCount(0, text.length)
+    /** Length in user-visible characters (grapheme clusters), so "e" plus a combining accent counts once. */
+    private fun userVisibleLength(text: String): Int {
+        val boundaries = BreakIterator.getCharacterInstance()
+        boundaries.setText(text)
+        var count = 0
+        var end = boundaries.next()
+        while (end != BreakIterator.DONE) {
+            count++
+            end = boundaries.next()
+        }
+        return count
+    }
 
     /** INV-REG-11: an "@" with at least one character before it and at least one after it. Nothing more. */
     private fun looksLikeEmail(email: String): Boolean {
@@ -100,7 +124,7 @@ class RegisterNeighborCommandHandler(
      * Folded from the three lifecycle events. Mutable maps, because a neighborhood's history is
      * long and copying on every event would be wasteful.
      */
-    @EventSourcedEntity
+    @EventSourced(idType = NeighborRegistry::class)
     class State
         @EntityCreator
         constructor() {
