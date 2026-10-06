@@ -17,8 +17,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Profile
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
@@ -35,6 +37,7 @@ import kotlin.test.assertEquals
 
 /** Refusal records nothing, over real Axon Server: decide-then-append, and append-then-refuse fails closed. */
 @SpringBootTest
+@ActiveProfiles("probes")
 @AutoConfigureMockMvc
 @Testcontainers
 class AppendDisciplineOverAxonServerTest {
@@ -117,6 +120,7 @@ data class ProbeAppendThenRefuse(
     val toolId: UUID,
 )
 
+@Profile("probes")
 @Component
 class ProbeAppendHandlers {
     @CommandHandler
@@ -142,6 +146,7 @@ class ProbeAppendHandlers {
     }
 }
 
+@Profile("probes")
 @RestController
 class AppendProbeController(
     private val dispatcher: CommandDispatcher,

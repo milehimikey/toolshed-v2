@@ -9,6 +9,7 @@ class AppendDisciplineTest {
     @Test
     fun `no class outside com toolshed axon references EventAppender`() {
         val root = File("src/main/kotlin/com/toolshed")
+        assertTrue(root.isDirectory, "source root not found: ${root.absolutePath}")
         val offenders =
             root
                 .walkTopDown()
