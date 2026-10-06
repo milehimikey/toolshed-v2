@@ -221,3 +221,35 @@ Ratified by Mike Key on 2026-10-06 (recorded in `.event-modeling.md`).
 
    The formatter's "Kotlin official style" (Code style) means ktlint's `ktlint_official` code
    style.
+
+Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.lead; recorded in
+`.event-modeling.md`).
+
+10. **API layout and code shape.** These refine Amendments 3 and 7.
+    - **API root and paths.** Every endpoint lives under `/api`.
+      - What a neighbor acts on or owns sits under `/api/neighbors/{neighborId}/...`.
+      - Tools sit under `/api/tools/{toolId}`.
+      - The shed manager's actions on a neighbor also sit under
+        `/api/neighbors/{neighborId}/...`.
+    - **Verbs.**
+      - `PUT` is for a command that creates or sets state at a known URI: a caller-chosen id,
+        or a singleton sub-resource. For example, check out is
+        `PUT /api/neighbors/{n}/loans/{l}`, suspend is `PUT .../suspension`, and return is
+        `PUT .../loans/{l}/return`.
+      - `DELETE` is for undoing a singleton state or removing a resource. For example,
+        reinstate is `DELETE .../suspension`, and cancel hold is
+        `DELETE /api/neighbors/{n}/holds/{h}`.
+      - `POST` is only for Amendment 7's "adding" commands, which have no caller-chosen id. For
+        example, extend is `POST .../loans/{l}/extensions`.
+    - **Decider shape.** Each State Change slice has three parts:
+      - a separate `<Slice>Decider` object holding the pure decide function;
+      - a top-level `<Concept>State` entity;
+      - a `<Command>CommandHandler` that calls the foundation's
+        `context.decideAndAppend { ... }`.
+
+      Slices never reference `EventAppender`. `AppendDisciplineTest` enforces this.
+    - **Dispatch.** REST controllers send commands through `com.toolshed.web.CommandDispatcher`.
+      It retries a server-side failure up to 3 times, which is safe because Amendment 7 makes
+      commands safe to repeat. It never retries a refusal or a timeout.
+    - **Refusal exceptions** are named `<Command>Rejected` and extend
+      `com.toolshed.axon.CommandRejected`.
