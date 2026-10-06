@@ -48,7 +48,9 @@ class ReturnToolCommandHandler(
     ) {
         val recorded =
             try {
-                decide(command, state, LocalDate.now(clock), clock.instant())
+                // One reading of the clock, so returnedAt and returnedOn always agree (the shed's local date of returnedAt).
+                val now = clock.instant()
+                decide(command, state, now.atZone(clock.zone).toLocalDate(), now)
             } catch (refused: ReturnToolRejected) {
                 logger.info { "return-tool loanId=${command.loanId.value} outcome=refused reason=${refused.reason}" }
                 throw refused

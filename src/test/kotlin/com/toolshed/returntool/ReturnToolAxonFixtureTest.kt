@@ -124,6 +124,20 @@ class ReturnToolAxonFixtureTest {
     }
 
     @Test
+    fun `INV-RET-4 given L1 was due 12 October, when Ana returns it at 00 00 30 on 13 October, then date and lateness agree`() {
+        // 06:00:30 UTC is 00:00:30 in Denver: the shed day is already the 13th, so the return is late.
+        val now = Instant.parse("2026-10-13T06:00:30Z")
+        at(now)
+            .given()
+            .recorded(drillOnLoan())
+            .`when`()
+            .command(ReturnTool(ana, l1))
+            .then()
+            .success()
+            .events(ToolReturned(l1, t1, now, LocalDate.of(2026, 10, 13), true))
+    }
+
+    @Test
     fun `INV-RET-5 given L1 is overdue, when Ana returns it on 14 October, then recorded as late`() {
         val now = Instant.parse("2026-10-14T16:00:00Z")
         at(now)
