@@ -6,7 +6,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 /** A refused checkout. [invariant] is the doc's INV id, [reason] the stable name, the message the doc sentence. */
-class CheckOutRefused(
+class CheckOutToolRejected(
     invariant: String,
     reason: String,
     sentence: String,
@@ -128,5 +128,5 @@ object CheckOutToolDecider {
         invariant: String,
         reason: String,
         sentence: String,
-    ): Nothing = throw CheckOutRefused(invariant, reason, sentence)
+    ): Nothing = throw CheckOutToolRejected(invariant, reason, sentence)
 }

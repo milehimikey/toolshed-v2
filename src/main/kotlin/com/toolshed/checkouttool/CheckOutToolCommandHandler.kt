@@ -26,7 +26,7 @@ class CheckOutToolCommandHandler(
         val events =
             try {
                 context.decideAndAppend { CheckOutToolDecider.decide(command, state, today, now) }
-            } catch (refused: CheckOutRefused) {
+            } catch (refused: CheckOutToolRejected) {
                 logger.info { "check out refused loan=${command.loanId.value} tool=${command.toolId.value} reason=${refused.reason}" }
                 throw refused
             }

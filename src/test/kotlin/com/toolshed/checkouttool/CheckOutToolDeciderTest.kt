@@ -82,7 +82,7 @@ class CheckOutToolDeciderTest {
         on: LocalDate = today,
     ) = CheckOutToolDecider.decide(command, s, on, now)
 
-    private fun refusal(block: () -> Unit): CheckOutRefused = assertFailsWith<CheckOutRefused>(block = block)
+    private fun refusal(block: () -> Unit): CheckOutToolRejected = assertFailsWith<CheckOutToolRejected>(block = block)
 
     // --- INV-CHK-6 ---
 
