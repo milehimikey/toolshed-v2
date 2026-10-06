@@ -3,7 +3,7 @@ package com.toolshed.returntool
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import com.toolshed.web.CommandDispatcher
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -18,7 +18,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors/{neighborId}/loans/{loanId}/return")
 class ReturnToolController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     @PostMapping
     fun returnTool(
@@ -28,7 +28,7 @@ class ReturnToolController(
     ): ResponseEntity<Void> {
         val command = ReturnTool(NeighborId(neighborId), LoanId(loanId))
         caller.requireReturner(command)
-        commandGateway.sendAndWait(command)
+        dispatcher.send(command, Any::class.java)
         return ResponseEntity.noContent().build()
     }
 }
