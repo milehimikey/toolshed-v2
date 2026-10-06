@@ -50,11 +50,11 @@ never connected to one another.
 | 9 | Tool Inventory — tool checked out | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 10 | Tool Catalog — checked out | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 11 | My Loans | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
-| 12 | Extend Loan | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/extend-loan.md](slices/extend-loan.md) |
+| 12 | Extend Loan | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/6 | — | [slices/extend-loan.md](slices/extend-loan.md) |
 | 13 | Tool Inventory — loan extended | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 14 | My Loans — loan extended | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 15 | Tool Catalog — loan extended | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
-| 16 | Place Hold | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/place-hold.md](slices/place-hold.md) |
+| 16 | Place Hold | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/9 | — | [slices/place-hold.md](slices/place-hold.md) |
 | 17 | My Holds | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 18 | Tool Catalog — hold placed | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 19 | My Loans — hold placed | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
