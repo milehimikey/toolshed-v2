@@ -4,9 +4,9 @@ import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.web.Caller
+import com.toolshed.web.CommandDispatcher
 import com.toolshed.web.Refusal
 import com.toolshed.web.requireNeighbor
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -21,7 +21,7 @@ import java.util.UUID
  */
 @RestController
 class CheckOutToolController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     @PostMapping("/loans")
     fun checkOut(
@@ -34,13 +34,14 @@ class CheckOutToolController(
             notSignedIn = Refusal("INV-CHK-1", "Please sign in."),
             mismatch = Refusal("INV-CHK-1", "You can only check out tools for yourself."),
         )
-        commandGateway.sendAndWait(
+        dispatcher.send(
             CheckOutTool(
                 loanId = LoanId(request.loanId),
                 toolId = ToolId(request.toolId),
                 neighborId = neighbor,
                 loanPeriodDays = request.loanPeriodDays,
             ),
+            Any::class.java,
         )
         return ResponseEntity.created(URI.create("/loans/${request.loanId}")).build()
     }
