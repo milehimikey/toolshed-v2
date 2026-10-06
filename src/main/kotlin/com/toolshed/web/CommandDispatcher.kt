@@ -19,11 +19,12 @@ class CommandDispatcher(
         command: Any,
         resultType: Class<R>,
     ): R? {
-        val result = commandGateway.send(command).getResultMessage().join()
+        val result = commandGateway.send(command).getResultMessage().join() ?: return null
         if (result.type().name() == CommandRefusal::class.java.name) {
             val refusal = checkNotNull(result.payloadAs(CommandRefusal::class.java, messageConverter)) { "refusal did not decode" }
             throw CommandRejected(refusal.invariant, refusal.reason, refusal.sentence)
         }
+        if (result.payload() == null) return null
         return result.payloadAs(resultType, messageConverter)
     }
 }

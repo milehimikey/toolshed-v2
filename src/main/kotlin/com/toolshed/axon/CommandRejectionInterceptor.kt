@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component
 
 /**
  * Turns a CommandRejected thrown in a handler into a [CommandRefusal] result, so the refusal survives the trip
- * through Axon Server as a normal payload. Anything that is not a refusal passes through unchanged.
+ * through Axon Server as a normal payload. A refusal after events were appended is a programming error: the
+ * command fails instead, so nothing commits. Anything that is not a refusal passes through unchanged.
  */
 @Component
 class CommandRejectionInterceptor : MessageHandlerInterceptor<CommandMessage> {
@@ -28,6 +29,7 @@ class CommandRejectionInterceptor : MessageHandlerInterceptor<CommandMessage> {
             val rejected =
                 generateSequence(error) { it.cause }.filterIsInstance<CommandRejected>().firstOrNull()
                     ?: return@onErrorContinue MessageStream.failed(error)
+            if (context.containsResource(APPENDED)) return@onErrorContinue MessageStream.failed(error)
             val refusal = CommandRefusal(rejected.invariant, rejected.reason, rejected.message.orEmpty())
             MessageStream.fromItems(GenericCommandResultMessage(MessageType(CommandRefusal::class.java), refusal))
         }
