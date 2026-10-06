@@ -7,6 +7,9 @@ import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
+import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.expirehold.HoldExpired
+import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.placehold.HoldPlaced
 import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.retiretool.ToolRetired
@@ -45,6 +48,9 @@ class ExtendLoanDeciderTest {
                 is NeighborSuspended -> state.evolve(event)
                 is HoldPlaced -> state.evolve(event)
                 is HoldCancelled -> state.evolve(event)
+                is HoldExpired -> state.evolve(event)
+                is HoldFulfilled -> state.evolve(event)
+                is NeighborAccountClosed -> state.evolve(event)
                 is LoanExtended -> state.evolve(event)
                 else -> error("unexpected event ${event::class.simpleName}")
             }
@@ -107,6 +113,38 @@ class ExtendLoanDeciderTest {
     @Test
     fun `INV-EXT-4 a hold waiting on the tool blocks the extension`() {
         refusedWith("hold-waiting") { decide(stateWith(*drillOnLoan(), HoldPlaced(hold, drill, ben, now))) }
+    }
+
+    @Test
+    fun `INV-EXT-4 an expired hold no longer blocks the extension`() {
+        val state = stateWith(*drillOnLoan(), HoldPlaced(hold, drill, ben, now), HoldExpired(hold, now))
+        assertThat(decide(state)).hasSize(1)
+    }
+
+    @Test
+    fun `INV-EXT-4 a fulfilled hold is no longer waiting, so it does not block the extension`() {
+        val state = stateWith(*drillOnLoan(), HoldPlaced(hold, drill, ben, now), HoldFulfilled(hold, drill, ben, oct12, now))
+        assertThat(decide(state)).hasSize(1)
+    }
+
+    @Test
+    fun `INV-EXT-4 a hold ends when its holder checks the tool out, so it does not block that holder's loan`() {
+        // Ben's hold is ended by his own checkout of the drill, so his new loan can be extended.
+        val benLoan = LoanId(UUID.fromString("00000000-0000-0000-0000-000000000012"))
+        val state =
+            stateWith(
+                ToolAdded(drill, "Cordless drill", null, 7, now),
+                HoldPlaced(hold, drill, ben, now),
+                ToolCheckedOut(benLoan, drill, ben, 7, oct12, now),
+            )
+        val recorded = handler.decide(ExtendLoan(ben, benLoan, oct12), state, LocalDate.of(2026, 10, 10), now)
+        assertThat(recorded).hasSize(1)
+    }
+
+    @Test
+    fun `INV-EXT-4 a hold ends when its holder closes their account, so it does not block the extension`() {
+        val state = stateWith(*drillOnLoan(), HoldPlaced(hold, drill, ben, now), NeighborAccountClosed(ben, false, now))
+        assertThat(decide(state)).hasSize(1)
     }
 
     // --- rejection order: the first failure is the reason returned ---
