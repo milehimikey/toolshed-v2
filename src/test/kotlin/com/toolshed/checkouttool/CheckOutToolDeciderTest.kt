@@ -24,7 +24,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /** Pure decider tests: one or more per invariant boundary, no framework and no fixture. */
-class CheckOutDeciderTest {
+class CheckOutToolDeciderTest {
     private val today = LocalDate.of(2026, 10, 5)
     private val now: Instant = Instant.parse("2026-10-05T15:00:00Z")
 
