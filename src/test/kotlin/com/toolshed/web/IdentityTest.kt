@@ -35,9 +35,8 @@ class IdentityTest {
         @GetMapping("/manage")
         fun manage(caller: Caller): String {
             caller.requireShedManager(
-                invariant = "INV-TEST-1",
-                notSignedInSentence = "Please sign in.",
-                notShedManagerSentence = "Only the shed manager can do this.",
+                notSignedIn = Refusal("INV-TEST-1", "Please sign in."),
+                notShedManager = Refusal("INV-TEST-4", "Only the shed manager can do this."),
             )
             return "ok"
         }
@@ -49,16 +48,15 @@ class IdentityTest {
         ): String {
             caller.requireNeighbor(
                 neighborId = NeighborId(UUID.fromString(owner)),
-                invariant = "INV-TEST-2",
-                notSignedInSentence = "Please sign in.",
-                mismatchSentence = "That is not your loan.",
+                notSignedIn = Refusal("INV-TEST-2", "Please sign in."),
+                mismatch = Refusal("INV-TEST-5", "That is not your loan."),
             )
             return "ok"
         }
 
         @GetMapping("/signed-in")
         fun signedIn(caller: Caller): String {
-            caller.requireSignedIn(invariant = "INV-TEST-3", sentence = "Please sign in.")
+            caller.requireSignedIn(Refusal("INV-TEST-3", "Please sign in."))
             return "ok"
         }
     }
@@ -145,7 +143,7 @@ class IdentityTest {
                 accept = MediaType.APPLICATION_PROBLEM_JSON
             }.andExpect {
                 status { isEqualTo(422) }
-                jsonPath("$.invariant") { value("INV-TEST-1") }
+                jsonPath("$.invariant") { value("INV-TEST-4") }
                 jsonPath("$.reason") { value("not-shed-manager") }
                 jsonPath("$.detail") { value("Only the shed manager can do this.") }
             }
@@ -168,7 +166,7 @@ class IdentityTest {
                 accept = MediaType.APPLICATION_PROBLEM_JSON
             }.andExpect {
                 status { isEqualTo(422) }
-                jsonPath("$.invariant") { value("INV-TEST-2") }
+                jsonPath("$.invariant") { value("INV-TEST-5") }
                 jsonPath("$.reason") { value("requester-mismatch") }
                 jsonPath("$.detail") { value("That is not your loan.") }
             }
@@ -207,6 +205,23 @@ class IdentityTest {
         mockMvc.get("/signed-in") { header("X-Toolshed-Role", "shed-manager") }.andExpect {
             status { isOk() }
         }
+    }
+
+    @Test
+    fun `each refusal in a guard carries its own invariant, even when the two differ`() {
+        // The docs cite different INV ids for not-signed-in and for mismatch or role; the 422 must carry the right one.
+        val anonymousMine =
+            mockMvc.get("/mine") {
+                header("X-Loan-Owner", neighbor.toString())
+                accept = MediaType.APPLICATION_PROBLEM_JSON
+            }
+        anonymousMine.andExpect { jsonPath("$.invariant") { value("INV-TEST-2") } }
+        mockMvc
+            .get("/mine") {
+                header("X-Toolshed-Neighbor-Id", neighbor.toString())
+                header("X-Loan-Owner", UUID.randomUUID().toString())
+                accept = MediaType.APPLICATION_PROBLEM_JSON
+            }.andExpect { jsonPath("$.invariant") { value("INV-TEST-5") } }
     }
 
     @Test
