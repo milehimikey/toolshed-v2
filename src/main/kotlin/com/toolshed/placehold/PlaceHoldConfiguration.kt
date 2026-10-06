@@ -18,7 +18,7 @@ object PlaceHoldConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 HoldLedger::class.java,
-                PlaceHoldCommandHandler.State::class.java,
+                HoldState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule

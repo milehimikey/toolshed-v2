@@ -17,16 +17,13 @@ import com.toolshed.suspendneighbor.NeighborSuspended
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: each boundary, and the order the first failure is reported in. */
 class PlaceHoldDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = PlaceHoldCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val drill = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d1"))
     private val ladder = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d2"))
     private val ana = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000a1"))
@@ -36,8 +33,8 @@ class PlaceHoldDeciderTest {
     private val h1 = HoldId(UUID.fromString("00000000-0000-0000-0000-0000000000e1"))
     private val h2 = HoldId(UUID.fromString("00000000-0000-0000-0000-0000000000e2"))
 
-    private fun stateWith(vararg events: Any): PlaceHoldCommandHandler.State {
-        val state = PlaceHoldCommandHandler.State()
+    private fun stateWith(vararg events: Any): HoldState {
+        val state = HoldState()
         events.forEach { event ->
             when (event) {
                 is ToolAdded -> state.evolve(event)
@@ -69,11 +66,11 @@ class PlaceHoldDeciderTest {
         )
 
     private fun decide(
-        state: PlaceHoldCommandHandler.State,
+        state: HoldState,
         hold: HoldId = h2,
         tool: ToolId = drill,
         by: NeighborId = cleo,
-    ) = handler.decide(PlaceHold(hold, tool, by), state, now)
+    ) = PlaceHoldDecider.decide(PlaceHold(hold, tool, by), state, now)
 
     private fun refusedWith(
         reason: String,
