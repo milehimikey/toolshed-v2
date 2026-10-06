@@ -253,3 +253,10 @@ Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.le
       commands safe to repeat. It never retries a refusal or a timeout.
     - **Refusal exceptions** are named `<Command>Rejected` and extend
       `com.toolshed.axon.CommandRejected`.
+    - **Success status.** On the first call and on a repeat alike:
+      - a command that creates a new resource with its own id (a tool, neighbor, loan, hold or
+        extension) answers `201 Created`;
+      - a command that sets, changes or removes state on an existing resource (suspension,
+        closure, retirement, return, email, cancel, reinstate) answers `204 No Content`.
+
+      (Added 2026-10-06 with Mike Key's approval.)
