@@ -529,4 +529,34 @@ class CheckOutToolAxonFixtureTest {
             .success()
             .events(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 25), lapsedNow))
     }
+
+    // --- a closed holder's holds end (close-account.md) ---
+
+    @Test
+    fun `INV-CHK-3a INV-CHK-7 - given ben at the front and cara behind, when ben closes his account, then cara checks out`() {
+        val loan = LoanId(UUID.randomUUID())
+        world()
+            .event(HoldPlaced(hold1, drill, ben, now))
+            .event(HoldPlaced(hold2, drill, cara, now))
+            .event(NeighborAccountClosed(ben, false, now))
+            .`when`()
+            .command(checkout(loan, drill, cara))
+            .then()
+            .success()
+            .events(ToolCheckedOut(loan, drill, cara, 7, LocalDate.of(2026, 10, 12), now))
+    }
+
+    @Test
+    fun `INV-CHK-3 INV-CHK-7 - given the drill set aside for ben who then closes, when ana checks out, then recorded`() {
+        val loan = LoanId(UUID.randomUUID())
+        world()
+            .event(HoldPlaced(hold1, drill, ben, now))
+            .event(HoldFulfilled(hold1, drill, ben, today, now))
+            .event(NeighborAccountClosed(ben, false, now))
+            .`when`()
+            .command(checkout(loan, drill, ana))
+            .then()
+            .success()
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+    }
 }

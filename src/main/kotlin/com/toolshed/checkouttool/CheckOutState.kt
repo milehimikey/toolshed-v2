@@ -140,6 +140,10 @@ class CheckOutState
         @EventSourcingHandler
         fun evolve(event: NeighborAccountClosed) {
             closedNeighbors += event.neighborId
+            // Closing ends every hold the neighbor has, so holds behind theirs move up (close-account.md).
+            holds
+                .filter { it.neighborId == event.neighborId && !it.ended }
+                .forEach { it.ended = true }
         }
 
         @EventSourcingHandler
@@ -210,6 +214,8 @@ class CheckOutState
                             LoanExtended::class.java.name,
                             HoldCancelled::class.java.name,
                             HoldExpired::class.java.name,
+                            // By type, not by tag: a holder's hold ends when their account closes, whoever is asking.
+                            NeighborAccountClosed::class.java.name,
                         ),
                 )
         }

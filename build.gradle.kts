@@ -55,8 +55,6 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    // Several @SpringBootTest contexts (each with an Axon Server container) share one test JVM.
-    maxHeapSize = "2g"
     // Docker Desktop rejects the docker-java default API version (1.32); 1.47 is inside its supported range.
     systemProperty("api.version", "1.47")
 }

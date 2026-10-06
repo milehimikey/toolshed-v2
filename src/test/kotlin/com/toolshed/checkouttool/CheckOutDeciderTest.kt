@@ -206,4 +206,22 @@ class CheckOutDeciderTest {
         assertEquals(1, decide(s, request(ben)).size)
         assertEquals("reserved-for-another", refusal { decide(s, request(cara)) }.reason)
     }
+    // --- closing an account ends the neighbor's holds (close-account.md) ---
+
+    @Test
+    fun `INV-CHK-3a INV-CHK-7 - a holder who closes their account leaves the queue, so the next holder is at the front`() {
+        val s = state(HoldPlaced(hold1, drill, ben, now), HoldPlaced(hold2, drill, cara, now), NeighborAccountClosed(ben, false, now))
+        assertEquals(1, decide(s, request(cara)).size)
+    }
+
+    @Test
+    fun `INV-CHK-3 INV-CHK-7 - a holder who closes while the tool is set aside releases it to anyone`() {
+        val s =
+            state(
+                HoldPlaced(hold1, drill, ben, now),
+                HoldFulfilled(hold1, drill, ben, today, now),
+                NeighborAccountClosed(ben, false, now),
+            )
+        assertEquals(1, decide(s, request(ana)).size)
+    }
 }
