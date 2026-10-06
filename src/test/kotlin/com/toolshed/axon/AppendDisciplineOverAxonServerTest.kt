@@ -123,9 +123,8 @@ class ProbeAppendHandlers {
     fun decided(
         command: ProbeDecided,
         context: ProcessingContext,
-        appender: EventAppender,
     ) {
-        decideAndAppend(context, appender) {
+        context.decideAndAppend {
             if (command.refuse) throw ProbeRejected()
             listOf(ToolRetired(ToolId(command.toolId), Instant.now()))
         }
