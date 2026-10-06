@@ -18,16 +18,13 @@ import com.toolshed.suspendneighbor.NeighborSuspended
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: each boundary, and the order the first failure is reported in. */
 class ExtendLoanDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = ExtendLoanCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val drill = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d1"))
     private val ladder = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d2"))
     private val ana = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000a1"))
@@ -36,8 +33,8 @@ class ExtendLoanDeciderTest {
     private val hold = HoldId(UUID.fromString("00000000-0000-0000-0000-0000000000e1"))
     private val oct12 = LocalDate.of(2026, 10, 12)
 
-    private fun stateWith(vararg events: Any): ExtendLoanCommandHandler.State {
-        val state = ExtendLoanCommandHandler.State()
+    private fun stateWith(vararg events: Any): LoanLedgerState {
+        val state = LoanLedgerState()
         events.forEach { event ->
             when (event) {
                 is ToolAdded -> state.evolve(event)
@@ -62,11 +59,11 @@ class ExtendLoanDeciderTest {
         arrayOf(ToolAdded(drill, "Cordless drill", null, 7, now), ToolCheckedOut(l1, drill, ana, 7, oct12, now))
 
     private fun decide(
-        state: ExtendLoanCommandHandler.State,
+        state: LoanLedgerState,
         today: LocalDate = LocalDate.of(2026, 10, 10),
         by: NeighborId = ana,
         from: LocalDate = oct12,
-    ) = handler.decide(ExtendLoan(by, l1, from), state, today, now)
+    ) = ExtendLoanDecider.decide(ExtendLoan(by, l1, from), state, today, now)
 
     private fun refusedWith(
         reason: String,
@@ -137,7 +134,7 @@ class ExtendLoanDeciderTest {
                 HoldPlaced(hold, drill, ben, now),
                 ToolCheckedOut(benLoan, drill, ben, 7, oct12, now),
             )
-        val recorded = handler.decide(ExtendLoan(ben, benLoan, oct12), state, LocalDate.of(2026, 10, 10), now)
+        val recorded = ExtendLoanDecider.decide(ExtendLoan(ben, benLoan, oct12), state, LocalDate.of(2026, 10, 10), now)
         assertThat(recorded).hasSize(1)
     }
 

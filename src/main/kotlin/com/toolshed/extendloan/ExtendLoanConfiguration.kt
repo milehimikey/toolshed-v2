@@ -17,7 +17,7 @@ object ExtendLoanConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 LoanLedger::class.java,
-                ExtendLoanCommandHandler.State::class.java,
+                LoanLedgerState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule
