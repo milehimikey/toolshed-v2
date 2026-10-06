@@ -18,7 +18,7 @@ object RecordOverdueNoticeFailureConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 NoticeLedger::class.java,
-                RecordOverdueNoticeFailureCommandHandler.State::class.java,
+                NoticeState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule

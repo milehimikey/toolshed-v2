@@ -1,10 +1,12 @@
 package com.toolshed.recordoverduenoticefailure
 
+import com.toolshed.axon.CommandRejected
+import com.toolshed.axon.FailureReport
 import com.toolshed.axon.LoanId
 import com.toolshed.sendoverduenotice.OverdueNoticeSent
+import com.toolshed.web.CommandDispatcher
 import io.axoniq.framework.testcontainer.AxonServerContainer
 import org.assertj.core.api.Assertions.assertThat
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
 import org.axonframework.messaging.eventhandling.EventMessage
 import org.axonframework.messaging.eventhandling.conversion.EventConverter
@@ -44,7 +46,7 @@ class RecordOverdueNoticeFailureWiringTest {
     }
 
     @Autowired
-    lateinit var commandGateway: CommandGateway
+    lateinit var dispatcher: CommandDispatcher
 
     @Autowired
     lateinit var translation: OverdueNoticeFailureTranslation
@@ -71,7 +73,7 @@ class RecordOverdueNoticeFailureWiringTest {
         val loan = LoanId(UUID.randomUUID())
         publish(OverdueNoticeSent(loan, "ana@example.org", "Ana Ruiz", "Cordless drill", LocalDate.of(2026, 10, 5), now))
 
-        commandGateway.sendAndWait(RecordOverdueNoticeFailure(loan, "refused"))
+        dispatcher.send(RecordOverdueNoticeFailure(loan, "refused"), Any::class.java)
 
         assertThat(failedFor(loan)).hasSize(1)
     }
@@ -81,8 +83,20 @@ class RecordOverdueNoticeFailureWiringTest {
         val loan = LoanId(UUID.randomUUID())
         publish(OverdueNoticeSent(loan, "ana@example.org", "Ana Ruiz", "Cordless drill", LocalDate.of(2026, 10, 5), now))
 
-        translation.receive(ProviderFailureReport(loan.value.toString(), "refused", signature = null))
+        translation.receive(FailureReport("{}", null))
 
+        assertThat(failedFor(loan)).isEmpty()
+    }
+
+    @Test
+    fun `INV-ONF-7 given no notice was sent for a loan, when the failure command runs in the app, then it is refused no-matching-notice`() {
+        val loan = LoanId(UUID.randomUUID())
+        val refused =
+            org.junit.jupiter.api.assertThrows<CommandRejected> {
+                dispatcher.send(RecordOverdueNoticeFailure(loan, "refused"), Any::class.java)
+            }
+        assertThat(refused.invariant).isEqualTo("INV-ONF-7")
+        assertThat(refused.reason).isEqualTo("no-matching-notice")
         assertThat(failedFor(loan)).isEmpty()
     }
 

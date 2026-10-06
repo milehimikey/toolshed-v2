@@ -8,21 +8,18 @@ import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: each boundary, and the order the first failure is reported in. */
 class RecordOverdueNoticeFailureDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = RecordOverdueNoticeFailureCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val drill = ToolId(UUID.nameUUIDFromBytes("drill".toByteArray()))
     private val l1 = LoanId(UUID.nameUUIDFromBytes("l1".toByteArray()))
 
-    private fun stateWith(vararg events: Any): RecordOverdueNoticeFailureCommandHandler.State {
-        val state = RecordOverdueNoticeFailureCommandHandler.State()
+    private fun stateWith(vararg events: Any): NoticeState {
+        val state = NoticeState()
         events.forEach { event ->
             when (event) {
                 is OverdueNoticeSent -> state.evolve(event)
@@ -38,9 +35,9 @@ class RecordOverdueNoticeFailureDeciderTest {
     private fun sent() = OverdueNoticeSent(l1, "ana@example.org", "Ana Ruiz", "Cordless drill", LocalDate.of(2026, 10, 5), now)
 
     private fun decide(
-        state: RecordOverdueNoticeFailureCommandHandler.State,
+        state: NoticeState,
         reason: String = "refused",
-    ) = handler.decide(RecordOverdueNoticeFailure(l1, reason), state, now)
+    ) = RecordOverdueNoticeFailureDecider.decide(RecordOverdueNoticeFailure(l1, reason), state, now)
 
     private fun refusedWith(
         reason: String,

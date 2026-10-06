@@ -1,71 +1,42 @@
 package com.toolshed.recordoverduenoticefailure
 
+import com.toolshed.axon.EmailKey
+import com.toolshed.axon.FailureReportVerdict
+import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
-import com.toolshed.recordoverduenoticefailure.ProviderFailureReport.Interpretation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
-/** The translation's negative cases: an unsigned or wrongly signed report, or a bad shape, builds no command. */
+/** The translation's decision: a verified overdue-notice report builds the command; anything else builds nothing. */
 class OverdueNoticeFailureTranslationTest {
-    private val loan = UUID.nameUUIDFromBytes("l1".toByteArray())
-    private val genuine =
-        object : ProviderReportVerifier {
-            override fun isGenuine(report: ProviderFailureReport) = report.signature == "genuine"
-        }
-
-    private fun report(
-        reference: String? = loan.toString(),
-        reason: String? = "refused",
-        signature: String? = "genuine",
-    ) = ProviderFailureReport(reference, reason, signature)
+    private val loan = LoanId(UUID.nameUUIDFromBytes("l1".toByteArray()))
 
     @Test
-    fun `INV-ONF-3 a genuine report with a loan and a refused reason builds the command`() {
-        val result = ProviderFailureReport.interpret(report(), genuine)
-        assertThat(result).isEqualTo(Interpretation.Dispatch(RecordOverdueNoticeFailure(LoanId(loan), "refused")))
+    fun `INV-ONF-3 a verified report for an overdue notice with reason refused builds the command`() {
+        val command = OverdueNoticeFailureTranslation.commandFor(FailureReportVerdict.Verified(EmailKey.ForLoan(loan), "refused"))
+        assertThat(command).isEqualTo(RecordOverdueNoticeFailure(loan, "refused"))
     }
 
     @Test
-    fun `INV-ONF-3 a genuine report with reason bounced builds the command`() {
-        val result = ProviderFailureReport.interpret(report(reason = "bounced"), genuine)
-        assertThat(result).isEqualTo(Interpretation.Dispatch(RecordOverdueNoticeFailure(LoanId(loan), "bounced")))
+    fun `INV-ONF-3 a verified report with reason bounced builds the command`() {
+        val command = OverdueNoticeFailureTranslation.commandFor(FailureReportVerdict.Verified(EmailKey.ForLoan(loan), "bounced"))
+        assertThat(command).isEqualTo(RecordOverdueNoticeFailure(loan, "bounced"))
     }
 
     @Test
-    fun `INV-ONF-3 an unsigned report builds no command`() {
-        assertThat(ProviderFailureReport.interpret(report(signature = null), genuine))
-            .isEqualTo(Interpretation.Dropped("signature-not-verified"))
+    fun `INV-ONF-3 a rejected report builds no command`() {
+        assertThat(OverdueNoticeFailureTranslation.commandFor(FailureReportVerdict.Rejected("no-provider-selected"))).isNull()
     }
 
     @Test
-    fun `INV-ONF-3 a wrongly signed report builds no command`() {
-        assertThat(ProviderFailureReport.interpret(report(signature = "forged"), genuine))
-            .isEqualTo(Interpretation.Dropped("signature-not-verified"))
+    fun `INV-ONF-3 a verified report keyed to a hold, not a loan, builds no command`() {
+        val hold = EmailKey.ForHold(HoldId(UUID.nameUUIDFromBytes("h1".toByteArray())))
+        assertThat(OverdueNoticeFailureTranslation.commandFor(FailureReportVerdict.Verified(hold, "refused"))).isNull()
     }
 
     @Test
-    fun `INV-ONF-3 with the placeholder verifier every report is dropped`() {
-        val failClosed = FailClosedProviderReportVerifier()
-        assertThat(ProviderFailureReport.interpret(report(signature = "genuine"), failClosed))
-            .isEqualTo(Interpretation.Dropped("signature-not-verified"))
-    }
-
-    @Test
-    fun `INV-ONF-3 a reference that is not a loan UUID builds no command`() {
-        assertThat(ProviderFailureReport.interpret(report(reference = "not-a-uuid"), genuine))
-            .isEqualTo(Interpretation.Dropped("loan-reference-malformed"))
-    }
-
-    @Test
-    fun `INV-ONF-3 a reason other than refused or bounced builds no command`() {
-        assertThat(ProviderFailureReport.interpret(report(reason = "lost"), genuine))
-            .isEqualTo(Interpretation.Dropped("reason-not-refused-or-bounced"))
-    }
-
-    @Test
-    fun `INV-ONF-3 a missing reason builds no command`() {
-        assertThat(ProviderFailureReport.interpret(report(reason = null), genuine))
-            .isEqualTo(Interpretation.Dropped("reason-not-refused-or-bounced"))
+    fun `INV-ONF-3 a verified report with a reason other than refused or bounced builds no command`() {
+        assertThat(OverdueNoticeFailureTranslation.commandFor(FailureReportVerdict.Verified(EmailKey.ForLoan(loan), "lost"))).isNull()
     }
 }
