@@ -3,7 +3,7 @@ package com.toolshed.extendloan
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import com.toolshed.web.CommandDispatcher
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,7 +21,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors/{neighborId}/loans/{loanId}/extensions")
 class ExtendLoanController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     @PostMapping
     fun extend(
@@ -32,7 +32,7 @@ class ExtendLoanController(
     ): ResponseEntity<Void> {
         val command = ExtendLoan(NeighborId(neighborId), LoanId(loanId), body.fromDueDate)
         caller.requireBorrower(command)
-        commandGateway.sendAndWait(command)
+        dispatcher.send(command, Any::class.java)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 }
