@@ -2,6 +2,7 @@ package com.toolshed.changeemail
 
 import com.toolshed.axon.CommandRejected
 import com.toolshed.axon.NeighborId
+import com.toolshed.axon.decideAndAppend
 import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
@@ -12,7 +13,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 import org.axonframework.extension.spring.stereotype.EventSourced
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
-import org.axonframework.messaging.eventhandling.gateway.EventAppender
+import org.axonframework.messaging.core.unitofwork.ProcessingContext
 import org.axonframework.messaging.eventstreaming.EventCriteria
 import org.axonframework.modelling.annotation.InjectEntity
 import org.springframework.stereotype.Component
@@ -43,16 +44,15 @@ class ChangeEmailCommandHandler(
     fun handle(
         command: ChangeEmail,
         @InjectEntity state: State,
-        eventAppender: EventAppender,
+        context: ProcessingContext,
     ) {
         val recorded =
             try {
-                decide(command, state, clock.instant())
+                context.decideAndAppend { decide(command, state, clock.instant()) }
             } catch (refused: ChangeEmailRejected) {
                 logger.info { "change-email neighborId=${command.neighborId.value} outcome=refused reason=${refused.reason}" }
                 throw refused
             }
-        eventAppender.append(recorded)
         val outcome = if (recorded.isEmpty()) "repeat" else "recorded"
         logger.info { "change-email neighborId=${command.neighborId.value} outcome=$outcome" }
     }
