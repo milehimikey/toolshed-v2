@@ -5,8 +5,14 @@ import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.web.CallerArgumentResolver
 import io.axoniq.framework.testcontainer.AxonServerContainer
+import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
+import org.axonframework.messaging.eventhandling.EventMessage
+import org.axonframework.messaging.eventhandling.conversion.EventConverter
 import org.axonframework.messaging.eventhandling.gateway.EventGateway
+import org.axonframework.messaging.eventstreaming.StreamableEventSource
+import org.axonframework.messaging.eventstreaming.StreamingCondition
+import org.axonframework.messaging.eventstreaming.TrackingTokenSource
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -18,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -50,6 +57,15 @@ class SuspendNeighborEndToEndTest {
     @Autowired
     lateinit var unitOfWorkFactory: UnitOfWorkFactory
 
+    @Autowired
+    lateinit var eventSource: StreamableEventSource
+
+    @Autowired
+    lateinit var tokenSource: TrackingTokenSource
+
+    @Autowired
+    lateinit var eventConverter: EventConverter
+
     private val now = Instant.now()
 
     private fun record(vararg events: Any) {
@@ -61,7 +77,7 @@ class SuspendNeighborEndToEndTest {
     private fun suspend(
         neighbor: String,
         caller: (org.springframework.test.web.servlet.MockHttpServletRequestDsl) -> Unit = {},
-    ) = mockMvc.post("/neighbors/$neighbor/suspension") {
+    ) = mockMvc.post("/api/neighbors/$neighbor/suspension") {
         contentType = MediaType.APPLICATION_JSON
         caller(this)
     }
@@ -76,8 +92,9 @@ class SuspendNeighborEndToEndTest {
         record(NeighborRegistered(ana, "Ana", "ana@example.com", now))
         suspend(ana.value.toString()) { manager(it) }.andExpect {
             status { isCreated() }
-            header { string("Location", "/neighbors/${ana.value}/suspension") }
+            header { string("Location", "/api/neighbors/${ana.value}/suspension") }
         }
+        assertThat(suspendedFor(ana)).hasSize(1)
     }
 
     @Test
@@ -85,7 +102,9 @@ class SuspendNeighborEndToEndTest {
         val ana = NeighborId(UUID.randomUUID())
         record(NeighborRegistered(ana, "Ana", "ana@example.com", now))
         suspend(ana.value.toString()) { manager(it) }.andExpect { status { isCreated() } }
+        assertThat(suspendedFor(ana)).hasSize(1)
         suspend(ana.value.toString()) { manager(it) }.andExpect { status { isCreated() } }
+        assertThat(suspendedFor(ana)).hasSize(1)
     }
 
     @Test
@@ -137,4 +156,32 @@ class SuspendNeighborEndToEndTest {
     fun `a malformed neighbor id is bad input, 400, not a refusal`() {
         suspend("not-a-uuid") { manager(it) }.andExpect { status { isBadRequest() } }
     }
+
+    /** Reads the store from the start for a few seconds and returns the Neighbor Suspended events for [neighbor]. */
+    private fun suspendedFor(neighbor: NeighborId): List<NeighborSuspended> {
+        val found = mutableListOf<NeighborSuspended>()
+        val deadline = Instant.now().plus(Duration.ofSeconds(5))
+        unitOfWorkFactory
+            .create()
+            .executeWithResult { ctx ->
+                tokenSource.firstToken(ctx).thenApply { first ->
+                    val stream = eventSource.open(StreamingCondition.startingFrom(first), ctx)
+                    while (Instant.now().isBefore(deadline)) {
+                        stream.next().ifPresent { entry ->
+                            val message: EventMessage = entry.message()
+                            if (message.type().name() == NeighborSuspended::class.java.name) {
+                                decode(message)
+                                    ?.takeIf { it.neighborId == neighbor }
+                                    ?.let { found.add(it) }
+                            }
+                        }
+                    }
+                    stream.close()
+                }
+            }.join()
+        return found
+    }
+
+    private fun decode(message: EventMessage): NeighborSuspended? =
+        eventConverter.convertPayload<EventMessage, NeighborSuspended>(message, NeighborSuspended::class.java)
 }

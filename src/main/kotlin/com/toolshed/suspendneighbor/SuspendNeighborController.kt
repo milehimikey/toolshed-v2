@@ -13,14 +13,14 @@ import java.net.URI
 import java.util.UUID
 
 /**
- * Suspend Neighbor over REST: `POST /neighbors/{neighborId}/suspension`, from the shed manager only.
+ * Suspend Neighbor over REST: `POST /api/neighbors/{neighborId}/suspension`, from the shed manager only.
  * A repeat for an already-suspended neighbor succeeds and records nothing, and still answers `201`.
  */
 @RestController
 class SuspendNeighborController(
     private val dispatcher: CommandDispatcher,
 ) {
-    @PostMapping("/neighbors/{neighborId}/suspension")
+    @PostMapping("/api/neighbors/{neighborId}/suspension")
     fun suspend(
         caller: Caller,
         @PathVariable neighborId: UUID,
@@ -30,6 +30,6 @@ class SuspendNeighborController(
             notShedManager = Refusal("INV-SUS-1", "Only the shed manager can suspend neighbors."),
         )
         dispatcher.send(SuspendNeighbor(NeighborId(neighborId)), Any::class.java)
-        return ResponseEntity.created(URI.create("/neighbors/$neighborId/suspension")).build()
+        return ResponseEntity.created(URI.create("/api/neighbors/$neighborId/suspension")).build()
     }
 }
