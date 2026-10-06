@@ -169,7 +169,11 @@ and over Amendments 1–5, where they differ.
    Every neighbor command carries the `neighborId` it acts for. A request whose signed-in
    neighbor isn't that neighbor is refused `requester-mismatch`. A shed-manager command from a
    caller without the role is refused `not-shed-manager`. Both checks come before any other.
-   Neighbors only ever see their own account, loans and holds. This replaces the "self-identify,
+   Neighbors only ever see their own account, loans and holds. Views are guarded the same way. A
+   shed-manager view refuses other callers `not-shed-manager`, and a neighbor's own views refuse
+   another neighbor's data `requester-mismatch`. Any caller who isn't signed in is refused
+   `not-signed-in` everywhere except Sign Up. The system's own automations aren't signed in;
+   they are internal and aren't on the API. This replaces the "self-identify,
    no accounts" authorization baseline above. The PII baseline still applies to v2's personal
    data (neighbor name and email): it is kept with the loan and hold history, with no erasure.
 7. **Shape conventions.** Every slice follows these:
