@@ -1,0 +1,9 @@
+toolshed:
+  timezone: America/Denver
+  email:
+    provider: logging
+
+axon:
+  axonserver:
+    servers: localhost:8124
+    context: default
