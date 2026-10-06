@@ -169,6 +169,37 @@ class PlaceHoldDeciderTest {
     }
 
     @Test
+    fun `INV-HOLD-4 a waiting hold ended by its holder closing their account leaves the tool available`() {
+        // The drill is back in the shed with only Ben's hold waiting; Ben closes his account, so the tool is free again.
+        val state =
+            stateWith(
+                ToolAdded(drill, "Cordless drill", null, 7, now),
+                NeighborRegistered(ben, "Ben Cole", "ben@example.org", now),
+                NeighborRegistered(cleo, "Cleo Park", "cleo@example.org", now),
+                ToolReturned(loan, drill, now, LocalDate.of(2026, 10, 10), false),
+                HoldPlaced(h1, drill, ben, now),
+                NeighborAccountClosed(ben, false, now),
+            )
+        refusedWith("tool-available") { decide(state) }
+    }
+
+    @Test
+    fun `INV-HOLD-4 a set-aside hold ended by its holder closing their account leaves the tool available`() {
+        // The drill is set aside for Ben; he closes his account, which ends the set-aside, so Cleo's hold is refused.
+        val state =
+            stateWith(
+                ToolAdded(drill, "Cordless drill", null, 7, now),
+                NeighborRegistered(ben, "Ben Cole", "ben@example.org", now),
+                NeighborRegistered(cleo, "Cleo Park", "cleo@example.org", now),
+                ToolReturned(loan, drill, now, LocalDate.of(2026, 10, 10), false),
+                HoldPlaced(h1, drill, ben, now),
+                HoldFulfilled(h1, drill, ben, LocalDate.of(2026, 10, 13), now),
+                NeighborAccountClosed(ben, false, now),
+            )
+        refusedWith("tool-available") { decide(state) }
+    }
+
+    @Test
     fun `INV-HOLD-2 a free ladder with no holds is refused available`() {
         val state = stateWith(ToolAdded(ladder, "Ladder", null, 7, now), NeighborRegistered(ben, "Ben Cole", "ben@example.org", now))
         refusedWith("tool-available") { decide(state, tool = ladder, by = ben) }
