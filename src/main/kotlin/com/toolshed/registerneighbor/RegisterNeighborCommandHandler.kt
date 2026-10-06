@@ -2,6 +2,7 @@ package com.toolshed.registerneighbor
 
 import com.toolshed.axon.CommandRejected
 import com.toolshed.axon.NeighborId
+import com.toolshed.axon.decideAndAppend
 import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -10,7 +11,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 import org.axonframework.extension.spring.stereotype.EventSourced
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
-import org.axonframework.messaging.eventhandling.gateway.EventAppender
+import org.axonframework.messaging.core.unitofwork.ProcessingContext
 import org.axonframework.messaging.eventstreaming.EventCriteria
 import org.axonframework.modelling.annotation.InjectEntity
 import org.springframework.stereotype.Component
@@ -44,16 +45,15 @@ class RegisterNeighborCommandHandler(
     fun handle(
         command: RegisterNeighbor,
         @InjectEntity state: State,
-        eventAppender: EventAppender,
+        context: ProcessingContext,
     ) {
         val recorded =
             try {
-                decide(command, state, clock.instant())
+                context.decideAndAppend { decide(command, state, clock.instant()) }
             } catch (refused: RegisterNeighborRejected) {
                 logger.info { "register-neighbor neighborId=${command.neighborId.value} outcome=refused reason=${refused.reason}" }
                 throw refused
             }
-        eventAppender.append(recorded)
         val outcome = if (recorded.isEmpty()) "repeat" else "recorded"
         logger.info { "register-neighbor neighborId=${command.neighborId.value} outcome=$outcome" }
     }
