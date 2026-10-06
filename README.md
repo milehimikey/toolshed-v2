@@ -42,11 +42,11 @@ never connected to one another.
 | 1 | Add Tool | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/add-tool.md](slices/add-tool.md) |
 | 2 | Tool Inventory | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 3 | Tool Catalog | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
-| 4 | Register Neighbor | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/register-neighbor.md](slices/register-neighbor.md) |
+| 4 | Register Neighbor | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/5 | — | [slices/register-neighbor.md](slices/register-neighbor.md) |
 | 5 | Tool Inventory — neighbor registered | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 6 | Neighbors | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/neighbors.md](slices/neighbors.md) |
 | 7 | My Account | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-account.md](slices/my-account.md) |
-| 8 | Check Out Tool | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/check-out-tool.md](slices/check-out-tool.md) |
+| 8 | Check Out Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/8 | — | [slices/check-out-tool.md](slices/check-out-tool.md) |
 | 9 | Tool Inventory — tool checked out | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 10 | Tool Catalog — checked out | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 11 | My Loans | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
@@ -58,21 +58,21 @@ never connected to one another.
 | 17 | My Holds | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 18 | Tool Catalog — hold placed | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 19 | My Loans — hold placed | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
-| 20 | Cancel Hold | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/cancel-hold.md](slices/cancel-hold.md) |
+| 20 | Cancel Hold | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/10 | — | [slices/cancel-hold.md](slices/cancel-hold.md) |
 | 21 | My Holds — hold cancelled | State View | continuation of `my-holds` | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 22 | Tool Catalog — hold cancelled | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 23 | My Loans — hold cancelled | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 24 | Overdue Loans To Notify | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/overdue-loans-to-notify.md](slices/overdue-loans-to-notify.md) |
 | 25 | Send Overdue Notice | Translation | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/send-overdue-notice.md](slices/send-overdue-notice.md) |
 | 26 | My Loans — overdue notice sent | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
-| 27 | Record Overdue Notice Failure | Translation | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/record-overdue-notice-failure.md](slices/record-overdue-notice-failure.md) |
+| 27 | Record Overdue Notice Failure | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/11 | — | [slices/record-overdue-notice-failure.md](slices/record-overdue-notice-failure.md) |
 | 28 | My Loans — overdue notice failed | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 29 | Undelivered Notices | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
-| 30 | Change Email | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/change-email.md](slices/change-email.md) |
+| 30 | Change Email | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/12 | — | [slices/change-email.md](slices/change-email.md) |
 | 31 | My Account — email changed | State View | continuation of `my-account` | Mike Key | Mike Key | — | — | — | — | [slices/my-account.md](slices/my-account.md) |
 | 32 | Neighbors — email changed | State View | continuation of `neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/neighbors.md](slices/neighbors.md) |
 | 33 | Undelivered Notices — email changed | State View | continuation of `undelivered-notices` | Mike Key | Mike Key | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
-| 34 | Return Tool | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/return-tool.md](slices/return-tool.md) |
+| 34 | Return Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/15 | — | [slices/return-tool.md](slices/return-tool.md) |
 | 35 | Undelivered Notices — tool returned | State View | continuation of `undelivered-notices` | Mike Key | Mike Key | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
 | 36 | Tool Inventory — tool returned | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 37 | Tool Catalog — tool returned | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
@@ -85,7 +85,7 @@ never connected to one another.
 | 44 | Pickup Notices To Send | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/pickup-notices-to-send.md](slices/pickup-notices-to-send.md) |
 | 45 | Send Pickup Notice | Translation | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/send-pickup-notice.md](slices/send-pickup-notice.md) |
 | 46 | My Holds — pickup notice sent | State View | continuation of `my-holds` | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
-| 47 | Record Pickup Notice Failure | Translation | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/record-pickup-notice-failure.md](slices/record-pickup-notice-failure.md) |
+| 47 | Record Pickup Notice Failure | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/19 | — | [slices/record-pickup-notice-failure.md](slices/record-pickup-notice-failure.md) |
 | 48 | My Holds — pickup notice failed | State View | continuation of `my-holds` | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 49 | Undelivered Notices — pickup notice failed | State View | continuation of `undelivered-notices` | Mike Key | Mike Key | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
 | 50 | Pickups To Expire | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/pickups-to-expire.md](slices/pickups-to-expire.md) |
@@ -97,7 +97,7 @@ never connected to one another.
 | 56 | Neighbors To Flag | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/neighbors-to-flag.md](slices/neighbors-to-flag.md) |
 | 57 | Flag Neighbor | Automation | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/flag-neighbor.md](slices/flag-neighbor.md) |
 | 58 | Flagged Neighbors | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/flagged-neighbors.md](slices/flagged-neighbors.md) |
-| 59 | Suspend Neighbor | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/suspend-neighbor.md](slices/suspend-neighbor.md) |
+| 59 | Suspend Neighbor | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/18 | — | [slices/suspend-neighbor.md](slices/suspend-neighbor.md) |
 | 60 | Flagged Neighbors — neighbor suspended | State View | continuation of `flagged-neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/flagged-neighbors.md](slices/flagged-neighbors.md) |
 | 61 | Suspended Neighbors | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/suspended-neighbors.md](slices/suspended-neighbors.md) |
 | 62 | Neighbors — neighbor suspended | State View | continuation of `neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/neighbors.md](slices/neighbors.md) |

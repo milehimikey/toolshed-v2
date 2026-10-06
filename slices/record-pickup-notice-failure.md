@@ -2,7 +2,8 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Holds
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/pull/19
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
