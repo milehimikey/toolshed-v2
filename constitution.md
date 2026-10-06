@@ -158,3 +158,52 @@ they differ.
 5. **Read-model storage** is in-memory (a repository class in the slice package) until a slice's
    NFRs require otherwise; no JPA/JDBC dependency is added by a slice PR.
 
+
+Ratified by Mike Key on 2026-10-05 in decision brief 10 (A1 and A5), during the deep pass of the
+toolshed v2 slice docs (recorded in `.event-modeling.md`). They win over the sections above,
+and over Amendments 1–5, where they differ.
+
+6. **Identity and authorization.** Sign-in happens outside the model. It supplies each request
+   with the acting neighbor's `NeighborId`, or with the shed-manager role. It always resolves a
+   person to their newest account, and to a closed account only when there's no newer one.
+   Every neighbor command carries the `neighborId` it acts for. A request whose signed-in
+   neighbor isn't that neighbor is refused `requester-mismatch`. A shed-manager command from a
+   caller without the role is refused `not-shed-manager`. Both checks come before any other.
+   Neighbors only ever see their own account, loans and holds. Views are guarded the same way. A
+   shed-manager view refuses other callers `not-shed-manager`, and a neighbor's own views refuse
+   another neighbor's data `requester-mismatch`. Any caller who isn't signed in is refused
+   `not-signed-in` everywhere except Sign Up. The system's own automations aren't signed in;
+   they are internal and aren't on the API. This replaces the "self-identify,
+   no accounts" authorization baseline above. The PII baseline still applies to v2's personal
+   data (neighbor name and email): it is kept with the loan and hold history, with no erasure.
+7. **Shape conventions.** Every slice follows these:
+   - Ids (`ToolId`, `NeighborId`, `LoanId`, `HoldId`) are UUIDs chosen by the caller of the
+     command that creates the thing. A missing or malformed id is bad input, not an invariant
+     refusal.
+   - A command that creates a thing is safe to repeat. The same id with the same details
+     (compared after trimming) succeeds and records nothing, and the same id with different
+     details is refused. A command that changes something is also safe to repeat: when its
+     effect has already happened, it succeeds and records nothing. State-setting commands carry
+     no "from" value. Adding commands (Extend Loan) carry one.
+   - Event times are UTC `Instant`s that the handler sets. Every day rule uses calendar dates in
+     the shed's zone, from the `ZoneId`/`Clock` beans. Values computed once by a handler
+     (`dueDate`, `collectByDate`, `late`, `whileSuspended`) are carried on the event, and no
+     view recomputes them.
+   - Text is trimmed of any Unicode whitespace, and text that's empty after trimming is absent.
+   - A refusal records nothing and returns one reason: a stable kebab-case name plus the slice
+     doc's sentence. A name means the same condition in every slice.
+   - A lapsed or derived condition is worked out from current facts. State changes are never
+     replayed as "when X happens" steps.
+   - The two time-driven automations, the overdue-notice gateway and the pickup expirer, read
+     their lists every 5 minutes at any hour. Every other reaction acts when its list changes.
+8. **Email port.** `EmailGateway` in `com.toolshed.axon` replaces `SmsGateway` (Amendment 4). Its
+   contract:
+   - A notice is handed over with a key: the loan or hold id.
+   - The provider sends at most one email per key.
+   - It retries delivery itself and sends exactly one final failure report, quoting the key.
+   - Failure reports are signed, and the shed checks the signature before acting on one.
+
+   Outgoing notices are recorded first (Overdue Notice Sent, Pickup Notice Sent), carrying
+   what was sent. They are then handed over from an outbox driven by those events, and the
+   hand-off resumes after a restart until the provider accepts it. A logging stub stands in
+   until a provider is chosen.
