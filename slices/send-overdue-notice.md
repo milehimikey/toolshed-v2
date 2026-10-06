@@ -2,7 +2,9 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Loans
-status: draft
+status: reviewed
+reviewedBy: Mike Key
+reviewedOn: 2026-10-05
 version: 1
 ---
 # Slice: Send Overdue Notice
