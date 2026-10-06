@@ -4,7 +4,7 @@ import com.toolshed.axon.CommandRejected
 import java.time.Instant
 
 /** A refused failure report. [invariant] is the doc's INV id, [reason] the stable name, the message the doc sentence. */
-class RecordPickupNoticeFailureRefused(
+class RecordPickupNoticeFailureRejected(
     invariant: String,
     reason: String,
     sentence: String,
@@ -35,5 +35,5 @@ object RecordPickupNoticeFailureDecider {
         invariant: String,
         reason: String,
         sentence: String,
-    ): Nothing = throw RecordPickupNoticeFailureRefused(invariant, reason, sentence)
+    ): Nothing = throw RecordPickupNoticeFailureRejected(invariant, reason, sentence)
 }

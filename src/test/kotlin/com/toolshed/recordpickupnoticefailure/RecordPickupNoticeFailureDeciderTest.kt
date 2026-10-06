@@ -58,8 +58,8 @@ class RecordPickupNoticeFailureDeciderTest {
         reason: String,
     ) = RecordPickupNoticeFailureDecider.decide(RecordPickupNoticeFailure(hold, reason), s, now)
 
-    private fun refusal(block: () -> Unit): RecordPickupNoticeFailureRefused =
-        assertFailsWith<RecordPickupNoticeFailureRefused>(block = block)
+    private fun refusal(block: () -> Unit): RecordPickupNoticeFailureRejected =
+        assertFailsWith<RecordPickupNoticeFailureRejected>(block = block)
 
     @Test
     fun `INV-PNF-3 - a refused report is recorded for the hold with the reason and the time`() {

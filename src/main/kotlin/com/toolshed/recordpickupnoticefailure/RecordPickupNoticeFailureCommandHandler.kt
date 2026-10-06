@@ -25,7 +25,7 @@ class RecordPickupNoticeFailureCommandHandler(
         val events =
             try {
                 context.decideAndAppend { RecordPickupNoticeFailureDecider.decide(command, state, failedAt) }
-            } catch (refused: RecordPickupNoticeFailureRefused) {
+            } catch (refused: RecordPickupNoticeFailureRejected) {
                 logger.info { "pickup-notice-failure hold=${command.holdId.value} reason=${refused.reason}" }
                 throw refused
             }
