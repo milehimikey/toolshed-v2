@@ -15,6 +15,14 @@ class FailureReportVerifierTest {
     }
 
     @Test
+    fun `a verified verdict carries the same EmailKey the notice was handed over with`() {
+        val loan = EmailKey.ForLoan(LoanId(java.util.UUID.fromString("00000000-0000-0000-0000-0000000000a1")))
+        val verdict = FailureReportVerdict.Verified(loan, "bounced")
+        assertEquals(loan, verdict.key)
+        assertEquals("bounced", verdict.reason)
+    }
+
+    @Test
     fun `an unsigned report is rejected while no provider is selected`() {
         assertIs<FailureReportVerdict.Rejected>(verifier.verify(FailureReport("""{"reference":"loan"}""", null)))
     }

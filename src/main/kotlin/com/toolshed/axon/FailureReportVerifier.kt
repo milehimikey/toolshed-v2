@@ -15,9 +15,12 @@ data class FailureReport(
 
 /** What the verifier says about a report. Only [Verified] carries anything a slice may act on. */
 sealed interface FailureReportVerdict {
-    /** The report is genuine: [key] is the reference the shed gave the notice, [reason] the provider's reason. */
+    /**
+     * The report is genuine: [key] is the same [EmailKey] the shed handed the notice over with (the loan or
+     * hold it concerns), [reason] the provider's reason. Decoding the key once here keeps every slice on one type.
+     */
     data class Verified(
-        val key: String,
+        val key: EmailKey,
         val reason: String,
     ) : FailureReportVerdict
 
