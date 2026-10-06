@@ -6,6 +6,7 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
+import com.toolshed.axon.decideAndAppend
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
@@ -23,7 +24,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 import org.axonframework.extension.spring.stereotype.EventSourced
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
-import org.axonframework.messaging.eventhandling.gateway.EventAppender
+import org.axonframework.messaging.core.unitofwork.ProcessingContext
 import org.axonframework.messaging.eventstreaming.EventCriteria
 import org.axonframework.modelling.annotation.InjectEntity
 import org.springframework.stereotype.Component
@@ -52,16 +53,15 @@ class PlaceHoldCommandHandler(
     fun handle(
         command: PlaceHold,
         @InjectEntity state: State,
-        eventAppender: EventAppender,
+        context: ProcessingContext,
     ) {
         val recorded =
             try {
-                decide(command, state, clock.instant())
+                context.decideAndAppend { decide(command, state, clock.instant()) }
             } catch (refused: PlaceHoldRejected) {
                 logger.info { "place-hold holdId=${command.holdId.value} outcome=refused reason=${refused.reason}" }
                 throw refused
             }
-        eventAppender.append(recorded)
         val outcome = if (recorded.isEmpty()) "repeat" else "recorded"
         logger.info { "place-hold holdId=${command.holdId.value} outcome=$outcome" }
     }
