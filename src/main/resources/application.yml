@@ -1,2 +1,7 @@
 toolshed:
   timezone: America/Denver
+
+axon:
+  axonserver:
+    servers: localhost:8124
+    context: default
