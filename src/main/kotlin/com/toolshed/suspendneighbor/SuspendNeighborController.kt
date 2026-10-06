@@ -7,20 +7,20 @@ import com.toolshed.web.Refusal
 import com.toolshed.web.requireShedManager
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 import java.util.UUID
 
 /**
- * Suspend Neighbor over REST: `POST /api/neighbors/{neighborId}/suspension`, from the shed manager only.
- * A repeat for an already-suspended neighbor succeeds and records nothing, and still answers `201`.
+ * Suspend Neighbor over REST: `PUT /api/neighbors/{neighborId}/suspension`, from the shed manager only.
+ * PUT is the idempotent state-setting verb: a repeat for an already-suspended neighbor succeeds and records nothing, and still answers `201`.
  */
 @RestController
 class SuspendNeighborController(
     private val dispatcher: CommandDispatcher,
 ) {
-    @PostMapping("/api/neighbors/{neighborId}/suspension")
+    @PutMapping("/api/neighbors/{neighborId}/suspension")
     fun suspend(
         caller: Caller,
         @PathVariable neighborId: UUID,

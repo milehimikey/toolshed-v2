@@ -25,7 +25,7 @@ class SuspendNeighborCommandHandler(
         val events =
             try {
                 context.decideAndAppend { SuspendNeighborDecider.decide(command, state, now) }
-            } catch (refused: SuspendNeighborRefused) {
+            } catch (refused: SuspendNeighborRejected) {
                 logger.info { "suspend refused neighbor=${command.neighborId.value} reason=${refused.reason}" }
                 throw refused
             }

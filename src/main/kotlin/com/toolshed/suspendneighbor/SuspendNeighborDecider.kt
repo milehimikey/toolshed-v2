@@ -4,7 +4,7 @@ import com.toolshed.axon.CommandRejected
 import java.time.Instant
 
 /** A refused suspension. [invariant] is the doc's INV id, [reason] the stable name, the message the doc sentence. */
-class SuspendNeighborRefused(
+class SuspendNeighborRejected(
     invariant: String,
     reason: String,
     sentence: String,
@@ -30,5 +30,5 @@ object SuspendNeighborDecider {
         invariant: String,
         reason: String,
         sentence: String,
-    ): Nothing = throw SuspendNeighborRefused(invariant, reason, sentence)
+    ): Nothing = throw SuspendNeighborRejected(invariant, reason, sentence)
 }

@@ -39,7 +39,7 @@ class SuspendNeighborDeciderTest {
 
     private fun decide(s: NeighborStatusState) = SuspendNeighborDecider.decide(SuspendNeighbor(ana), s, now)
 
-    private fun refusal(block: () -> Unit): SuspendNeighborRefused = assertFailsWith<SuspendNeighborRefused>(block = block)
+    private fun refusal(block: () -> Unit): SuspendNeighborRejected = assertFailsWith<SuspendNeighborRejected>(block = block)
 
     @Test
     fun `INV-SUS-2 - an active neighbor is suspended, with the time recorded`() {

@@ -21,7 +21,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
@@ -77,7 +77,7 @@ class SuspendNeighborEndToEndTest {
     private fun suspend(
         neighbor: String,
         caller: (org.springframework.test.web.servlet.MockHttpServletRequestDsl) -> Unit = {},
-    ) = mockMvc.post("/api/neighbors/$neighbor/suspension") {
+    ) = mockMvc.put("/api/neighbors/$neighbor/suspension") {
         contentType = MediaType.APPLICATION_JSON
         caller(this)
     }
