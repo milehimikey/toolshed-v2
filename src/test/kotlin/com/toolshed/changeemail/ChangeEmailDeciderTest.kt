@@ -139,4 +139,33 @@ class ChangeEmailDeciderTest {
     fun `INV-CEM-2 an invalid email is reported before a held one`() {
         refusedWith("email-invalid") { decide(stateWith(*shed()), email = "ben.example.org") }
     }
+
+    // --- INV-CEM-12: lengths are user-visible characters, not code points ---
+
+    @Test
+    fun `INV-CEM-12 an email of 254 user-visible characters with a combining mark is accepted`() {
+        // "é" is e plus U+0301: two code points, one user-visible character.
+        val email = "é" + "a".repeat(241) + "@example.org"
+        assertThat(email.codePointCount(0, email.length)).isGreaterThan(254)
+        assertThat(decide(stateWith(*shed()), email = email)).hasSize(1)
+    }
+
+    @Test
+    fun `INV-CEM-12 an email of 255 user-visible characters with a combining mark is refused email-too-long`() {
+        val email = "é" + "a".repeat(242) + "@example.org"
+        refusedWith("email-too-long") { decide(stateWith(*shed()), email = email) }
+    }
+
+    // --- Text is trimmed of any Unicode whitespace; text empty after trimming is absent (INV-CEM-11) ---
+
+    @Test
+    fun `INV-CEM-11 an email wrapped in no-break space and ideographic space is trimmed and recorded`() {
+        val recorded = decide(stateWith(*shed()), email = " ana@example.org　")
+        assertThat(recorded.single().email).isEqualTo("ana@example.org")
+    }
+
+    @Test
+    fun `INV-CEM-11 an email of only an em space is missing`() {
+        refusedWith("email-missing") { decide(stateWith(*shed()), email = " ") }
+    }
 }
