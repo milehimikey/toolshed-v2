@@ -4,7 +4,7 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.web.Caller
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import com.toolshed.web.CommandDispatcher
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -22,7 +22,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors/{neighborId}/holds/{holdId}")
 class PlaceHoldController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     @PutMapping
     fun place(
@@ -33,7 +33,7 @@ class PlaceHoldController(
     ): ResponseEntity<Void> {
         val command = PlaceHold(HoldId(holdId), ToolId(body.toolId), NeighborId(neighborId))
         caller.requireHolder(command)
-        commandGateway.sendAndWait(command)
+        dispatcher.send(command, Any::class.java)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 }
