@@ -8,20 +8,17 @@ import com.toolshed.suspendneighbor.NeighborSuspended
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: each boundary, and the order the first failure is reported in. */
 class ChangeEmailDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = ChangeEmailCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val ana = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000a1"))
     private val ben = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000b1"))
 
-    private fun stateWith(vararg events: Any): ChangeEmailCommandHandler.State {
-        val state = ChangeEmailCommandHandler.State()
+    private fun stateWith(vararg events: Any): EmailRegistryState {
+        val state = EmailRegistryState()
         events.forEach { event ->
             when (event) {
                 is NeighborRegistered -> state.evolve(event)
@@ -43,10 +40,10 @@ class ChangeEmailDeciderTest {
         )
 
     private fun decide(
-        state: ChangeEmailCommandHandler.State,
+        state: EmailRegistryState,
         email: String? = "ana@example.org",
         by: NeighborId = ana,
-    ) = handler.decide(ChangeEmail(by, email), state, now)
+    ) = ChangeEmailDecider.decide(ChangeEmail(by, email), state, now)
 
     private fun refusedWith(
         reason: String,
@@ -87,7 +84,7 @@ class ChangeEmailDeciderTest {
     @Test
     fun `INV-CEM-5 the old email is free once the account has changed away from it`() {
         val state = stateWith(*shed(NeighborEmailChanged(ana, "ana@example.org", now)))
-        assertThat(handler.decide(ChangeEmail(ben, "ana@oldmail.example"), state, now)).hasSize(1)
+        assertThat(ChangeEmailDecider.decide(ChangeEmail(ben, "ana@oldmail.example"), state, now)).hasSize(1)
     }
 
     // --- INV-CEM-9: the same email as now succeeds with nothing recorded, compared exactly as typed ---

@@ -18,7 +18,7 @@ object ChangeEmailConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 EmailLedger::class.java,
-                ChangeEmailCommandHandler.State::class.java,
+                EmailRegistryState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule
