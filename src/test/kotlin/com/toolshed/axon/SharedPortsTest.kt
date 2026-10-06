@@ -42,4 +42,13 @@ class SharedPortsTest {
         assertIs<LoggingEmailGateway>(SharedPorts().selectEmailGateway("logging"))
         assertFailsWith<IllegalArgumentException> { SharedPorts().selectEmailGateway("nope") }
     }
+
+    @Test
+    fun `the failure report verifier is fail-closed and rejects every report`() {
+        assertIs<FailClosedFailureReportVerifier>(SharedPorts().selectFailureReportVerifier("logging"))
+        assertIs<FailureReportVerdict.Rejected>(
+            FailClosedFailureReportVerifier().verify(FailureReport("{}", "any-signature")),
+        )
+        assertFailsWith<IllegalArgumentException> { SharedPorts().selectFailureReportVerifier("nope") }
+    }
 }

@@ -30,6 +30,18 @@ class SharedPorts {
             "logging" -> LoggingEmailGateway()
             else -> throw IllegalArgumentException("unknown toolshed.email.provider '$provider'")
         }
+
+    /** Selects the failure-report verifier by the same `toolshed.email.provider`. Fail-closed until a provider is chosen. */
+    @Bean
+    fun failureReportVerifier(
+        @Value("\${toolshed.email.provider:logging}") provider: String,
+    ): FailureReportVerifier = selectFailureReportVerifier(provider)
+
+    internal fun selectFailureReportVerifier(provider: String): FailureReportVerifier =
+        when (provider) {
+            "logging" -> FailClosedFailureReportVerifier()
+            else -> throw IllegalArgumentException("unknown toolshed.email.provider '$provider'")
+        }
 }
 
 /** Stand-in until a provider is chosen. Logs keys only, never addresses or bodies. */
