@@ -14,16 +14,13 @@ import com.toolshed.retiretool.ToolRetired
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: each boundary, and the order the first failure is reported in. */
 class CancelHoldDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = CancelHoldCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val drill = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d1"))
     private val ben = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000b1"))
     private val cara = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000c1"))
@@ -31,8 +28,8 @@ class CancelHoldDeciderTest {
     private val h1 = HoldId(UUID.fromString("00000000-0000-0000-0000-0000000000e1"))
     private val h2 = HoldId(UUID.fromString("00000000-0000-0000-0000-0000000000e2"))
 
-    private fun stateWith(vararg events: Any): CancelHoldCommandHandler.State {
-        val state = CancelHoldCommandHandler.State()
+    private fun stateWith(vararg events: Any): CancelHoldState {
+        val state = CancelHoldState()
         events.forEach { event ->
             when (event) {
                 is HoldPlaced -> state.evolve(event)
@@ -50,10 +47,10 @@ class CancelHoldDeciderTest {
     }
 
     private fun cancel(
-        state: CancelHoldCommandHandler.State,
+        state: CancelHoldState,
         by: NeighborId = ben,
         hold: HoldId = h1,
-    ) = handler.decide(CancelHold(by, hold), state, now)
+    ) = CancelHoldDecider.decide(CancelHold(by, hold), state, now)
 
     private fun refusedWith(
         reason: String,

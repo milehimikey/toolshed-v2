@@ -18,7 +18,7 @@ object CancelHoldConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 HoldLedger::class.java,
-                CancelHoldCommandHandler.State::class.java,
+                CancelHoldState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule
