@@ -2,7 +2,7 @@ package com.toolshed.changeemail
 
 import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
-import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import com.toolshed.web.CommandDispatcher
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -18,7 +18,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors/{neighborId}/email")
 class ChangeEmailController(
-    private val commandGateway: CommandGateway,
+    private val dispatcher: CommandDispatcher,
 ) {
     @PutMapping
     fun change(
@@ -28,7 +28,7 @@ class ChangeEmailController(
     ): ResponseEntity<Void> {
         val command = ChangeEmail(NeighborId(neighborId), body.email)
         caller.requireAccountHolder(command)
-        commandGateway.sendAndWait(command)
+        dispatcher.send(command, Any::class.java)
         return ResponseEntity.noContent().build()
     }
 }
