@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.reflect.full.memberProperties
 import kotlin.test.assertEquals
 
 /** The DCB tag convention: each id field is tagged by its field name, so a key means the same thing on every event. */
@@ -79,5 +80,28 @@ class TagConventionTest {
         // Axon tags each list element, but its value would be the element's toString (`LoanId(value=...)`),
         // not the UUID that scalar loanId tags carry. So the list stays untagged rather than mixing formats.
         assertEquals(setOf(Tag.of("neighborId", neighbor.value.toString())), tagsOf(NeighborFlagged(neighbor, loans, now)))
+    }
+
+    @Test
+    fun `every one of the 20 events tags exactly its own id fields, by field name`() {
+        val events = SampleEvents.all()
+        assertEquals(20, events.map { it::class }.distinct().size)
+        events.forEach { event ->
+            // Expected: one tag per direct id-typed property, keyed by its name. A list of ids (NeighborFlagged.loanIds)
+            // is deliberately not in this set; it is the one documented exclusion.
+            val expected =
+                event::class
+                    .memberProperties
+                    .mapNotNull { prop ->
+                        when (val value = prop.getter.call(event)) {
+                            is ToolId -> Tag.of(prop.name, value.value.toString())
+                            is NeighborId -> Tag.of(prop.name, value.value.toString())
+                            is LoanId -> Tag.of(prop.name, value.value.toString())
+                            is HoldId -> Tag.of(prop.name, value.value.toString())
+                            else -> null
+                        }
+                    }.toSet()
+            assertEquals(expected, tagsOf(event), "tags of ${event::class.simpleName}")
+        }
     }
 }
