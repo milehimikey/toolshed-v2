@@ -207,3 +207,17 @@ and over Amendments 1–5, where they differ.
    what was sent. They are then handed over from an outbox driven by those events, and the
    hand-off resumes after a restart until the provider accepts it. A logging stub stands in
    until a provider is chosen.
+
+Ratified by Mike Key on 2026-10-06 (recorded in `.event-modeling.md`).
+
+9. **Identity mechanism and code style.** Amendment 6's sign-in is a layer in front of the app.
+   It passes the caller's identity (the neighbor's `NeighborId`, or the shed-manager role) in
+   trusted request headers. The app does no authentication of its own; it reads those headers.
+   The app must be reachable only through that layer.
+   - The headers are `X-Toolshed-Neighbor-Id` (the acting neighbor's `NeighborId`) and
+     `X-Toolshed-Role` (exactly `shed-manager` for the role).
+   - A malformed neighbor id means not signed in, and any role header on that request is
+     dropped too.
+
+   The formatter's "Kotlin official style" (Code style) means ktlint's `ktlint_official` code
+   style.
