@@ -18,7 +18,7 @@ object ReturnToolConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 LoanBook::class.java,
-                ReturnToolCommandHandler.State::class.java,
+                LoanBookState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule

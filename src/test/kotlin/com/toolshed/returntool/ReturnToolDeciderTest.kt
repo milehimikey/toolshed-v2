@@ -9,24 +9,21 @@ import com.toolshed.recordtoollost.ToolLost
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.UUID
 
 /** The pure decision, with no Axon fixture: the lateness boundary, the repeat, and the order of the first failure. */
 class ReturnToolDeciderTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
-    private val handler = ReturnToolCommandHandler(Clock.fixed(now, ZoneOffset.UTC))
     private val drill = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d1"))
     private val ana = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000a1"))
     private val ben = NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000b1"))
     private val loan = LoanId(UUID.fromString("00000000-0000-0000-0000-000000000011"))
     private val oct12 = LocalDate.of(2026, 10, 12)
 
-    private fun stateWith(vararg events: Any): ReturnToolCommandHandler.State {
-        val state = ReturnToolCommandHandler.State()
+    private fun stateWith(vararg events: Any): LoanBookState {
+        val state = LoanBookState()
         events.forEach { event ->
             when (event) {
                 is ToolCheckedOut -> state.evolve(event)
@@ -42,10 +39,10 @@ class ReturnToolDeciderTest {
     private fun checkedOut() = ToolCheckedOut(loan, drill, ana, 7, oct12, now)
 
     private fun decide(
-        state: ReturnToolCommandHandler.State,
+        state: LoanBookState,
         today: LocalDate,
         by: NeighborId = ana,
-    ) = handler.decide(ReturnTool(by, loan), state, today, now)
+    ) = ReturnToolDecider.decide(ReturnTool(by, loan), state, today, now)
 
     private fun refusedWith(
         reason: String,
