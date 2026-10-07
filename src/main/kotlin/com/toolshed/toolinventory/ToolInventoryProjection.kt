@@ -50,7 +50,6 @@ class ToolInventoryProjection(
 
     @EventHandler
     fun on(event: ToolLost) {
-        repository.endLoan(event.loanId)
-        repository.retire(event.toolId)
+        repository.recordLost(event.loanId, event.toolId)
     }
 }

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** The view's rules, applied to the in-memory read model: one row per added tool, retirement, loans, order, overdue. */
 class ToolInventoryRepositoryTest {
@@ -244,9 +245,34 @@ class ToolInventoryRepositoryTest {
         r.checkOut(l1, trimmer, ana, oct12)
         r.retire(trimmer)
         assertThat(r.rows(oct12).single().retired).isTrue()
-        // Tool Lost ends the loan and retires the tool.
-        r.endLoan(l1)
-        r.retire(trimmer)
+        r.recordLost(l1, trimmer)
         assertThat(r.rows(oct12)).isEmpty()
+    }
+
+    // --- Tool Lost is one step: a reader never sees the loan ended while the tool still lists ---
+
+    @Test
+    fun `Tool Lost is never seen half-applied by a concurrent reader`() {
+        val r = ToolInventoryRepository()
+        repeat(200) { i ->
+            val tool = ToolId(UUID.nameUUIDFromBytes("lost-tool-$i".toByteArray()))
+            val loan = LoanId(UUID.nameUUIDFromBytes("lost-loan-$i".toByteArray()))
+            r.add(tool, "Trimmer $i")
+            r.checkOut(loan, tool, ana, oct12)
+            val torn = AtomicBoolean(false)
+            val reader =
+                Thread {
+                    repeat(50) {
+                        r.rows(oct12).filter { it.toolId == tool }.forEach { row ->
+                            if (!row.onLoan && !row.retired) torn.set(true)
+                        }
+                    }
+                }
+            reader.start()
+            r.recordLost(loan, tool)
+            reader.join()
+            assertThat(torn.get()).isFalse()
+            assertThat(r.rows(oct12).none { it.toolId == tool }).isTrue()
+        }
     }
 }

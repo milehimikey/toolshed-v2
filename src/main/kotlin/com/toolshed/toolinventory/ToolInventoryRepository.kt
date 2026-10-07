@@ -11,11 +11,18 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * The in-memory read model behind the Tool Inventory view (Amendment 5). Every apply is idempotent (INV-TINV-8): a
- * replayed event leaves the view as it was after the first. Projection threads write while REST reads, so every map is
- * concurrent and every per-key change is one atomic step (compute or putIfAbsent), with loans as immutable records.
+ * replayed event leaves the view as it was after the first. Projection threads write while REST reads, so each tool is
+ * one immutable record replaced in one atomic step: its open loan and its retirement change together, so a reader never
+ * sees half of an event (Tool Lost ends the loan and retires the tool in one step).
  */
 @Component
 class ToolInventoryRepository {
+    private data class OpenLoan(
+        val loanId: LoanId,
+        val borrower: NeighborId,
+        val dueDate: LocalDate,
+    )
+
     private data class Tool(
         val toolId: ToolId,
         val name: String,
@@ -23,19 +30,12 @@ class ToolInventoryRepository {
         val defaultCheckoutPeriodDays: Int,
         val addedAt: Instant,
         val sequence: Long,
-    )
-
-    private data class Loan(
-        val loanId: LoanId,
-        val toolId: ToolId,
-        val borrower: NeighborId,
-        val dueDate: LocalDate,
-        val ended: Boolean,
+        val loan: OpenLoan? = null,
+        val retired: Boolean = false,
     )
 
     private val tools = ConcurrentHashMap<ToolId, Tool>()
-    private val retired: MutableSet<ToolId> = ConcurrentHashMap.newKeySet()
-    private val loans = ConcurrentHashMap<LoanId, Loan>()
+    private val toolOfLoan = ConcurrentHashMap<LoanId, ToolId>()
     private val names = ConcurrentHashMap<NeighborId, String>()
     private val sequence = AtomicLong()
 
@@ -62,34 +62,51 @@ class ToolInventoryRepository {
         borrower: NeighborId,
         dueDate: LocalDate,
     ) {
-        loans.putIfAbsent(loanId, Loan(loanId, toolId, borrower, dueDate, ended = false))
+        // A loan is applied once: a replayed checkout never reopens a loan that has already ended.
+        if (toolOfLoan.putIfAbsent(loanId, toolId) == null) {
+            tools.computeIfPresent(toolId) { _, tool -> tool.copy(loan = OpenLoan(loanId, borrower, dueDate)) }
+        }
     }
 
     fun extend(
         loanId: LoanId,
         dueDate: LocalDate,
     ) {
-        loans.computeIfPresent(loanId) { _, loan -> if (loan.ended) loan else loan.copy(dueDate = dueDate) }
+        val toolId = toolOfLoan[loanId] ?: return
+        tools.computeIfPresent(toolId) { _, tool ->
+            val loan = tool.loan
+            if (loan?.loanId == loanId) tool.copy(loan = loan.copy(dueDate = dueDate)) else tool
+        }
     }
 
     fun endLoan(loanId: LoanId) {
-        loans.computeIfPresent(loanId) { _, loan -> loan.copy(ended = true) }
+        val toolId = toolOfLoan[loanId] ?: return
+        tools.computeIfPresent(toolId) { _, tool -> if (tool.loan?.loanId == loanId) tool.copy(loan = null) else tool }
     }
 
     fun retire(toolId: ToolId) {
-        retired.add(toolId)
+        tools.computeIfPresent(toolId) { _, tool -> tool.copy(retired = true) }
+    }
+
+    /** Tool Lost: the loan ends and the tool is retired in one atomic step, so no reader sees one without the other. */
+    fun recordLost(
+        loanId: LoanId,
+        toolId: ToolId,
+    ) {
+        tools.computeIfPresent(toolId) { _, tool ->
+            val loan = tool.loan
+            tool.copy(loan = if (loan?.loanId == loanId) null else loan, retired = true)
+        }
     }
 
     /** The screen's rows, in INV-TINV-10 order, with overdue worked out against [today] in the shed's zone (INV-TINV-9). */
-    fun rows(today: LocalDate): List<ToolInventoryRow> {
-        val currentLoan = loans.values.filter { !it.ended }.associateBy { it.toolId }
-        return tools.values
-            .map { tool -> Triple(tool, currentLoan[tool.toolId], tool.toolId in retired) }
+    fun rows(today: LocalDate): List<ToolInventoryRow> =
+        tools.values
             // INV-TINV-2: a retired tool drops off once it is back in the shed or recorded lost.
-            .filter { (_, loan, isRetired) -> loan != null || !isRetired }
-            .sortedWith(
-                compareBy<Triple<Tool, Loan?, Boolean>>({ it.first.name.lowercase() }, { it.first.addedAt }, { it.first.sequence }),
-            ).map { (tool, loan, isRetired) ->
+            .filter { it.loan != null || !it.retired }
+            .sortedWith(compareBy({ it.name.lowercase() }, { it.addedAt }, { it.sequence }))
+            .map { tool ->
+                val loan = tool.loan
                 ToolInventoryRow(
                     toolId = tool.toolId,
                     name = tool.name,
@@ -101,11 +118,10 @@ class ToolInventoryRepository {
                     borrowerId = loan?.borrower,
                     borrowerName = loan?.let { names[it.borrower] },
                     dueDate = loan?.dueDate,
-                    retired = isRetired,
-                    canRetire = !isRetired,
+                    retired = tool.retired,
+                    canRetire = !tool.retired,
                     canMarkLost = loan != null,
                     overdue = loan != null && today.isAfter(loan.dueDate),
                 )
             }
-    }
 }
