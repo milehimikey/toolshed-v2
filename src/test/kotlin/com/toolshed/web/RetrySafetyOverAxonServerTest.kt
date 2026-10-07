@@ -37,13 +37,10 @@ class RetrySafetyOverAxonServerTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
-    @Autowired
-    lateinit var handlers: RetryProbeHandlers
-
     @BeforeEach
     fun resetCounters() {
-        handlers.flakyAttempts.set(0)
-        handlers.refuseAttempts.set(0)
+        RetryProbeCounters.flakyAttempts.set(0)
+        RetryProbeCounters.refuseAttempts.set(0)
     }
 
     @Test
@@ -52,13 +49,13 @@ class RetrySafetyOverAxonServerTest {
             status { isEqualTo(422) }
             jsonPath("$.reason") { value("probe-refused") }
         }
-        assertEquals(1, handlers.refuseAttempts.get())
+        assertEquals(1, RetryProbeCounters.refuseAttempts.get())
     }
 
     @Test
     fun `a persistent server failure is retried to three attempts, then 500`() {
         mockMvc.post("/probe-retry-flaky").andExpect { status { isEqualTo(500) } }
-        assertEquals(3, handlers.flakyAttempts.get())
+        assertEquals(3, RetryProbeCounters.flakyAttempts.get())
     }
 }
 
@@ -70,21 +67,27 @@ data class ProbeRetryRefuse(
     val id: String,
 )
 
+/**
+ * Attempt counters shared by every probe context. The probe command may be answered by any live context on the
+ * shared Axon Server, so the counts live here, not on a bean.
+ */
+object RetryProbeCounters {
+    val flakyAttempts = AtomicInteger()
+    val refuseAttempts = AtomicInteger()
+}
+
 @Profile("probes-retry")
 @Component
 class RetryProbeHandlers {
-    val flakyAttempts = AtomicInteger()
-    val refuseAttempts = AtomicInteger()
-
     @CommandHandler
     fun flaky(command: ProbeRetryFlaky) {
-        flakyAttempts.incrementAndGet()
+        RetryProbeCounters.flakyAttempts.incrementAndGet()
         throw IllegalStateException("persistent server failure")
     }
 
     @CommandHandler
     fun refuse(command: ProbeRetryRefuse) {
-        refuseAttempts.incrementAndGet()
+        RetryProbeCounters.refuseAttempts.incrementAndGet()
         throw object : CommandRejected("INV-PROBE-1", "probe-refused", "Probe refused.") {}
     }
 }

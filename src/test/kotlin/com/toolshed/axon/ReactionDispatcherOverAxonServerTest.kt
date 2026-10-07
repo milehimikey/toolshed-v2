@@ -2,10 +2,10 @@ package com.toolshed.axon
 
 import com.toolshed.race.ProbeClaim
 import com.toolshed.race.ProbeClaimed
+import com.toolshed.testsupport.SharedAxonServer
 import com.toolshed.web.CommandDispatcher
 import com.toolshed.web.ProbeRetryFlaky
-import com.toolshed.web.RetryProbeHandlers
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.web.RetryProbeCounters
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
 import org.axonframework.messaging.eventhandling.EventMessage
 import org.axonframework.messaging.eventhandling.conversion.EventConverter
@@ -18,8 +18,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -31,26 +29,19 @@ import kotlin.test.assertIs
 
 /** The internal reaction dispatcher over real Axon Server: race re-decides, a refusal is an outcome, a failure gives up. */
 @SpringBootTest
-@Testcontainers
-@ActiveProfiles("probes")
+@ActiveProfiles("probes-race", "probes-retry")
 class ReactionDispatcherOverAxonServerTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 
     @Autowired lateinit var reactions: ReactionDispatcher
 
     @Autowired lateinit var dispatcher: CommandDispatcher
-
-    @Autowired lateinit var handlers: RetryProbeHandlers
 
     @Autowired lateinit var unitOfWorkFactory: UnitOfWorkFactory
 
@@ -120,8 +111,8 @@ class ReactionDispatcherOverAxonServerTest {
 
     @Test
     fun `a persistent server failure gives up after three attempts`() {
-        handlers.flakyAttempts.set(0)
+        RetryProbeCounters.flakyAttempts.set(0)
         assertFailsWith<Exception> { reactions.send(ProbeRetryFlaky("x")) }
-        assertEquals(3, handlers.flakyAttempts.get())
+        assertEquals(3, RetryProbeCounters.flakyAttempts.get())
     }
 }
