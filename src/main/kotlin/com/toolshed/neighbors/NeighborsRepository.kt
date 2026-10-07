@@ -22,8 +22,17 @@ class NeighborsRepository {
 
     fun find(neighborId: NeighborId): NeighborEntry? = entries[neighborId]
 
-    fun save(entry: NeighborEntry) {
-        entries[entry.neighborId] = entry
+    /** Adds an account if it isn't there yet. A repeat changes nothing (atomic per key). */
+    fun register(entry: NeighborEntry) {
+        entries.putIfAbsent(entry.neighborId, entry)
+    }
+
+    /** Applies [change] to one account in a single atomic step, so concurrent events never lose an update. */
+    fun update(
+        neighborId: NeighborId,
+        change: (NeighborEntry) -> NeighborEntry,
+    ) {
+        entries.computeIfPresent(neighborId) { _, current -> change(current) }
     }
 
     fun all(): List<NeighborEntry> = entries.values.toList()

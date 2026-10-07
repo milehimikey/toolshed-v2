@@ -19,33 +19,26 @@ class NeighborsProjection(
     @EventHandler
     fun on(event: NeighborRegistered) {
         // One entry per account: a repeat of the same registration changes nothing.
-        if (repository.find(event.neighborId) != null) return
-        repository.save(NeighborEntry(event.neighborId, event.name, event.email, event.registeredAt))
+        repository.register(NeighborEntry(event.neighborId, event.name, event.email, event.registeredAt))
     }
 
     @EventHandler
     fun on(event: NeighborEmailChanged) {
-        val entry = repository.find(event.neighborId) ?: return
-        repository.save(entry.copy(email = event.email))
+        repository.update(event.neighborId) { it.copy(email = event.email) }
     }
 
     @EventHandler
     fun on(event: NeighborSuspended) {
-        val entry = repository.find(event.neighborId) ?: return
-        if (entry.closed) return
-        repository.save(entry.copy(suspended = true))
+        repository.update(event.neighborId) { if (it.closed) it else it.copy(suspended = true) }
     }
 
     @EventHandler
     fun on(event: NeighborReinstated) {
-        val entry = repository.find(event.neighborId) ?: return
-        if (entry.closed) return
-        repository.save(entry.copy(suspended = false))
+        repository.update(event.neighborId) { if (it.closed) it else it.copy(suspended = false) }
     }
 
     @EventHandler
     fun on(event: NeighborAccountClosed) {
-        val entry = repository.find(event.neighborId) ?: return
-        repository.save(entry.copy(closed = true))
+        repository.update(event.neighborId) { it.copy(closed = true) }
     }
 }
