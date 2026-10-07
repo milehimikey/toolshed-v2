@@ -1,7 +1,7 @@
 package com.toolshed.web
 
 import com.toolshed.axon.CommandRejected
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.testsupport.SharedAxonServer
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,39 +18,29 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 
 /** Retry policy over real Axon Server: server failures retry to 3 attempts, refusals never retry. */
 @SpringBootTest
-@ActiveProfiles("probes")
+@ActiveProfiles("probes-retry")
 @AutoConfigureMockMvc
-@Testcontainers
 class RetrySafetyOverAxonServerTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 
     @Autowired
     lateinit var mockMvc: MockMvc
 
-    @Autowired
-    lateinit var handlers: RetryProbeHandlers
-
     @BeforeEach
     fun resetCounters() {
-        handlers.flakyAttempts.set(0)
-        handlers.refuseAttempts.set(0)
+        RetryProbeCounters.flakyAttempts.set(0)
+        RetryProbeCounters.refuseAttempts.set(0)
     }
 
     @Test
@@ -59,13 +49,13 @@ class RetrySafetyOverAxonServerTest {
             status { isEqualTo(422) }
             jsonPath("$.reason") { value("probe-refused") }
         }
-        assertEquals(1, handlers.refuseAttempts.get())
+        assertEquals(1, RetryProbeCounters.refuseAttempts.get())
     }
 
     @Test
     fun `a persistent server failure is retried to three attempts, then 500`() {
         mockMvc.post("/probe-retry-flaky").andExpect { status { isEqualTo(500) } }
-        assertEquals(3, handlers.flakyAttempts.get())
+        assertEquals(3, RetryProbeCounters.flakyAttempts.get())
     }
 }
 
@@ -77,26 +67,32 @@ data class ProbeRetryRefuse(
     val id: String,
 )
 
-@Profile("probes")
-@Component
-class RetryProbeHandlers {
+/**
+ * Attempt counters shared by every probe context. The probe command may be answered by any live context on the
+ * shared Axon Server, so the counts live here, not on a bean.
+ */
+object RetryProbeCounters {
     val flakyAttempts = AtomicInteger()
     val refuseAttempts = AtomicInteger()
+}
 
+@Profile("probes-retry")
+@Component
+class RetryProbeHandlers {
     @CommandHandler
     fun flaky(command: ProbeRetryFlaky) {
-        flakyAttempts.incrementAndGet()
+        RetryProbeCounters.flakyAttempts.incrementAndGet()
         throw IllegalStateException("persistent server failure")
     }
 
     @CommandHandler
     fun refuse(command: ProbeRetryRefuse) {
-        refuseAttempts.incrementAndGet()
+        RetryProbeCounters.refuseAttempts.incrementAndGet()
         throw object : CommandRejected("INV-PROBE-1", "probe-refused", "Probe refused.") {}
     }
 }
 
-@Profile("probes")
+@Profile("probes-retry")
 @RestController
 class RetryProbeController(
     private val dispatcher: CommandDispatcher,

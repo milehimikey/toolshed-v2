@@ -21,7 +21,7 @@ data class ProbeEcho(
 
 class ProbeRejected : CommandRejected("INV-PROBE-1", "probe-refused", "Probe refused.")
 
-@Profile("probes")
+@Profile("probes-refusal")
 @Component
 class ProbeHandlers {
     @CommandHandler
@@ -31,7 +31,7 @@ class ProbeHandlers {
     fun echo(command: ProbeEcho): String = "pong"
 }
 
-@Profile("probes")
+@Profile("probes-refusal")
 @RestController
 class ProbeController(
     private val dispatcher: CommandDispatcher,

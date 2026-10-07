@@ -1,6 +1,6 @@
 package com.toolshed.web
 
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.testsupport.SharedAxonServer
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -11,24 +11,17 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 
 /** A refusal thrown in a handler reaches the client as a 422 with its invariant and reason, over real Axon Server. */
 @SpringBootTest
-@ActiveProfiles("probes")
+@ActiveProfiles("probes-refusal")
 @AutoConfigureMockMvc
-@Testcontainers
 class CommandRefusalOverAxonServerTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 

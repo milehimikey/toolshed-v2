@@ -49,7 +49,7 @@ class ProbeClaimState
         }
     }
 
-@Profile("probes")
+@Profile("probes-race")
 @Component
 class ProbeClaimHandler {
     @CommandHandler
@@ -65,7 +65,7 @@ class ProbeClaimHandler {
     }
 }
 
-@Profile("probes")
+@Profile("probes-race")
 @RestController
 class RaceProbeController(
     private val dispatcher: CommandDispatcher,
@@ -79,7 +79,7 @@ class RaceProbeController(
     }
 }
 
-@Profile("probes")
+@Profile("probes-race")
 @Configuration
 class RaceProbeWiring {
     @Bean
