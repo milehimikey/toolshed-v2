@@ -9,6 +9,7 @@ import com.toolshed.axon.ToolId
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.placehold.HoldPlaced
 import com.toolshed.registerneighbor.NeighborRegistered
+import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import io.axoniq.framework.testcontainer.AxonServerContainer
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
@@ -120,6 +121,16 @@ class ToolInventoryEndpointTest {
         val before = rowFor(tool)
 
         publish(HoldPlaced(HoldId(UUID.randomUUID()), tool, ben, now))
+        publish(
+            OverdueNoticeSent(
+                LoanId(UUID.randomUUID()),
+                "ana-${ana.value}@example.org",
+                "Ana Ruiz",
+                "Ladder",
+                LocalDate.now().plusDays(7),
+                now,
+            ),
+        )
 
         assertThat(rowFor(tool)).isEqualTo(before)
     }

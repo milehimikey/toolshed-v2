@@ -179,8 +179,9 @@ class ToolInventoryRepositoryTest {
 
     // --- Projection threads write while REST reads: no errors, no lost updates ---
 
+    /** The view-concurrency ruling: projection threads write while readers query; no error, and the final view is right. */
     @Test
-    fun `INV-TINV-8 concurrent writes and reads leave a consistent final view`() {
+    fun `concurrent writes and reads leave a consistent final view`() {
         val r = ToolInventoryRepository()
         val tools = (1..300).map { ToolId(UUID.nameUUIDFromBytes("tool-$it".toByteArray())) }
         val borrower = ana
@@ -221,5 +222,31 @@ class ToolInventoryRepositoryTest {
         val rows = r.rows(oct12)
         assertThat(rows).hasSize(300)
         assertThat(rows.none { it.onLoan }).isTrue()
+    }
+
+    // --- INV-TINV-3: a neighbor registering changes no entry ---
+
+    @Test
+    fun `INV-TINV-3 a neighbor registering leaves the entries of tools in the shed unchanged`() {
+        val r = ToolInventoryRepository()
+        r.add(drill, "Cordless drill")
+        val before = r.rows(oct12)
+        r.registerNeighbor(NeighborId(UUID.fromString("00000000-0000-0000-0000-0000000000b9")), "Ben Cole")
+        assertThat(r.rows(oct12)).isEqualTo(before)
+    }
+
+    // --- INV-TINV-2: a tool retired while out, then recorded lost, drops off ---
+
+    @Test
+    fun `INV-TINV-2 a tool retired while out and then recorded lost drops off`() {
+        val r = ToolInventoryRepository()
+        r.add(trimmer, "Hedge trimmer")
+        r.checkOut(l1, trimmer, ana, oct12)
+        r.retire(trimmer)
+        assertThat(r.rows(oct12).single().retired).isTrue()
+        // Tool Lost ends the loan and retires the tool.
+        r.endLoan(l1)
+        r.retire(trimmer)
+        assertThat(r.rows(oct12)).isEmpty()
     }
 }
