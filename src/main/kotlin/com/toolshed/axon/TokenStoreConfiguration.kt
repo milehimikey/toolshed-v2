@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 
 /**
  * The one token store for every event processor. Read models are in-memory (Amendment 5), so their tokens are
- * in-memory too: a restart starts each processor from a fresh token, which replays the stream from its head and
+ * in-memory too: a restart starts each processor from a fresh token, which replays the stream from the start and
  * rebuilds every view. A durable store here would make a restarted view come back empty.
  */
 @Configuration

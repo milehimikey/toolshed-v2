@@ -18,7 +18,7 @@ import java.util.UUID
 
 /**
  * A view rebuilds on restart: the in-memory token store starts each processor from a fresh token, so a new
- * context replays the stream from its head into the probe. Runs against a real Axon Server.
+ * context replays the stream from the start into the probe. Runs against a real Axon Server.
  */
 @Testcontainers
 class TokenStoreRebuildTest {
@@ -32,6 +32,7 @@ class TokenStoreRebuildTest {
         SpringApplicationBuilder(ProbeApplication::class.java).run(
             "--axon.axonserver.servers=${axonServer.axonServerAddress}",
             "--spring.main.web-application-type=none",
+            "--spring.profiles.active=probes",
         )
 
     @Test

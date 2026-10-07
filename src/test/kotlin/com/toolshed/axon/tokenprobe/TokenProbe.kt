@@ -1,6 +1,7 @@
 package com.toolshed.axon.tokenprobe
 
 import org.axonframework.messaging.eventhandling.annotation.EventHandler
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -11,6 +12,7 @@ data class ProbeEvent(
 )
 
 @Component
+@Profile("probes")
 class TokenProbe {
     val seen: MutableSet<UUID> = ConcurrentHashMap.newKeySet()
 
