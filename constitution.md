@@ -260,3 +260,19 @@ Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.le
         closure, retirement, return, email, cancel, reinstate) answers `204 No Content`.
 
       (Added 2026-10-06 with Mike Key's approval.)
+
+Approved by Mike Key on 2026-10-07 ("yes to amendment 11", relayed by deliver.lead; recorded in
+`.event-modeling.md`).
+
+11. **Read-model concurrency.** These refine Amendments 2 and 5.
+    - **One segment.** Every streaming event processor runs on one segment. That is configured
+      once, in `com.toolshed.axon`. So one thread applies events in the order they were
+      recorded, and views that combine events across tools, loans and holds rely on that order.
+    - **Thread-safe stores.** A read model's in-memory store (Amendment 5) must be safe to read
+      while its processor writes. Use either concurrent maps with atomic per-key updates, or an
+      immutable snapshot swapped atomically. Plain unsynchronised collections are not used.
+    - **Concurrency test.** Every State View slice includes a test in which a writer applies many
+      events while readers query. It must show no exception and consistent results.
+    - **Replay.** Processors replay all history on restart (Decisions log, 2026-10-07).
+      Automation and translation slices therefore include a test showing that a replay is
+      harmless.
