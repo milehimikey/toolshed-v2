@@ -6,14 +6,17 @@ import com.toolshed.axon.ToolId
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
- * The in-memory read model behind the Tool Inventory view (Amendment 5). Every apply is idempotent (INV-TINV-8):
- * a replayed event leaves the view as it was after the first. Mutable maps, because the shed's history is long.
+ * The in-memory read model behind the Tool Inventory view (Amendment 5). Every apply is idempotent (INV-TINV-8): a
+ * replayed event leaves the view as it was after the first. Projection threads write while REST reads, so every map is
+ * concurrent and every per-key change is one atomic step (compute or putIfAbsent), with loans as immutable records.
  */
 @Component
 class ToolInventoryRepository {
-    private class Tool(
+    private data class Tool(
         val toolId: ToolId,
         val name: String,
         val description: String?,
@@ -22,19 +25,19 @@ class ToolInventoryRepository {
         val sequence: Long,
     )
 
-    private class Loan(
+    private data class Loan(
         val loanId: LoanId,
         val toolId: ToolId,
         val borrower: NeighborId,
-        var dueDate: LocalDate,
-        var ended: Boolean,
+        val dueDate: LocalDate,
+        val ended: Boolean,
     )
 
-    private val tools = linkedMapOf<ToolId, Tool>()
-    private val retired = mutableSetOf<ToolId>()
-    private val loans = mutableMapOf<LoanId, Loan>()
-    private val names = mutableMapOf<NeighborId, String>()
-    private var sequence = 0L
+    private val tools = ConcurrentHashMap<ToolId, Tool>()
+    private val retired: MutableSet<ToolId> = ConcurrentHashMap.newKeySet()
+    private val loans = ConcurrentHashMap<LoanId, Loan>()
+    private val names = ConcurrentHashMap<NeighborId, String>()
+    private val sequence = AtomicLong()
 
     fun addTool(
         toolId: ToolId,
@@ -43,8 +46,7 @@ class ToolInventoryRepository {
         defaultCheckoutPeriodDays: Int,
         addedAt: Instant,
     ) {
-        if (toolId in tools) return
-        tools[toolId] = Tool(toolId, name, description, defaultCheckoutPeriodDays, addedAt, sequence++)
+        tools.computeIfAbsent(toolId) { Tool(toolId, name, description, defaultCheckoutPeriodDays, addedAt, sequence.getAndIncrement()) }
     }
 
     fun registerNeighbor(
@@ -60,19 +62,18 @@ class ToolInventoryRepository {
         borrower: NeighborId,
         dueDate: LocalDate,
     ) {
-        if (loanId in loans) return
-        loans[loanId] = Loan(loanId, toolId, borrower, dueDate, ended = false)
+        loans.putIfAbsent(loanId, Loan(loanId, toolId, borrower, dueDate, ended = false))
     }
 
     fun extend(
         loanId: LoanId,
         dueDate: LocalDate,
     ) {
-        loans[loanId]?.let { if (!it.ended) it.dueDate = dueDate }
+        loans.computeIfPresent(loanId) { _, loan -> if (loan.ended) loan else loan.copy(dueDate = dueDate) }
     }
 
     fun endLoan(loanId: LoanId) {
-        loans[loanId]?.ended = true
+        loans.computeIfPresent(loanId) { _, loan -> loan.copy(ended = true) }
     }
 
     fun retire(toolId: ToolId) {
@@ -83,11 +84,7 @@ class ToolInventoryRepository {
     fun rows(today: LocalDate): List<ToolInventoryRow> {
         val currentLoan = loans.values.filter { !it.ended }.associateBy { it.toolId }
         return tools.values
-            .map { tool ->
-                val loan = currentLoan[tool.toolId]
-                val isRetired = tool.toolId in retired
-                Triple(tool, loan, isRetired)
-            }
+            .map { tool -> Triple(tool, currentLoan[tool.toolId], tool.toolId in retired) }
             // INV-TINV-2: a retired tool drops off once it is back in the shed or recorded lost.
             .filter { (_, loan, isRetired) -> loan != null || !isRetired }
             .sortedWith(

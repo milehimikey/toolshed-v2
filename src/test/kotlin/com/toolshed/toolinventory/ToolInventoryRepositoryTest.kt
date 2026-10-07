@@ -176,4 +176,50 @@ class ToolInventoryRepositoryTest {
         r.add(second, "Drill", at = now)
         assertThat(r.rows(oct12).map { it.toolId }).containsExactly(first, second)
     }
+
+    // --- Projection threads write while REST reads: no errors, no lost updates ---
+
+    @Test
+    fun `INV-TINV-8 concurrent writes and reads leave a consistent final view`() {
+        val r = ToolInventoryRepository()
+        val tools = (1..300).map { ToolId(UUID.nameUUIDFromBytes("tool-$it".toByteArray())) }
+        val borrower = ana
+        val writers =
+            java.util.concurrent.Executors
+                .newFixedThreadPool(8)
+        val failures = java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
+        val done =
+            java.util.concurrent.atomic
+                .AtomicBoolean(false)
+
+        val reader =
+            Thread {
+                while (!done.get()) {
+                    try {
+                        r.rows(oct12)
+                    } catch (ex: Throwable) {
+                        failures.add(ex)
+                    }
+                }
+            }
+        reader.start()
+
+        tools.forEachIndexed { i, tool ->
+            writers.submit {
+                val loan = LoanId(UUID.nameUUIDFromBytes("loan-$i".toByteArray()))
+                r.addTool(tool, "Tool $i", null, 7, now)
+                r.checkOut(loan, tool, borrower, oct12)
+                r.endLoan(loan)
+            }
+        }
+        writers.shutdown()
+        assertThat(writers.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)).isTrue()
+        done.set(true)
+        reader.join()
+
+        assertThat(failures).isEmpty()
+        val rows = r.rows(oct12)
+        assertThat(rows).hasSize(300)
+        assertThat(rows.none { it.onLoan }).isTrue()
+    }
 }
