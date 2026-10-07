@@ -10,7 +10,6 @@ import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.core.unitofwork.ProcessingContext
-import org.axonframework.messaging.eventhandling.gateway.EventAppender
 import org.axonframework.modelling.annotation.InjectEntity
 import org.axonframework.modelling.annotation.TargetEntityId
 import org.springframework.context.annotation.Bean
@@ -58,9 +57,8 @@ class ProbeClaimHandler {
         command: ProbeClaim,
         @InjectEntity state: ProbeClaimState,
         context: ProcessingContext,
-        appender: EventAppender,
     ) {
-        decideAndAppend(context, appender) {
+        context.decideAndAppend {
             if (state.isClaimed) throw ProbeClaimedRejected()
             listOf(ProbeClaimed(command.claimId))
         }
