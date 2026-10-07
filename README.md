@@ -39,7 +39,7 @@ never connected to one another.
 <!-- GENERATED:slices:start -->
 | # | Slice | Pattern | Status | Reviewed by | Ratified by | Owner | Tracking | Implemented in | Conformed | Design doc |
 |---|-------|---------|--------|-------------|-------------|-------|----------|----------------|-----------|------------|
-| 1 | Add Tool | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/add-tool.md](slices/add-tool.md) |
+| 1 | Add Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/20 | — | [slices/add-tool.md](slices/add-tool.md) |
 | 2 | Tool Inventory | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 3 | Tool Catalog | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 4 | Register Neighbor | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/5 | — | [slices/register-neighbor.md](slices/register-neighbor.md) |
@@ -102,23 +102,23 @@ never connected to one another.
 | 61 | Suspended Neighbors | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/suspended-neighbors.md](slices/suspended-neighbors.md) |
 | 62 | Neighbors — neighbor suspended | State View | continuation of `neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/neighbors.md](slices/neighbors.md) |
 | 63 | My Account — neighbor suspended | State View | continuation of `my-account` | Mike Key | Mike Key | — | — | — | — | [slices/my-account.md](slices/my-account.md) |
-| 64 | Reinstate Neighbor | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/reinstate-neighbor.md](slices/reinstate-neighbor.md) |
+| 64 | Reinstate Neighbor | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/25 | — | [slices/reinstate-neighbor.md](slices/reinstate-neighbor.md) |
 | 65 | Suspended Neighbors — neighbor reinstated | State View | continuation of `suspended-neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/suspended-neighbors.md](slices/suspended-neighbors.md) |
 | 66 | Neighbors — neighbor reinstated | State View | continuation of `neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/neighbors.md](slices/neighbors.md) |
 | 67 | My Account — neighbor reinstated | State View | continuation of `my-account` | Mike Key | Mike Key | — | — | — | — | [slices/my-account.md](slices/my-account.md) |
-| 68 | Retire Tool | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/retire-tool.md](slices/retire-tool.md) |
+| 68 | Retire Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/26 | — | [slices/retire-tool.md](slices/retire-tool.md) |
 | 69 | Tool Inventory — tool retired | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 70 | Tool Catalog — tool retired | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 71 | My Holds — tool retired | State View | continuation of `my-holds` | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 72 | My Loans — tool retired | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 73 | Undelivered Notices — tool retired | State View | continuation of `undelivered-notices` | Mike Key | Mike Key | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
-| 74 | Record Tool Lost | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/record-tool-lost.md](slices/record-tool-lost.md) |
+| 74 | Record Tool Lost | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/24 | — | [slices/record-tool-lost.md](slices/record-tool-lost.md) |
 | 75 | Tool Inventory — tool lost | State View | continuation of `tool-inventory` | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 76 | Tool Catalog — tool lost | State View | continuation of `tool-catalog` | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 77 | My Loans — tool lost | State View | continuation of `my-loans` | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 78 | My Holds — tool lost | State View | continuation of `my-holds` | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 79 | Undelivered Notices — tool lost | State View | continuation of `undelivered-notices` | Mike Key | Mike Key | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
-| 80 | Close Account | State Change | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/close-account.md](slices/close-account.md) |
+| 80 | Close Account | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/27 | — | [slices/close-account.md](slices/close-account.md) |
 | 81 | Flagged Neighbors — account closed | State View | continuation of `flagged-neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/flagged-neighbors.md](slices/flagged-neighbors.md) |
 | 82 | Suspended Neighbors — account closed | State View | continuation of `suspended-neighbors` | Mike Key | Mike Key | — | — | — | — | [slices/suspended-neighbors.md](slices/suspended-neighbors.md) |
 | 83 | My Account — account closed | State View | continuation of `my-account` | Mike Key | Mike Key | — | — | — | — | [slices/my-account.md](slices/my-account.md) |
