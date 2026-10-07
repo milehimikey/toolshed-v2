@@ -109,21 +109,22 @@ class ToolInventoryEndpointTest {
     }
 
     @Test
-    fun `INV-TINV-3 a hold placed on a listed tool leaves its entry unchanged`() {
+    fun `INV-TINV-3 a hold placed on a listed tool and an overdue notice for its loan leave the entry unchanged`() {
         val tool = ToolId(UUID.randomUUID())
         val ana = NeighborId(UUID.randomUUID())
         val ben = NeighborId(UUID.randomUUID())
+        val loan = LoanId(UUID.randomUUID())
         publish(
             ToolAdded(tool, "Ladder ${tool.value}", null, 7, now),
             NeighborRegistered(ana, "Ana Ruiz", "ana-${ana.value}@example.org", now),
-            ToolCheckedOut(LoanId(UUID.randomUUID()), tool, ana, 7, LocalDate.now().plusDays(7), now),
+            ToolCheckedOut(loan, tool, ana, 7, LocalDate.now().plusDays(7), now),
         )
         val before = rowFor(tool)
 
         publish(HoldPlaced(HoldId(UUID.randomUUID()), tool, ben, now))
         publish(
             OverdueNoticeSent(
-                LoanId(UUID.randomUUID()),
+                loan,
                 "ana-${ana.value}@example.org",
                 "Ana Ruiz",
                 "Ladder",
