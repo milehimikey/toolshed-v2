@@ -87,23 +87,23 @@ class SuspendNeighborEndToEndTest {
     }
 
     @Test
-    fun `INV-SUS-1 - the shed manager suspends an active neighbor and gets 201`() {
+    fun `INV-SUS-1 - the shed manager suspends an active neighbor and gets 204`() {
         val ana = NeighborId(UUID.randomUUID())
         record(NeighborRegistered(ana, "Ana", "ana@example.com", now))
         suspend(ana.value.toString()) { manager(it) }.andExpect {
-            status { isCreated() }
-            header { string("Location", "/api/neighbors/${ana.value}/suspension") }
+            status { isNoContent() }
+            header { doesNotExist("Location") }
         }
         assertThat(suspendedFor(ana)).hasSize(1)
     }
 
     @Test
-    fun `INV-SUS-9 - suspending an already suspended neighbor again is 201 and records nothing new`() {
+    fun `INV-SUS-9 - suspending an already suspended neighbor again is 204 and records nothing new`() {
         val ana = NeighborId(UUID.randomUUID())
         record(NeighborRegistered(ana, "Ana", "ana@example.com", now))
-        suspend(ana.value.toString()) { manager(it) }.andExpect { status { isCreated() } }
+        suspend(ana.value.toString()) { manager(it) }.andExpect { status { isNoContent() } }
         assertThat(suspendedFor(ana)).hasSize(1)
-        suspend(ana.value.toString()) { manager(it) }.andExpect { status { isCreated() } }
+        suspend(ana.value.toString()) { manager(it) }.andExpect { status { isNoContent() } }
         assertThat(suspendedFor(ana)).hasSize(1)
     }
 
