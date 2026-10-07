@@ -89,7 +89,7 @@ class RecordToolLostEndToEndTest {
     }
 
     @Test
-    fun `INV-LOST-1 INV-LOST-2 - the shed manager records a loan lost and gets 201, and a repeat is also 201`() {
+    fun `INV-LOST-1 INV-LOST-2 - the shed manager records a loan lost and gets 204, and a repeat is also 204`() {
         val tool = ToolId(UUID.randomUUID())
         val ana = NeighborId(UUID.randomUUID())
         val loan = LoanId(UUID.randomUUID())
@@ -99,15 +99,15 @@ class RecordToolLostEndToEndTest {
             ToolCheckedOut(loan, tool, ana, 7, LocalDate.now().plusDays(7), now),
         )
         lost(tool.value.toString(), loan.value.toString()).andExpect {
-            status { isCreated() }
-            header { string("Location", "/api/tools/${tool.value}/loans/${loan.value}/lost") }
+            status { isNoContent() }
+            header { doesNotExist("Location") }
         }
         val lost = recorded(ToolLost::class.java) { it.loanId == loan }
         assertThat(lost).hasSize(1)
         assertThat(lost.single().toolId).isEqualTo(tool)
         // INV-LOST-3: recording a loss records only Tool Lost, so no Tool Retired is recorded for the tool.
         assertThat(recorded(ToolRetired::class.java) { it.toolId == tool }).isEmpty()
-        lost(tool.value.toString(), loan.value.toString()).andExpect { status { isCreated() } }
+        lost(tool.value.toString(), loan.value.toString()).andExpect { status { isNoContent() } }
         // INV-LOST-10: the repeat records nothing new.
         assertThat(recorded(ToolLost::class.java) { it.loanId == loan }).hasSize(1)
     }
