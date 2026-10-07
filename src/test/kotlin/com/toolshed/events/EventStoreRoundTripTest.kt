@@ -1,11 +1,12 @@
 package com.toolshed.events
 
 import com.toolshed.addtool.ToolAdded
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.testsupport.SharedAxonServer
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
 import org.axonframework.messaging.eventhandling.EventMessage
 import org.axonframework.messaging.eventhandling.conversion.EventConverter
 import org.axonframework.messaging.eventhandling.gateway.EventGateway
+import org.axonframework.messaging.eventhandling.processing.streaming.token.TrackingToken
 import org.axonframework.messaging.eventstreaming.StreamableEventSource
 import org.axonframework.messaging.eventstreaming.StreamingCondition
 import org.axonframework.messaging.eventstreaming.TrackingTokenSource
@@ -14,10 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.CompletableFuture
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
@@ -27,17 +27,12 @@ import kotlin.test.assertIs
  * Axon's [EventConverter], which is the real read path.
  */
 @SpringBootTest
-@Testcontainers
 class EventStoreRoundTripTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 
@@ -61,11 +56,14 @@ class EventStoreRoundTripTest {
         val events = SampleEvents.all()
         assertEquals(20, events.size)
 
+        // The store is shared by every test in the run, so read from the point just before this test publishes.
+        val before = unitOfWorkFactory.create().executeWithResult { ctx -> tokenSource.latestToken(ctx) }.join()
+
         val uow = unitOfWorkFactory.create()
         uow.onInvocation { ctx -> eventGateway.publish(ctx, events) }
         uow.execute().join()
 
-        val read = readFromStart(events)
+        val read = readFrom(before, events)
 
         assertEquals(events, read)
         // The first sample is a ToolAdded with no description; it must still be null after the round trip.
@@ -73,14 +71,17 @@ class EventStoreRoundTripTest {
         assertEquals(null, (read.first() as ToolAdded).description)
     }
 
-    /** Reads back as many events as [expected] from the start of the store, in stored order. */
-    private fun readFromStart(expected: List<Any>): List<Any> {
+    /** Reads back as many events as [expected] from [from] onward, in stored order. */
+    private fun readFrom(
+        from: TrackingToken,
+        expected: List<Any>,
+    ): List<Any> {
         val collected = mutableListOf<EventMessage>()
         val deadline = Instant.now().plus(Duration.ofSeconds(15))
         unitOfWorkFactory
             .create()
             .executeWithResult { ctx ->
-                tokenSource.firstToken(ctx).thenApply { first ->
+                CompletableFuture.completedFuture(from).thenApply { first ->
                     val stream = eventSource.open(StreamingCondition.startingFrom(first), ctx)
                     while (collected.size < expected.size && Instant.now().isBefore(deadline)) {
                         stream.next().ifPresent { entry -> collected.add(entry.message()) }

@@ -1,7 +1,7 @@
 package com.toolshed.web
 
 import com.toolshed.axon.CommandRejected
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.testsupport.SharedAxonServer
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,26 +18,19 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 
 /** Retry policy over real Axon Server: server failures retry to 3 attempts, refusals never retry. */
 @SpringBootTest
-@ActiveProfiles("probes")
+@ActiveProfiles("probes-retry")
 @AutoConfigureMockMvc
-@Testcontainers
 class RetrySafetyOverAxonServerTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 
@@ -77,7 +70,7 @@ data class ProbeRetryRefuse(
     val id: String,
 )
 
-@Profile("probes")
+@Profile("probes-retry")
 @Component
 class RetryProbeHandlers {
     val flakyAttempts = AtomicInteger()
@@ -96,7 +89,7 @@ class RetryProbeHandlers {
     }
 }
 
-@Profile("probes")
+@Profile("probes-retry")
 @RestController
 class RetryProbeController(
     private val dispatcher: CommandDispatcher,

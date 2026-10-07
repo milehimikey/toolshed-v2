@@ -1,9 +1,9 @@
 package com.toolshed.axon
 
 import com.toolshed.retiretool.ToolRetired
+import com.toolshed.testsupport.SharedAxonServer
 import com.toolshed.web.CommandDispatcher
 import com.toolshed.web.ProbeRejected
-import io.axoniq.framework.testcontainer.AxonServerContainer
 import org.axonframework.messaging.commandhandling.annotation.CommandHandler
 import org.axonframework.messaging.core.unitofwork.ProcessingContext
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
@@ -28,8 +28,6 @@ import org.springframework.test.web.servlet.post
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -37,19 +35,14 @@ import kotlin.test.assertEquals
 
 /** Refusal records nothing, over real Axon Server: decide-then-append, and append-then-refuse fails closed. */
 @SpringBootTest
-@ActiveProfiles("probes")
+@ActiveProfiles("probes-append")
 @AutoConfigureMockMvc
-@Testcontainers
 class AppendDisciplineOverAxonServerTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 
@@ -120,7 +113,7 @@ data class ProbeAppendThenRefuse(
     val toolId: UUID,
 )
 
-@Profile("probes")
+@Profile("probes-append")
 @Component
 class ProbeAppendHandlers {
     @CommandHandler
@@ -146,7 +139,7 @@ class ProbeAppendHandlers {
     }
 }
 
-@Profile("probes")
+@Profile("probes-append")
 @RestController
 class AppendProbeController(
     private val dispatcher: CommandDispatcher,

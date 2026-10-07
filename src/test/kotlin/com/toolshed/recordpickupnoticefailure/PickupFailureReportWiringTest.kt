@@ -9,7 +9,7 @@ import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.sendpickupnotice.PickupNoticeSent
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.testsupport.SharedAxonServer
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
 import org.axonframework.messaging.eventhandling.EventMessage
 import org.axonframework.messaging.eventhandling.conversion.EventConverter
@@ -25,8 +25,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -38,17 +36,12 @@ import kotlin.test.assertEquals
  * verifier fails closed; this test supplies a verifier that accepts reports signed "ok", and reads the store back.
  */
 @SpringBootTest
-@Testcontainers
 class PickupFailureReportWiringTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 

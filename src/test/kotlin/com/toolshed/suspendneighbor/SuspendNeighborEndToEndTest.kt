@@ -3,8 +3,8 @@ package com.toolshed.suspendneighbor
 import com.toolshed.axon.NeighborId
 import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.registerneighbor.NeighborRegistered
+import com.toolshed.testsupport.SharedAxonServer
 import com.toolshed.web.CallerArgumentResolver
-import io.axoniq.framework.testcontainer.AxonServerContainer
 import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
 import org.axonframework.messaging.eventhandling.EventMessage
@@ -22,8 +22,6 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.put
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -34,17 +32,12 @@ import java.util.UUID
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
 class SuspendNeighborEndToEndTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
     }
 

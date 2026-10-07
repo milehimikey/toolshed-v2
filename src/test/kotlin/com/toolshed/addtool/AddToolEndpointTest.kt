@@ -2,7 +2,7 @@ package com.toolshed.addtool
 
 import com.toolshed.axon.ToolId
 import com.toolshed.retiretool.ToolRetired
-import io.axoniq.framework.testcontainer.AxonServerContainer
+import com.toolshed.testsupport.SharedAxonServer
 import org.axonframework.messaging.core.unitofwork.UnitOfWorkFactory
 import org.axonframework.messaging.eventhandling.EventMessage
 import org.axonframework.messaging.eventhandling.conversion.EventConverter
@@ -19,8 +19,6 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.put
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -29,17 +27,12 @@ import kotlin.test.assertEquals
 /** The endpoint and the real Axon path: guards first, then the decider, against a real Axon Server. */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Testcontainers
 class AddToolEndpointTest {
     companion object {
-        @Container
-        @JvmStatic
-        val axonServer = AxonServerContainer().withDcbContext(true)
-
         @DynamicPropertySource
         @JvmStatic
         fun axonServerProperties(registry: DynamicPropertyRegistry) {
-            registry.add("axon.axonserver.servers") { axonServer.axonServerAddress }
+            registry.add("axon.axonserver.servers") { SharedAxonServer.address }
         }
 
         private const val MANAGER = "shed-manager"
