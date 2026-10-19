@@ -44,5 +44,17 @@
     "deny": [
       "Bash(gh pr merge *)"
     ]
+  },
+  "extraKnownMarketplaces": {
+    "em-1-18-0": {
+      "source": {
+        "source": "github",
+        "repo": "milehimikey/em",
+        "ref": "v1.18.0"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "em@em-1-18-0": true
   }
 }
