@@ -2,6 +2,7 @@ package com.toolshed.myholds
 
 import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -14,7 +15,7 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/neighbors/{neighborId}/holds")
 class MyHoldsController(
-    private val queryHandler: ListMyHoldsQueryHandler,
+    private val queries: QueryGateway,
 ) {
     @GetMapping
     fun list(
@@ -23,7 +24,7 @@ class MyHoldsController(
     ): List<MyHoldsResponse> {
         val query = ListMyHolds(NeighborId(neighborId))
         caller.requireLister(query)
-        return queryHandler.handle(query).map { it.toResponse() }
+        return queries.queryMany(query, MyHoldsRow::class.java).join().map { it.toResponse() }
     }
 }
 
