@@ -11,7 +11,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 /** The view's rules, applied to the in-memory read model: one row per open loan, holds, retirement, order, overdue. */
-class MyLoansRepositoryTest {
+class MyLoansProjectionTest {
     private val now = Instant.parse("2026-10-05T10:00:00Z")
     private val drill = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d1"))
     private val ladder = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d2"))

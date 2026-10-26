@@ -34,7 +34,7 @@ import java.util.UUID
  * the list query answers. Each assertion waits until the view has caught up. The clock is fixed so overdue is a
  * known fact rather than a race against the real one.
  */
-class MyLoansQueryFixtureTest {
+class MyLoansProjectionFixtureTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val drill = ToolId(UUID.nameUUIDFromBytes("drill".toByteArray()))
     private val ladder = ToolId(UUID.nameUUIDFromBytes("ladder".toByteArray()))

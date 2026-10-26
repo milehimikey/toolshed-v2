@@ -12,7 +12,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** The view's status rules, applied to the in-memory read model: one row per added tool, holds, loans, order. */
-class ToolCatalogRepositoryTest {
+class ToolCatalogProjectionTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val drill = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d1"))
     private val ladder = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000d2"))
