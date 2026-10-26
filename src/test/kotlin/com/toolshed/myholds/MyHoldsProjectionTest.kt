@@ -32,7 +32,7 @@ import java.util.UUID
  * against a fresh [InMemoryMyHoldsRepository] — the fastest-feedback unit level for a projection
  * (axon-projection-testing). Together these scenarios cover every INV-MYHD id in the doc.
  */
-class MyHoldsScenarioTest {
+class MyHoldsProjectionTest {
     private val shedZone = ZoneId.of("America/Denver")
     private val now = Instant.parse("2026-10-06T04:00:00Z")
 

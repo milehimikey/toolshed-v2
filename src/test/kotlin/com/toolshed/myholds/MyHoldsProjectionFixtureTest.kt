@@ -23,9 +23,9 @@ import java.util.UUID
 /**
  * The slice's own wiring (axon-projection-testing): built from [MyHoldsConfiguration.configure], so this proves
  * the projection really is registered on its processor and the query really is answered through the query bus,
- * not just that the plain classes behave correctly in isolation (covered by [MyHoldsScenarioTest]).
+ * not just that the plain classes behave correctly in isolation (covered by [MyHoldsProjectionTest]).
  */
-class MyHoldsFixtureTest {
+class MyHoldsProjectionFixtureTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val drill = ToolId(UUID.nameUUIDFromBytes("t1".toByteArray()))
     private val ben = NeighborId(UUID.nameUUIDFromBytes("n2".toByteArray()))

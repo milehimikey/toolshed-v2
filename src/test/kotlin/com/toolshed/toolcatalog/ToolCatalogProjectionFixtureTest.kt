@@ -29,7 +29,7 @@ import java.util.UUID
  * The Tool Catalog state view through the query bus: events go in through the fixture, the projection applies
  * them, and the list query answers. Each assertion waits until the view has caught up.
  */
-class ToolCatalogQueryFixtureTest {
+class ToolCatalogProjectionFixtureTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val drill = ToolId(UUID.nameUUIDFromBytes("drill".toByteArray()))
     private val ladder = ToolId(UUID.nameUUIDFromBytes("ladder".toByteArray()))
