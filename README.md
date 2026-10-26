@@ -41,7 +41,7 @@ never connected to one another.
 |---|-------|---------|--------|-------------|-------------|-------|----------|----------------|-----------|------------|
 | 1 | Add Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/20 | — | [slices/add-tool.md](slices/add-tool.md) |
 | 2 | Tool Inventory | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
-| 3 | Tool Catalog | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
+| 3 | Tool Catalog | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/01689d1fc90e13b2356e10def6605b8c08aff62a | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 4 | Register Neighbor | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/5 | — | [slices/register-neighbor.md](slices/register-neighbor.md) |
 | 5 | Tool Inventory — neighbor registered | State View | continuation of `tool-inventory` | — | — | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 6 | Neighbors | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/neighbors.md](slices/neighbors.md) |
@@ -49,13 +49,13 @@ never connected to one another.
 | 8 | Check Out Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/8 | — | [slices/check-out-tool.md](slices/check-out-tool.md) |
 | 9 | Tool Inventory — tool checked out | State View | continuation of `tool-inventory` | — | — | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 10 | Tool Catalog — checked out | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
-| 11 | My Loans | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
+| 11 | My Loans | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/b1485c8a98f0f2a4b4f48fce0be87ad4cfb6b284 | — | [slices/my-loans.md](slices/my-loans.md) |
 | 12 | Extend Loan | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/6 | — | [slices/extend-loan.md](slices/extend-loan.md) |
 | 13 | Tool Inventory — loan extended | State View | continuation of `tool-inventory` | — | — | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 14 | My Loans — loan extended | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 15 | Tool Catalog — loan extended | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 16 | Place Hold | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/9 | — | [slices/place-hold.md](slices/place-hold.md) |
-| 17 | My Holds | State View | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
+| 17 | My Holds | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/d9518711311de805e50704c325a661b527b2845b | — | [slices/my-holds.md](slices/my-holds.md) |
 | 18 | Tool Catalog — hold placed | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 19 | My Loans — hold placed | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 20 | Cancel Hold | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/10 | — | [slices/cancel-hold.md](slices/cancel-hold.md) |
