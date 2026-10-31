@@ -21,6 +21,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.core.conversion.MessageConverter
 import org.axonframework.messaging.eventhandling.annotation.EventHandler
+import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -35,7 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
 
 /**
- * The Hold Fulfiller on Holds To Fulfill's own processor (Amendment 11), built from the two slices' own configure functions
+ * The Hold Fulfiller as a reaction invoked by the Holds To Fulfill projection (Amendment 11), built from the two slices'
+ * own configure functions
  * with the real projection and the real fulfiller: no stubbed list. The fulfiller must act on the very event that put the
  * item on the list.
  */
@@ -87,7 +89,15 @@ class HoldFulfillerHandlerFixtureTest {
         val clock = Clock.fixed(now, ZoneId.of("America/Denver"))
         val configurer = EventSourcingConfigurer.create()
         FulfillHoldConfiguration.configure(configurer, clock)
-        HoldsToFulfillConfiguration.configure(configurer, repository, listOf(HoldFulfillerHandler(fulfiller), FulfilledRecorder()))
+        HoldsToFulfillConfiguration.configure(configurer, repository, listOf(HoldFulfillerHandler(fulfiller)))
+        val recorder =
+            EventProcessorModule
+                .pooledStreaming("FulfilledRecorder_Processor")
+                .eventHandlingComponents { it.autodetected { FulfilledRecorder() } }
+                .notCustomized()
+        configurer.modelling { m ->
+            m.messaging { ms -> ms.eventProcessing { ep -> ep.pooledStreaming { ps -> ps.processor(recorder) } } }
+        }
         // AxonTestFixture.with disables Axon Server (a bare configurer.start() dials it and fails UNAVAILABLE).
         configurer.lifecycleRegistry { it.onStart(Int.MAX_VALUE, Consumer<Configuration> { started -> configuration = started }) }
         fixture = AxonTestFixture.with(configurer)
