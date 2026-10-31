@@ -116,7 +116,7 @@ class LateReturnFlaggerHandlerTest {
     }
 
     @Test
-    fun `INV-FLG-2 - given the list lags the late return, when it catches up, then the flagger flags only the changed neighbor`() {
+    fun `INV-FLG-2 - given the list lags a live late return, when it catches up, then the flagger flags the neighbors on it`() {
         val bo = NeighborId(UUID.nameUUIDFromBytes("bo".toByteArray()))
         val other = LoanId(UUID.nameUUIDFromBytes("other".toByteArray()))
         val reads =
@@ -132,10 +132,11 @@ class LateReturnFlaggerHandlerTest {
                 },
                 attempts = 5,
                 pause = {},
+                now = { now },
             )
         handler.on(returned(late = true))
         assertThat(reads.get()).isEqualTo(3)
-        assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)))
+        assertThat(sent).containsExactly(FlagNeighbor(bo, listOf(other, other, other)), FlagNeighbor(ana, listOf(l1, l2, l3)))
     }
 
     @Test
@@ -144,8 +145,66 @@ class LateReturnFlaggerHandlerTest {
             LateReturnFlaggerHandler({ NeighborsToFlag(emptyList()) }, {
                 sent.add(it)
                 ReactionOutcome.Accepted
-            }, 3, {})
+            }, 3, {}, { now })
         handler.on(returned(late = true))
         assertThat(sent).isEmpty()
+    }
+
+    @Test
+    fun `INV-FLG-2 - given a replayed late return, when the list lacks it, then the flagger does not wait`() {
+        val reads =
+            java.util.concurrent.atomic
+                .AtomicInteger()
+        val handler =
+            LateReturnFlaggerHandler(
+                readList = {
+                    reads.incrementAndGet()
+                    NeighborsToFlag(emptyList())
+                },
+                send = { ReactionOutcome.Accepted },
+                attempts = 20,
+                pause = { error("must not wait for a replayed event") },
+                now = { now.plusSeconds(3600) },
+            )
+        handler.on(returned(late = true))
+        assertThat(reads.get()).isEqualTo(1)
+    }
+
+    @Test
+    fun `INV-FLG-2 - given a neighbor was left unflagged, when a later late return lands elsewhere, then the flagger flags them too`() {
+        val handler =
+            LateReturnFlaggerHandler(
+                readList = { onList },
+                send = {
+                    sent.add(it)
+                    ReactionOutcome.Accepted
+                },
+                attempts = 1,
+                pause = {},
+                now = { now },
+            )
+        handler.on(returned(late = true, loan = LoanId(UUID.nameUUIDFromBytes("elsewhere".toByteArray()))))
+        assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)))
+    }
+
+    @Test
+    fun `INV-FLG-4 - given late-returns-changed, when the list has an updated entry, then the flagger acts again on it`() {
+        val l4 = LoanId(UUID.nameUUIDFromBytes("l4".toByteArray()))
+        val lists = ArrayDeque(listOf(onList, NeighborsToFlag(listOf(NeighborToFlag(ana, listOf(l2, l3, l4))))))
+        val outcomes =
+            ArrayDeque(listOf<ReactionOutcome>(ReactionOutcome.Refused("INV-FLG-4", "late-returns-changed"), ReactionOutcome.Accepted))
+        val handler =
+            LateReturnFlaggerHandler(
+                readList = { if (lists.size > 1) lists.removeFirst() else lists.first() },
+                send = {
+                    sent.add(it)
+                    outcomes.removeFirst()
+                },
+                attempts = 1,
+                pause = {},
+                now = { now },
+            )
+        handler.on(returned(late = true))
+        assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)), FlagNeighbor(ana, listOf(l2, l3, l4)))
     }
 }
