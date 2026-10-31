@@ -260,3 +260,39 @@ Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.le
         closure, retirement, return, email, cancel, reinstate) answers `204 No Content`.
 
       (Added 2026-10-06 with Mike Key's approval.)
+
+11. **An automation rides the processor of the list it reads.** This refines Amendment 7
+    ("every other reaction acts when its list changes") and the Automation row of the routing
+    table. An automation that acts on a read model (its to-do list) does not run on a processor
+    of its own, and it never polls, waits or re-reads to let the list catch up: a bounded wait
+    is still a race. Its reaction handler is registered on the read model's own event processor,
+    after the projection, so that for every event the processor handles, the list has already
+    applied that event by the time the reaction reads it. Axon 5 keeps handling components in
+    registration order, which is what makes this a guarantee rather than a timing guess.
+    - **Shape.** One `EventProcessorModule` per read model, named as the read slice's
+      `configure` already names it, whose `eventHandlingComponents` list the projection first
+      and each reaction after it. In the running app, one `EventProcessorDefinition` bean per
+      read model, declared in the read slice's package, selects the projection bean and every
+      reaction bean for that processor.
+    - **Who owns the binding.** The read slice owns the processor and the binding point: its
+      `configure` takes the reactions to register after the projection (for example
+      `reactions: List<Any> = emptyList()`), and it declares the marker type or selector the
+      Spring definition uses to admit a reaction. The automation slice supplies its handler and
+      implements the marker. Adding that binding point to the read slice is part of implementing
+      the first automation that reads it, and is the one edit to another slice's code that
+      Amendment 1 permits.
+    - **Reading and acting.** The reaction reads the list in-process through what the read slice
+      exposes (its query handler or repository); it does not go through a separate processor's
+      token. The command it issues still goes through `ReactionDispatcher`, and the command
+      handler still re-validates it, so Amendment 7's safe-to-repeat rule is what makes a
+      replayed or duplicate wake-up harmless.
+    - **Tests.** A reaction test runs through the fixture with the real projection and the
+      reaction on the same processor (no stubbed list), and proves the command is sent from the
+      very event that put the item on the list. The negative and idempotency cases of the
+      Testing norms still apply.
+    - **Exceptions.** Only Amendment 7's two schedule-driven automations (the overdue-notice
+      gateway and the pickup expirer) read on a timer. Every other automation follows this
+      amendment unless its slice doc states otherwise.
+
+    Approved by Mike Key on 2026-10-31 (ruling on the fulfill-hold / flag-neighbor escalations,
+    relayed by the percheron operator; recorded in the percheron benchmark note).
