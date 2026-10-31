@@ -7,24 +7,22 @@ import java.time.Clock
 
 /**
  * Wiring for this view alone, so a test can build the fixture from the same registrations. [reactions] are the automations
- * that read this list; each is registered on this processor after the projection (Amendment 11).
+ * that read this list; the projection invokes each after its repository write (Amendment 11).
  */
 object NeighborsToFlagConfiguration {
+    private const val PROCESSOR_NAME = "NeighborsToFlagProjection"
+
     fun configure(
         configurer: EventSourcingConfigurer,
         clock: Clock,
-        reactions: List<Any> = emptyList(),
+        reactions: List<NeighborsToFlagReaction> = emptyList(),
     ): EventSourcingConfigurer {
         val repository = NeighborsToFlagRepository()
         val projection =
             EventProcessorModule
-                .pooledStreaming(NeighborsToFlagWiring.PROCESSOR_NAME)
-                .eventHandlingComponents { phase ->
-                    // Projection first, then each reaction: handling components run in registration order (Amendment 11).
-                    reactions.fold(phase.autodetected { NeighborsToFlagProjection(repository) }) { components, reaction ->
-                        components.autodetected { reaction }
-                    }
-                }.notCustomized()
+                .pooledStreaming(PROCESSOR_NAME)
+                .eventHandlingComponents { it.autodetected { NeighborsToFlagProjection(repository, reactions) } }
+                .notCustomized()
         val queryHandling =
             QueryHandlingModule
                 .named("ListNeighborsToFlag")
