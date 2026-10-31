@@ -331,7 +331,7 @@ class NeighborsToFlagProjectionTest {
     }
 
     @Test
-    fun `INV-NTF-8 - given suspended, reinstated, then L3 returned late, when the suspension is delivered again, then Ana is not suspended and L3 counts`() {
+    fun `INV-NTF-8 - given reinstated then L3 late, when suspension is redelivered, then Ana is not suspended and L3 counts`() {
         val r = NeighborsToFlagRepository()
         val suspendedAt = tick()
         r.suspend(ana, suspendedAt)
