@@ -1,6 +1,7 @@
 package com.toolshed.sendpickupnotice
 
 import com.toolshed.addtool.ToolAdded
+import com.toolshed.axon.CommandRejected
 import com.toolshed.axon.CommandSender
 import com.toolshed.axon.EmailGateway
 import com.toolshed.axon.EmailKey
@@ -184,9 +185,12 @@ class PickupNoticeGatewayFixtureTest {
     fun `INV-PKN-2 - given email handed over, when another address is sent, then refused notice-already-sent, nothing handed over`() {
         fixture.given().events(known()).`when`().event(fulfilled).then().expect { _ ->
             awaitOneEmail()
-            val outcome = dispatcher().send(expected.copy(sentTo = "ben.ito@example.net"))
-            assertThat(outcome).isInstanceOf(ReactionOutcome.Refused::class.java)
-            assertThat((outcome as ReactionOutcome.Refused).reason).isEqualTo("notice-already-sent")
+            // The fixture has no Spring CommandRejectionInterceptor, so the refusal surfaces as the thrown rejection.
+            val failure =
+                runCatching { dispatcher().send(expected.copy(sentTo = "ben.ito@example.net")) }.exceptionOrNull()
+            val rejected = generateSequence(failure) { it.cause }.filterIsInstance<CommandRejected>().firstOrNull()
+            assertThat(rejected).isNotNull
+            assertThat(rejected!!.reason).isEqualTo("notice-already-sent")
             Thread.sleep(500)
             assertThat(handOffs).hasSize(1)
         }
