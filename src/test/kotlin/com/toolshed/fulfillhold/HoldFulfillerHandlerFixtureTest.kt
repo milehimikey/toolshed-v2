@@ -16,7 +16,7 @@ import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.returntool.ToolReturned
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
-import org.axonframework.common.configuration.AxonConfiguration
+import org.axonframework.common.configuration.Configuration
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.core.conversion.MessageConverter
@@ -31,6 +31,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.function.Consumer
 
 /**
  * The Hold Fulfiller on Holds To Fulfill's own processor (Amendment 11), built from the two slices' own configure functions
@@ -49,7 +50,7 @@ class HoldFulfillerHandlerFixtureTest {
 
     private val repository = InMemoryHoldsToFulfillRepository()
     private val sent = CopyOnWriteArrayList<FulfillHold>()
-    private lateinit var configuration: AxonConfiguration
+    private lateinit var configuration: Configuration
     private lateinit var fixture: AxonTestFixture
 
     private fun uuid(seed: String): UUID = UUID.nameUUIDFromBytes(seed.toByteArray())
@@ -77,8 +78,9 @@ class HoldFulfillerHandlerFixtureTest {
         val configurer = EventSourcingConfigurer.create()
         FulfillHoldConfiguration.configure(configurer, clock)
         HoldsToFulfillConfiguration.configure(configurer, repository, listOf(HoldFulfillerHandler(fulfiller)))
-        configuration = configurer.start()
-        fixture = AxonTestFixture(configuration, AxonTestFixture.Customization())
+        // AxonTestFixture.with disables Axon Server (a bare configurer.start() dials it and fails UNAVAILABLE).
+        configurer.lifecycleRegistry { it.onStart(Int.MAX_VALUE, Consumer<Configuration> { started -> configuration = started }) }
+        fixture = AxonTestFixture.with(configurer)
     }
 
     @AfterEach
