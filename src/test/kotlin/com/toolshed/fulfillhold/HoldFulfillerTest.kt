@@ -55,7 +55,7 @@ class HoldFulfillerTest {
     }
 
     @Test
-    fun `given the list has not caught up yet, when the fulfiller runs, then it re-reads and acts once the item appears, waiting out the bounded delays`() {
+    fun `given the list has not caught up yet, when the fulfiller runs, then it re-reads and acts once the item appears`() {
         val sent = mutableListOf<FulfillHold>()
         val pauses = mutableListOf<Long>()
         var reads = 0
@@ -66,7 +66,7 @@ class HoldFulfillerTest {
     }
 
     @Test
-    fun `INV-FUL-2 - given the list still shows a fulfilled tool when the next one lands, when the fulfiller runs, then it acts on the new tool too`() {
+    fun `INV-FUL-2 - given a stale fulfilled tool on the list, when the next lands, then the fulfiller acts on the new tool`() {
         val sent = mutableListOf<FulfillHold>()
         var reads = 0
         val list = { if (++reads < 3) listOf(sawRow) else listOf(sawRow, drillRow) }
