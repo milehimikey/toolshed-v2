@@ -12,8 +12,9 @@ private val logger = KotlinLogging.logger {}
  * its new front hold if there is one.
  *
  * The list is fed by its own processor, so a wake-up can arrive before the list has applied the event that caused it.
- * An empty read is therefore re-read after each of [catchUpDelaysMillis] (a bounded wait for the list to catch up)
- * before the fulfiller concludes there is nothing to do.
+ * The list may be empty, or may still show only tools this run has already fulfilled (it has not yet applied their
+ * Hold Fulfilled, nor shown the tool that woke us). So after acting on the first read, the list is re-read after
+ * each of [catchUpDelaysMillis] and any item not yet handled in this run is acted on.
  */
 class HoldFulfiller(
     private val list: () -> List<HoldsToFulfillRow>,
@@ -21,23 +22,23 @@ class HoldFulfiller(
     private val catchUpDelaysMillis: List<Long> = emptyList(),
     private val pause: (Long) -> Unit = { Thread.sleep(it) },
 ) {
-    private fun readList(): List<HoldsToFulfillRow> {
-        var items = list()
-        for (delay in catchUpDelaysMillis) {
-            if (items.isNotEmpty()) break
-            pause(delay)
-            items = list()
+    fun run() {
+        val handled = mutableSetOf<HoldsToFulfillRow>()
+        val readsAfterWaiting = catchUpDelaysMillis.map { { pause(it) } }
+        list().filter { handled.add(it) }.forEach { handle(it) }
+        // The list may not yet show the tool that woke us (or may still show tools already fulfilled), so keep
+        // re-reading for the bounded wait and act on whatever new item appears.
+        readsAfterWaiting.forEach { wait ->
+            wait()
+            list().filter { handled.add(it) }.forEach { handle(it) }
         }
-        return items
     }
 
-    fun run() {
-        readList().forEach { item ->
-            when (val outcome = send(FulfillHold(item.holdId))) {
-                is ReactionOutcome.Accepted -> logger.debug { "hold-fulfiller holdId=${item.holdId.value} outcome=accepted" }
-                is ReactionOutcome.Refused ->
-                    logger.info { "hold-fulfiller holdId=${item.holdId.value} outcome=refused reason=${outcome.reason}" }
-            }
+    private fun handle(item: HoldsToFulfillRow) {
+        when (val outcome = send(FulfillHold(item.holdId))) {
+            is ReactionOutcome.Accepted -> logger.debug { "hold-fulfiller holdId=${item.holdId.value} outcome=accepted" }
+            is ReactionOutcome.Refused ->
+                logger.info { "hold-fulfiller holdId=${item.holdId.value} outcome=refused reason=${outcome.reason}" }
         }
     }
 }

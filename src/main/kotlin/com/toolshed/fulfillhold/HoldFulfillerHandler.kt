@@ -27,6 +27,10 @@ class HoldFulfillerHandler(
     @EventHandler
     fun on(event: HoldExpired) = fulfiller.run()
 
+    // The list's own Hold Fulfilled may land after a return it was racing; this gives a second look at the list.
+    @EventHandler
+    fun on(event: HoldFulfilled) = fulfiller.run()
+
     @EventHandler
     fun on(event: HoldCancelled) = fulfiller.run()
 

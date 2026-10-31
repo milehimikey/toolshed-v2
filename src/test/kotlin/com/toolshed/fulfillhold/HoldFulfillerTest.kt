@@ -55,14 +55,23 @@ class HoldFulfillerTest {
     }
 
     @Test
-    fun `given the list has not caught up yet, when the fulfiller runs, then it re-reads and acts once the item appears`() {
+    fun `given the list has not caught up yet, when the fulfiller runs, then it re-reads and acts once the item appears, waiting out the bounded delays`() {
         val sent = mutableListOf<FulfillHold>()
         val pauses = mutableListOf<Long>()
         var reads = 0
         val list = { if (++reads < 3) emptyList() else listOf(drillRow) }
         HoldFulfiller(list, { sent.add(it).let { ReactionOutcome.Accepted } }, listOf(10, 20, 30), { pauses.add(it) }).run()
         assertThat(sent).containsExactly(FulfillHold(drillRow.holdId))
-        assertThat(pauses).containsExactly(10L, 20L)
+        assertThat(pauses).containsExactly(10L, 20L, 30L)
+    }
+
+    @Test
+    fun `INV-FUL-2 - given the list still shows a fulfilled tool when the next one lands, when the fulfiller runs, then it acts on the new tool too`() {
+        val sent = mutableListOf<FulfillHold>()
+        var reads = 0
+        val list = { if (++reads < 3) listOf(sawRow) else listOf(sawRow, drillRow) }
+        HoldFulfiller(list, { sent.add(it).let { ReactionOutcome.Accepted } }, listOf(10, 20), { }).run()
+        assertThat(sent).containsExactly(FulfillHold(sawRow.holdId), FulfillHold(drillRow.holdId))
     }
 
     @Test

@@ -18,6 +18,6 @@ class HoldFulfillerConfiguration {
         HoldFulfiller(
             list = { queryGateway.queryMany(ListToolsToFulfill, HoldsToFulfillRow::class.java).join() },
             send = { dispatcher.send(it) },
-            catchUpDelaysMillis = listOf(100, 300, 900),
+            catchUpDelaysMillis = listOf(100, 300, 900, 2700),
         )
 }
