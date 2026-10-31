@@ -2,8 +2,10 @@ package com.toolshed.myholds
 
 import com.toolshed.addtool.ToolAdded
 import com.toolshed.axon.HoldId
+import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
+import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.placehold.HoldPlaced
 import io.axoniq.framework.testcontainer.AxonServerContainer
 import org.assertj.core.api.Assertions.assertThat
@@ -23,6 +25,7 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -77,8 +80,18 @@ class MyHoldsEndpointTest {
     fun `GET a neighbor's holds answers 200 with the tool name and position`() {
         val tool = ToolId(UUID.randomUUID())
         val neighbor = NeighborId(UUID.randomUUID())
+        val borrower = NeighborId(UUID.randomUUID())
         val hold = UUID.randomUUID()
-        publish(listOf(ToolAdded(tool, "Cordless drill", null, 7, now), HoldPlaced(HoldId(hold), tool, neighbor, now)))
+        // The tool is on loan to someone else when the hold is placed, so the hold
+        // is genuinely waiting — a hold on a tool that is on the shelf is set aside
+        // by the Hold Fulfiller automation and would read ready-for-pickup instead.
+        publish(
+            listOf(
+                ToolAdded(tool, "Cordless drill", null, 7, now),
+                ToolCheckedOut(LoanId(UUID.randomUUID()), tool, borrower, 7, LocalDate.of(2026, 10, 24), now),
+                HoldPlaced(HoldId(hold), tool, neighbor, now),
+            ),
+        )
 
         await().atMost(Duration.ofSeconds(10)).untilAsserted {
             assertThat(repository.holdsForNeighbor(neighbor)).hasSize(1)
