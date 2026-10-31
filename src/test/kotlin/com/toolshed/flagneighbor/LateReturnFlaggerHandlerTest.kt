@@ -4,207 +4,155 @@ import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ReactionOutcome
 import com.toolshed.axon.ToolId
-import com.toolshed.neighborstoflag.NeighborToFlag
+import com.toolshed.checkouttool.ToolCheckedOut
+import com.toolshed.neighborstoflag.ListNeighborsToFlag
 import com.toolshed.neighborstoflag.NeighborsToFlag
+import com.toolshed.neighborstoflag.NeighborsToFlagConfiguration
+import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.returntool.ToolReturned
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
+import org.axonframework.common.configuration.Configuration
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+import org.axonframework.messaging.commandhandling.gateway.CommandGateway
+import org.axonframework.messaging.queryhandling.gateway.QueryGateway
 import org.axonframework.test.fixture.AxonTestFixture
+import org.axonframework.test.fixture.AxonTestPhase
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 
-/** The Late Return Flagger's reaction: a late return makes it read the list and issue Flag Neighbor; nothing else does. */
+/**
+ * The Late Return Flagger on Neighbors To Flag's processor (Amendment 11): the real projection and the flagger run on the
+ * shared processor, the list is not stubbed, and Flag Neighbor is the real command handler.
+ */
 class LateReturnFlaggerHandlerTest {
-    private val now = Instant.parse("2026-10-05T15:00:00Z")
+    private val today = LocalDate.of(2026, 10, 5)
+    private val now: Instant = today.atTime(9, 0).toInstant(ZoneOffset.UTC)
     private val ana = NeighborId(UUID.nameUUIDFromBytes("ana".toByteArray()))
+    private val bo = NeighborId(UUID.nameUUIDFromBytes("bo".toByteArray()))
     private val drill = ToolId(UUID.nameUUIDFromBytes("drill".toByteArray()))
     private val l1 = LoanId(UUID.nameUUIDFromBytes("l1".toByteArray()))
     private val l2 = LoanId(UUID.nameUUIDFromBytes("l2".toByteArray()))
     private val l3 = LoanId(UUID.nameUUIDFromBytes("l3".toByteArray()))
+    private val l4 = LoanId(UUID.nameUUIDFromBytes("l4".toByteArray()))
+
     private val sent = CopyOnWriteArrayList<Any>()
-    private var fixture: AxonTestFixture? = null
+    private val outcomes = CopyOnWriteArrayList<ReactionOutcome>()
+    private val reads = AtomicInteger()
+    private val configuration = CompletableFuture<Configuration>()
+    private lateinit var fixture: AxonTestFixture
 
-    private val onList = NeighborsToFlag(listOf(NeighborToFlag(ana, listOf(l1, l2, l3))))
-
-    @AfterEach
-    fun afterEach() {
-        fixture?.stop()
-    }
-
-    private fun flaggerWith(
-        list: NeighborsToFlag,
-        outcome: ReactionOutcome = ReactionOutcome.Accepted,
-    ): AxonTestFixture {
-        val configurer =
-            FlagNeighborConfiguration.configureFlagger(
-                EventSourcingConfigurer.create(),
-                readList = { list },
-                send = {
-                    sent.add(it)
+    @BeforeEach
+    fun beforeEach() {
+        val clock = Clock.fixed(now, ZoneOffset.UTC)
+        val flagger =
+            LateReturnFlaggerHandler(
+                readList = {
+                    reads.incrementAndGet()
+                    configuration
+                        .get()
+                        .getComponent(QueryGateway::class.java)
+                        .query(ListNeighborsToFlag(), NeighborsToFlag::class.java)
+                        .join()
+                },
+                send = { command ->
+                    sent.add(command)
+                    val outcome =
+                        try {
+                            configuration.get().getComponent(CommandGateway::class.java).sendAndWait(command)
+                            ReactionOutcome.Accepted
+                        } catch (e: Exception) {
+                            ReactionOutcome.Refused("", e.message ?: "")
+                        }
+                    outcomes.add(outcome)
                     outcome
                 },
             )
-        return AxonTestFixture.with(configurer).also { fixture = it }
+        val configurer =
+            FlagNeighborConfiguration.configure(
+                NeighborsToFlagConfiguration.configure(EventSourcingConfigurer.create(), clock, listOf(flagger)),
+                clock,
+            )
+        fixture = AxonTestFixture.with(configurer)
     }
 
-    private fun returned(
-        late: Boolean,
-        loan: LoanId = l3,
-    ) = ToolReturned(loan, drill, now, LocalDate.of(2026, 10, 5), late)
+    @AfterEach
+    fun afterEach() {
+        fixture.stop()
+    }
+
+    private fun registered(): AxonTestPhase.Given =
+        fixture
+            .given()
+            .execute { configuration.complete(it) }
+            .event(NeighborRegistered(ana, "Ana", "ana@example.com", now))
+            .event(NeighborRegistered(bo, "Bo", "bo@example.com", now))
+
+    private fun AxonTestPhase.Given.returned(
+        loan: LoanId,
+        on: LocalDate,
+        late: Boolean = true,
+        by: NeighborId = ana,
+    ): AxonTestPhase.Given =
+        event(ToolCheckedOut(loan, drill, by, 7, on.minusDays(1), now))
+            .event(ToolReturned(loan, drill, now, on, late))
+
+    private fun AxonTestPhase.Given.twoLateReturns(): AxonTestPhase.Given =
+        returned(l1, LocalDate.of(2026, 9, 1)).returned(l2, LocalDate.of(2026, 9, 20))
 
     @Test
-    fun `INV-FLG-2 - given Ana is on the list, when a late return is recorded, then the flagger issues Flag Neighbor with her loans`() {
-        flaggerWith(onList)
-            .given()
-            .event(returned(late = true))
+    fun `INV-FLG-2 - given Ana has two late returns, when the third is recorded, then the flagger sends Flag Neighbor from that return`() {
+        registered()
+            .twoLateReturns()
+            .returned(l3, today)
             .`when`()
             .nothing()
             .then()
             .noEvents()
         Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted {
             assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)))
+            assertThat(outcomes).containsExactly(ReactionOutcome.Accepted)
         }
     }
 
     @Test
-    fun `INV-FLG-2 - given Ana is on the list, when an on-time return is recorded, then the flagger issues nothing`() {
-        // The late return after it proves the on-time one was already handled: the processor works in order.
-        flaggerWith(onList)
-            .given()
-            .event(returned(late = false, loan = l1))
-            .event(returned(late = true, loan = l2))
+    fun `INV-FLG-2 - given Ana has two late returns, when her third return is on time, then the flagger sends nothing`() {
+        // Bo's late return after it is the marker: once the flagger has read for it, Ana's on-time return was handled before.
+        registered()
+            .twoLateReturns()
+            .returned(l3, today, late = false)
+            .returned(l4, today, by = bo)
             .`when`()
             .nothing()
             .then()
             .noEvents()
-        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted { assertThat(sent).hasSize(1) }
-    }
-
-    @Test
-    fun `INV-FLG-9 - given the flagger acts on Ana twice, when the second is a repeat, then both are the same command`() {
-        flaggerWith(onList)
-            .given()
-            .event(returned(late = true, loan = l2))
-            .event(returned(late = true, loan = l3))
-            .`when`()
-            .nothing()
-            .then()
-            .noEvents()
-        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted {
-            assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)), FlagNeighbor(ana, listOf(l1, l2, l3)))
-        }
-    }
-
-    @Test
-    fun `INV-FLG-4 - given the command is refused, when the flagger acts, then it moves on to the next neighbor`() {
-        val bo = NeighborId(UUID.nameUUIDFromBytes("bo".toByteArray()))
-        val both = NeighborsToFlag(onList.neighbors + NeighborToFlag(bo, listOf(l1, l2, l3)))
-        flaggerWith(both, ReactionOutcome.Refused("INV-FLG-4", "late-returns-changed"))
-            .given()
-            .event(returned(late = true))
-            .`when`()
-            .nothing()
-            .then()
-            .noEvents()
-        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted { assertThat(sent).hasSize(2) }
-    }
-
-    @Test
-    fun `INV-FLG-2 - given the list lags a live late return, when it catches up, then the flagger flags the neighbors on it`() {
-        val bo = NeighborId(UUID.nameUUIDFromBytes("bo".toByteArray()))
-        val other = LoanId(UUID.nameUUIDFromBytes("other".toByteArray()))
-        val reads =
-            java.util.concurrent.atomic
-                .AtomicInteger()
-        val caughtUp = NeighborsToFlag(listOf(NeighborToFlag(bo, listOf(other, other, other)), NeighborToFlag(ana, listOf(l1, l2, l3))))
-        val handler =
-            LateReturnFlaggerHandler(
-                readList = { if (reads.incrementAndGet() < 3) NeighborsToFlag(emptyList()) else caughtUp },
-                send = {
-                    sent.add(it)
-                    ReactionOutcome.Accepted
-                },
-                attempts = 5,
-                pause = {},
-                now = { now },
-            )
-        handler.on(returned(late = true))
-        assertThat(reads.get()).isEqualTo(3)
-        assertThat(sent).containsExactly(FlagNeighbor(bo, listOf(other, other, other)), FlagNeighbor(ana, listOf(l1, l2, l3)))
-    }
-
-    @Test
-    fun `INV-FLG-2 - given the loan never reaches the list, when attempts run out, then nothing is sent`() {
-        val handler =
-            LateReturnFlaggerHandler({ NeighborsToFlag(emptyList()) }, {
-                sent.add(it)
-                ReactionOutcome.Accepted
-            }, 3, {}, { now })
-        handler.on(returned(late = true))
+        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted { assertThat(reads.get()).isEqualTo(1) }
         assertThat(sent).isEmpty()
     }
 
     @Test
-    fun `INV-FLG-2 - given a replayed late return, when the list lacks it, then the flagger does not wait`() {
-        val reads =
-            java.util.concurrent.atomic
-                .AtomicInteger()
-        val handler =
-            LateReturnFlaggerHandler(
-                readList = {
-                    reads.incrementAndGet()
-                    NeighborsToFlag(emptyList())
-                },
-                send = { ReactionOutcome.Accepted },
-                attempts = 20,
-                pause = { error("must not wait for a replayed event") },
-                now = { now.plusSeconds(3600) },
-            )
-        handler.on(returned(late = true))
-        assertThat(reads.get()).isEqualTo(1)
-    }
-
-    @Test
-    fun `INV-FLG-2 - given a neighbor was left unflagged, when a later late return lands elsewhere, then the flagger flags them too`() {
-        val handler =
-            LateReturnFlaggerHandler(
-                readList = { onList },
-                send = {
-                    sent.add(it)
-                    ReactionOutcome.Accepted
-                },
-                attempts = 1,
-                pause = {},
-                now = { now },
-            )
-        handler.on(returned(late = true, loan = LoanId(UUID.nameUUIDFromBytes("elsewhere".toByteArray()))))
-        assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)))
-    }
-
-    @Test
-    fun `INV-FLG-4 - given late-returns-changed, when the list has an updated entry, then the flagger acts again on it`() {
-        val l4 = LoanId(UUID.nameUUIDFromBytes("l4".toByteArray()))
-        val lists = ArrayDeque(listOf(onList, NeighborsToFlag(listOf(NeighborToFlag(ana, listOf(l2, l3, l4))))))
-        val outcomes =
-            ArrayDeque(listOf<ReactionOutcome>(ReactionOutcome.Refused("INV-FLG-4", "late-returns-changed"), ReactionOutcome.Accepted))
-        val handler =
-            LateReturnFlaggerHandler(
-                readList = { if (lists.size > 1) lists.removeFirst() else lists.first() },
-                send = {
-                    sent.add(it)
-                    outcomes.removeFirst()
-                },
-                attempts = 1,
-                pause = {},
-                now = { now },
-            )
-        handler.on(returned(late = true))
-        assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)), FlagNeighbor(ana, listOf(l2, l3, l4)))
+    fun `INV-FLG-9 - given Ana was flagged by the flagger, when the same flag is sent again, then it succeeds and records nothing`() {
+        registered()
+            .twoLateReturns()
+            .returned(l3, today)
+            .execute {
+                Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted {
+                    assertThat(outcomes).containsExactly(ReactionOutcome.Accepted)
+                }
+            }.`when`()
+            .command(FlagNeighbor(ana, listOf(l1, l2, l3)))
+            .then()
+            .success()
+            .noEvents()
     }
 }
