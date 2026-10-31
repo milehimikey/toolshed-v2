@@ -48,8 +48,7 @@ class FulfillHoldAxonFixtureTest {
     @BeforeEach
     fun beforeEach() {
         val clock = Clock.fixed(now, ZoneId.of("America/Denver"))
-        val idleFulfiller = HoldFulfiller({ emptyList() }, { error("the fulfiller is not under test here") })
-        fixture = AxonTestFixture.with(FulfillHoldConfiguration.configure(EventSourcingConfigurer.create(), clock, idleFulfiller))
+        fixture = AxonTestFixture.with(FulfillHoldConfiguration.configure(EventSourcingConfigurer.create(), clock))
     }
 
     @AfterEach

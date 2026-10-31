@@ -17,7 +17,7 @@ class HoldFulfillerTest {
     private val sawRow = HoldsToFulfillRow(ToolId(uuid("saw")), HoldId(uuid("h3")), NeighborId(uuid("cara")))
 
     @Test
-    fun `INV-FUL-2 - given two tools on the list, when the fulfiller runs, then it issues Fulfill Hold for each front hold`() {
+    fun `given two tools on the list, when the fulfiller runs, then it issues Fulfill Hold for each front hold`() {
         val sent = mutableListOf<FulfillHold>()
         HoldFulfiller({ listOf(drillRow, sawRow) }, { sent.add(it).let { ReactionOutcome.Accepted } }).run()
         assertThat(sent).containsExactly(FulfillHold(drillRow.holdId), FulfillHold(sawRow.holdId))
@@ -31,7 +31,7 @@ class HoldFulfillerTest {
     }
 
     @Test
-    fun `INV-FUL-3 - given the first item is refused hold-ended, when the fulfiller runs, then it moves on to the next item`() {
+    fun `given the first item is refused hold-ended, when the fulfiller runs, then it moves on to the next item`() {
         val sent = mutableListOf<FulfillHold>()
         val send = { command: FulfillHold ->
             sent.add(command)
@@ -46,38 +46,13 @@ class HoldFulfillerTest {
     }
 
     @Test
-    fun `INV-FUL-10 - given the list shows the same item twice, when the fulfiller runs twice, then it is sent again`() {
+    fun `given the list shows the same item on two runs, when the fulfiller runs twice, then it sends it each time`() {
         val sent = mutableListOf<FulfillHold>()
-        val fulfiller = HoldFulfiller({ listOf(drillRow) }, { sent.add(it).let { ReactionOutcome.Accepted } })
+        var reads = 0
+        val fulfiller = HoldFulfiller({ reads++.let { listOf(drillRow) } }, { sent.add(it).let { ReactionOutcome.Accepted } })
         fulfiller.run()
         fulfiller.run()
+        assertThat(reads).isEqualTo(2)
         assertThat(sent).containsExactly(FulfillHold(drillRow.holdId), FulfillHold(drillRow.holdId))
-    }
-
-    @Test
-    fun `given the list has not caught up yet, when the fulfiller runs, then it re-reads and acts once the item appears`() {
-        val sent = mutableListOf<FulfillHold>()
-        val pauses = mutableListOf<Long>()
-        var reads = 0
-        val list = { if (++reads < 3) emptyList() else listOf(drillRow) }
-        HoldFulfiller(list, { sent.add(it).let { ReactionOutcome.Accepted } }, listOf(10, 20, 30), { pauses.add(it) }).run()
-        assertThat(sent).containsExactly(FulfillHold(drillRow.holdId))
-        assertThat(pauses).containsExactly(10L, 20L, 30L)
-    }
-
-    @Test
-    fun `INV-FUL-2 - given a stale fulfilled tool on the list, when the next lands, then the fulfiller acts on the new tool`() {
-        val sent = mutableListOf<FulfillHold>()
-        var reads = 0
-        val list = { if (++reads < 3) listOf(sawRow) else listOf(sawRow, drillRow) }
-        HoldFulfiller(list, { sent.add(it).let { ReactionOutcome.Accepted } }, listOf(10, 20), { }).run()
-        assertThat(sent).containsExactly(FulfillHold(sawRow.holdId), FulfillHold(drillRow.holdId))
-    }
-
-    @Test
-    fun `given the list stays empty, when the fulfiller runs, then it gives up after the bounded waits`() {
-        val pauses = mutableListOf<Long>()
-        HoldFulfiller({ emptyList() }, { error("nothing to send") }, listOf(10, 20), { pauses.add(it) }).run()
-        assertThat(pauses).containsExactly(10L, 20L)
     }
 }

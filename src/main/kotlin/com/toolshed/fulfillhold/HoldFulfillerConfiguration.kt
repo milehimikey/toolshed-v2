@@ -1,23 +1,20 @@
 package com.toolshed.fulfillhold
 
 import com.toolshed.axon.ReactionDispatcher
-import com.toolshed.holdstofulfill.HoldsToFulfillRow
-import com.toolshed.holdstofulfill.ListToolsToFulfill
-import org.axonframework.messaging.queryhandling.gateway.QueryGateway
+import com.toolshed.holdstofulfill.HoldsToFulfillRepository
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-/** Builds the running app's Hold Fulfiller: it reads the list through the query bus and sends through the reaction dispatcher. */
+/** The running app's Hold Fulfiller: reads the list in-process from the read slice's repository (Amendment 11). */
 @Configuration
 class HoldFulfillerConfiguration {
     @Bean
     fun holdFulfiller(
-        queryGateway: QueryGateway,
+        repository: HoldsToFulfillRepository,
         dispatcher: ReactionDispatcher,
     ): HoldFulfiller =
         HoldFulfiller(
-            list = { queryGateway.queryMany(ListToolsToFulfill, HoldsToFulfillRow::class.java).join() },
+            list = { repository.toolsToFulfill() },
             send = { dispatcher.send(it) },
-            catchUpDelaysMillis = listOf(100, 300, 900, 2700),
         )
 }
