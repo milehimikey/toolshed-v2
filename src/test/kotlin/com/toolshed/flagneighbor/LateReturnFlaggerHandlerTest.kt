@@ -127,7 +127,7 @@ class LateReturnFlaggerHandlerTest {
 
     @Test
     fun `INV-FLG-2 - given Ana has two late returns, when her third return is on time, then the flagger sends nothing`() {
-        // Bo's late return after it is the marker: once the flagger has read for it, Ana's on-time return was handled before.
+        // The flagger reads once per late return (l1, l2, then Bo's l4); Bo's is the marker, so Ana's on-time return was handled before.
         registered()
             .twoLateReturns()
             .returned(l3, today, late = false)
@@ -136,7 +136,7 @@ class LateReturnFlaggerHandlerTest {
             .nothing()
             .then()
             .noEvents()
-        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted { assertThat(reads.get()).isEqualTo(1) }
+        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted { assertThat(reads.get()).isEqualTo(3) }
         assertThat(sent).isEmpty()
     }
 
