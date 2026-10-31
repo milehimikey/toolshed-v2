@@ -114,4 +114,38 @@ class LateReturnFlaggerHandlerTest {
             .noEvents()
         Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted { assertThat(sent).hasSize(2) }
     }
+
+    @Test
+    fun `INV-FLG-2 - given the list lags the late return, when it catches up, then the flagger flags only the changed neighbor`() {
+        val bo = NeighborId(UUID.nameUUIDFromBytes("bo".toByteArray()))
+        val other = LoanId(UUID.nameUUIDFromBytes("other".toByteArray()))
+        val reads =
+            java.util.concurrent.atomic
+                .AtomicInteger()
+        val caughtUp = NeighborsToFlag(listOf(NeighborToFlag(bo, listOf(other, other, other)), NeighborToFlag(ana, listOf(l1, l2, l3))))
+        val handler =
+            LateReturnFlaggerHandler(
+                readList = { if (reads.incrementAndGet() < 3) NeighborsToFlag(emptyList()) else caughtUp },
+                send = {
+                    sent.add(it)
+                    ReactionOutcome.Accepted
+                },
+                attempts = 5,
+                pause = {},
+            )
+        handler.on(returned(late = true))
+        assertThat(reads.get()).isEqualTo(3)
+        assertThat(sent).containsExactly(FlagNeighbor(ana, listOf(l1, l2, l3)))
+    }
+
+    @Test
+    fun `INV-FLG-2 - given the loan never reaches the list, when attempts run out, then nothing is sent`() {
+        val handler =
+            LateReturnFlaggerHandler({ NeighborsToFlag(emptyList()) }, {
+                sent.add(it)
+                ReactionOutcome.Accepted
+            }, 3, {})
+        handler.on(returned(late = true))
+        assertThat(sent).isEmpty()
+    }
 }

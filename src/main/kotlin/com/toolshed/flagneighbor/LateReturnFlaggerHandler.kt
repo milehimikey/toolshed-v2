@@ -22,6 +22,8 @@ private val logger = KotlinLogging.logger {}
 class LateReturnFlaggerHandler(
     private val readList: () -> NeighborsToFlag,
     private val send: (Any) -> ReactionOutcome,
+    private val attempts: Int = LIST_CATCH_UP_ATTEMPTS,
+    private val pause: () -> Unit = { Thread.sleep(LIST_CATCH_UP_PAUSE_MILLIS) },
 ) {
     @Autowired
     constructor(queries: QueryGateway, reactions: ReactionDispatcher) : this(
@@ -29,10 +31,23 @@ class LateReturnFlaggerHandler(
         reactions::send,
     )
 
+    /**
+     * The list is built by its own processor, so it may not have applied this late return yet. Read it until the loan
+     * just returned shows on an entry (that neighbor's entry changed), for a bounded time. If it never shows, this
+     * late return did not put anyone on the list, or the list is slow; a later late return reads it again.
+     */
     @EventHandler
     fun on(event: ToolReturned) {
         if (!event.late) return
-        flag(readList())
+        repeat(attempts) { attempt ->
+            val changed = readList().neighbors.filter { event.loanId in it.loanIds }
+            if (changed.isNotEmpty()) {
+                flag(NeighborsToFlag(changed))
+                return
+            }
+            if (attempt < attempts - 1) pause()
+        }
+        logger.debug { "late-return-flagger loanId=${event.loanId.value} outcome=not-on-list" }
     }
 
     /** Issues Flag Neighbor for every neighbor on [list]. */
@@ -48,3 +63,6 @@ class LateReturnFlaggerHandler(
         }
     }
 }
+
+private const val LIST_CATCH_UP_ATTEMPTS = 20
+private const val LIST_CATCH_UP_PAUSE_MILLIS = 100L
