@@ -17,4 +17,8 @@ class HoldFulfillerConfiguration {
             list = { repository.toolsToFulfill() },
             send = { dispatcher.send(it) },
         )
+
+    /** Declared here so it registers after the scanned Holds To Fulfill projection on their shared processor (Amendment 11). */
+    @Bean
+    fun holdFulfillerHandler(fulfiller: HoldFulfiller): HoldFulfillerHandler = HoldFulfillerHandler(fulfiller)
 }

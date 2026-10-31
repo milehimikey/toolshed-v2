@@ -20,6 +20,7 @@ import org.axonframework.common.configuration.Configuration
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.messaging.commandhandling.gateway.CommandGateway
 import org.axonframework.messaging.core.conversion.MessageConverter
+import org.axonframework.messaging.eventhandling.annotation.EventHandler
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -50,8 +51,17 @@ class HoldFulfillerHandlerFixtureTest {
 
     private val repository = InMemoryHoldsToFulfillRepository()
     private val sent = CopyOnWriteArrayList<FulfillHold>()
+    private val fulfilledRecorded = CopyOnWriteArrayList<HoldFulfilled>()
     private lateinit var configuration: Configuration
     private lateinit var fixture: AxonTestFixture
+
+    /** Records every Hold Fulfilled the store publishes, so a test can see what was actually set aside. */
+    inner class FulfilledRecorder {
+        @EventHandler
+        fun on(event: HoldFulfilled) {
+            fulfilledRecorded.add(event)
+        }
+    }
 
     private fun uuid(seed: String): UUID = UUID.nameUUIDFromBytes(seed.toByteArray())
 
@@ -77,7 +87,7 @@ class HoldFulfillerHandlerFixtureTest {
         val clock = Clock.fixed(now, ZoneId.of("America/Denver"))
         val configurer = EventSourcingConfigurer.create()
         FulfillHoldConfiguration.configure(configurer, clock)
-        HoldsToFulfillConfiguration.configure(configurer, repository, listOf(HoldFulfillerHandler(fulfiller)))
+        HoldsToFulfillConfiguration.configure(configurer, repository, listOf(HoldFulfillerHandler(fulfiller), FulfilledRecorder()))
         // AxonTestFixture.with disables Axon Server (a bare configurer.start() dials it and fails UNAVAILABLE).
         configurer.lifecycleRegistry { it.onStart(Int.MAX_VALUE, Consumer<Configuration> { started -> configuration = started }) }
         fixture = AxonTestFixture.with(configurer)
@@ -120,17 +130,17 @@ class HoldFulfillerHandlerFixtureTest {
     }
 
     @Test
-    fun `given the drill is on loan with H1 waiting, when an event that cannot change the list lands, then nothing is sent`() {
+    fun `given the drill is on loan with H1 waiting, when a Hold Placed lands that puts no tool on the list, then nothing is sent`() {
         fixture
             .given()
-            .events(
-                drillOnLoanWithHoldWaiting(),
-            ).`when`()
-            .event(NeighborRegistered(uuid("dee").let(::NeighborId), "Dee", "d@example.org", now))
+            .events(drillOnLoanWithHoldWaiting())
+            .`when`()
+            .event(HoldPlaced(h2, drill, cara, now))
             .then()
             .expect { _ ->
                 Thread.sleep(500)
                 assertThat(sent).isEmpty()
+                assertThat(fulfilledRecorded).isEmpty()
             }
     }
 
@@ -141,11 +151,13 @@ class HoldFulfillerHandlerFixtureTest {
             await().atMost(Duration.ofSeconds(10)).untilAsserted {
                 assertThat(sent).containsExactly(FulfillHold(h1))
                 assertThat(repository.toolsToFulfill()).isEmpty()
+                assertThat(fulfilledRecorded.map { it.holdId }).containsExactly(h1)
             }
             assertThat(dispatcher().send(FulfillHold(h1))).isEqualTo(ReactionOutcome.Accepted)
             Thread.sleep(500)
             assertThat(sent).containsExactly(FulfillHold(h1))
             assertThat(repository.toolsToFulfill()).isEmpty()
+            assertThat(fulfilledRecorded.map { it.holdId }).containsExactly(h1)
         }
     }
 }
