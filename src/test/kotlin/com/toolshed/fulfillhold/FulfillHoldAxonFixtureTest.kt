@@ -21,7 +21,6 @@ import org.axonframework.test.fixture.AxonTestPhase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -78,19 +77,21 @@ class FulfillHoldAxonFixtureTest {
 
     private fun setAsideForBen(): List<Any> = returned() + HoldFulfilled(h1, drill, ben, oct13, now)
 
-    private fun refusing(
+    private fun assertRefused(
         events: List<Any>,
         hold: HoldId,
-    ): Throwable =
-        assertThrows<Throwable> {
-            val phase =
-                fixture
-                    .given()
-                    .recorded(events)
-                    .`when`()
-                    .command(FulfillHold(hold))
-            phase.then().noEvents()
-        }
+        invariant: String,
+        reason: String,
+        sentence: String,
+    ) {
+        fixture
+            .given()
+            .recorded(events)
+            .`when`()
+            .command(FulfillHold(hold))
+            .then()
+            .exceptionSatisfies { ex -> assertRejected(ex, invariant, reason, sentence) }
+    }
 
     private fun assertRejected(
         ex: Throwable,
@@ -191,19 +192,19 @@ class FulfillHoldAxonFixtureTest {
             .command(FulfillHold(h1))
             .then()
             .success()
-            .noEvents()
     }
 
     @Test
     fun `INV-FUL-3 - given Ben checked out before the fulfiller acted, when H1 is fulfilled, then refused hold-ended`() {
         val collected = returned() + ToolCheckedOut(LoanId(uuid("l2")), drill, ben, 7, oct13, now)
-        assertRejected(refusing(collected, h1), "INV-FUL-3", "hold-ended", "This hold has already ended.")
+        assertRefused(collected, h1, "INV-FUL-3", "hold-ended", "This hold has already ended.")
     }
 
     @Test
     fun `INV-FUL-2 - given H1 and H2 waiting on a returned drill, when H2 is fulfilled, then refused not-front-of-queue`() {
-        assertRejected(
-            refusing(returned(), h2),
+        assertRefused(
+            returned(),
+            h2,
             "INV-FUL-2",
             "not-front-of-queue",
             "This hold isn't at the front of its tool's queue.",
@@ -212,8 +213,9 @@ class FulfillHoldAxonFixtureTest {
 
     @Test
     fun `INV-FUL-4 - given the set-aside for Ben lapsed but not expired, when H2 is fulfilled, then refused tool-set-aside`() {
-        assertRejected(
-            refusing(setAsideForBen(), h2),
+        assertRefused(
+            setAsideForBen(),
+            h2,
             "INV-FUL-4",
             "tool-set-aside",
             "This tool is already set aside for a holder.",
@@ -222,13 +224,14 @@ class FulfillHoldAxonFixtureTest {
 
     @Test
     fun `INV-FUL-3 - given the drill is on loan to Ana, when H1 is fulfilled, then refused tool-checked-out`() {
-        assertRejected(refusing(waitingQueue(), h1), "INV-FUL-3", "tool-checked-out", "This tool is already checked out.")
+        assertRefused(waitingQueue(), h1, "INV-FUL-3", "tool-checked-out", "This tool is already checked out.")
     }
 
     @Test
     fun `INV-FUL-3 - given Ben cancelled H1 before the fulfiller acted, when H1 is fulfilled, then refused hold-ended`() {
-        assertRejected(
-            refusing(returned() + HoldCancelled(h1, now), h1),
+        assertRefused(
+            returned() + HoldCancelled(h1, now),
+            h1,
             "INV-FUL-3",
             "hold-ended",
             "This hold has already ended.",
@@ -237,6 +240,6 @@ class FulfillHoldAxonFixtureTest {
 
     @Test
     fun `INV-FUL-9 - given no hold H9 was placed, when H9 is fulfilled, then refused hold-not-found`() {
-        assertRejected(refusing(returned(), h9), "INV-FUL-9", "hold-not-found", "There is no such hold.")
+        assertRefused(returned(), h9, "INV-FUL-9", "hold-not-found", "There is no such hold.")
     }
 }
