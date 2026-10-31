@@ -24,7 +24,7 @@ class HoldFulfillerTest {
     }
 
     @Test
-    fun `INV-FUL-3 - given an empty list, when the fulfiller runs, then no command is issued`() {
+    fun `given an empty list, when the fulfiller runs, then no command is issued`() {
         val sent = mutableListOf<FulfillHold>()
         HoldFulfiller({ emptyList() }, { sent.add(it).let { ReactionOutcome.Accepted } }).run()
         assertThat(sent).isEmpty()
@@ -52,5 +52,23 @@ class HoldFulfillerTest {
         fulfiller.run()
         fulfiller.run()
         assertThat(sent).containsExactly(FulfillHold(drillRow.holdId), FulfillHold(drillRow.holdId))
+    }
+
+    @Test
+    fun `given the list has not caught up yet, when the fulfiller runs, then it re-reads and acts once the item appears`() {
+        val sent = mutableListOf<FulfillHold>()
+        val pauses = mutableListOf<Long>()
+        var reads = 0
+        val list = { if (++reads < 3) emptyList() else listOf(drillRow) }
+        HoldFulfiller(list, { sent.add(it).let { ReactionOutcome.Accepted } }, listOf(10, 20, 30), { pauses.add(it) }).run()
+        assertThat(sent).containsExactly(FulfillHold(drillRow.holdId))
+        assertThat(pauses).containsExactly(10L, 20L)
+    }
+
+    @Test
+    fun `given the list stays empty, when the fulfiller runs, then it gives up after the bounded waits`() {
+        val pauses = mutableListOf<Long>()
+        HoldFulfiller({ emptyList() }, { error("nothing to send") }, listOf(10, 20), { pauses.add(it) }).run()
+        assertThat(pauses).containsExactly(10L, 20L)
     }
 }

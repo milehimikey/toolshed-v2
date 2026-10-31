@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * The Hold Fulfiller's processor, built from [FulfillHoldConfiguration.configure]: an event that changes the list wakes
- * the fulfiller (INV-FUL-6, INV-FUL-2); an event that cannot change it does not.
+ * the fulfiller (INV-FUL-2); an event that cannot change it does not.
  */
 class HoldFulfillerHandlerFixtureTest {
     private val now = Instant.parse("2026-10-10T16:00:00Z")
@@ -54,14 +54,14 @@ class HoldFulfillerHandlerFixtureTest {
     }
 
     @Test
-    fun `INV-FUL-6 - given a hold is placed on a free tool, when Hold Placed lands, then the fulfiller reads the list`() {
+    fun `given a hold is placed on a free tool, when Hold Placed lands, then the fulfiller reads the list`() {
         fixture.given().events(HoldPlaced(h1, drill, ben, now)).then().expect { _ ->
             await().atMost(Duration.ofSeconds(5)).untilAsserted { assertThat(runs.get()).isGreaterThanOrEqualTo(1) }
         }
     }
 
     @Test
-    fun `INV-FUL-3 - given an event that cannot change the list, when Neighbor Registered lands, then the fulfiller does not act`() {
+    fun `given an event that cannot change the list, when Neighbor Registered lands, then the fulfiller does not act`() {
         fixture.given().events(NeighborRegistered(ben, "Ben Cole", "ben@example.org", now)).then().expect { _ ->
             Thread.sleep(500)
             assertThat(runs.get()).isZero()

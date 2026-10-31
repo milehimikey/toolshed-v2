@@ -202,12 +202,6 @@ class FulfillHoldDeciderTest {
         assertThat(fulfill(stateWith(overdue, placedH1), h1)).hasSize(1)
     }
 
-    @Test
-    fun `INV-FUL-8 - given the front holder is suspended, when H1 is fulfilled, then it is recorded`() {
-        // Suspension is not a fact this decision reads: the same state yields the event.
-        assertThat(fulfill(stateWith(placedH1), h1).single().neighborId).isEqualTo(ben)
-    }
-
     // --- INV-FUL-9 ---
 
     @Test

@@ -41,7 +41,6 @@ class FulfillState
     constructor() {
         private val holds = LinkedHashMap<HoldId, FulfillHoldView>()
         private val openLoans = mutableMapOf<ToolId, MutableSet<LoanId>>()
-        private val retired = mutableSetOf<ToolId>()
 
         fun hold(holdId: HoldId): FulfillHoldView? = holds[holdId]
 
@@ -94,7 +93,6 @@ class FulfillState
 
         @EventSourcingHandler
         fun evolve(event: ToolRetired) {
-            retired.add(event.toolId)
             holds.values.filter { it.toolId == event.toolId }.forEach { it.ended = true }
         }
 

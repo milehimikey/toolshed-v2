@@ -192,6 +192,7 @@ class FulfillHoldAxonFixtureTest {
             .command(FulfillHold(h1))
             .then()
             .success()
+            .noEvents()
     }
 
     @Test
