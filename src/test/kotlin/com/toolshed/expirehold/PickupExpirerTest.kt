@@ -48,7 +48,7 @@ class PickupExpirerTest {
     }
 
     @Test
-    fun `INV-EXP-11 - given the list shows the same lapsed set-aside on two runs, when the expirer runs twice, then it sends it each time`() {
+    fun `INV-EXP-11 - given the list shows the same lapsed set-aside on two runs, when run twice, then it sends each time`() {
         val sent = mutableListOf<ExpireHold>()
         val expirer = PickupExpirer({ listOf(h1Row) }, { sent.add(it).let { ReactionOutcome.Accepted } })
         expirer.run()

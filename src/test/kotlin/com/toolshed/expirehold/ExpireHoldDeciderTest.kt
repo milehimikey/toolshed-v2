@@ -72,7 +72,7 @@ class ExpireHoldDeciderTest {
 
     // --- INV-EXP-2 ---
     @Test
-    fun `INV-EXP-2 - given H1 set aside collect by 17 October, when handled at the start of 18 October, then Hold Expired with that moment`() {
+    fun `INV-EXP-2 - given H1 set aside collect by 17 October, when handled at start of 18 October, then Hold Expired`() {
         assertThat(decide(stateWith(placedH1, fulfilledH1))).containsExactly(HoldExpired(h1, startOfOct18))
     }
 
