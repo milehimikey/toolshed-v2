@@ -269,17 +269,24 @@ Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.le
     after the projection, so that for every event the processor handles, the list has already
     applied that event by the time the reaction reads it. Axon 5 keeps handling components in
     registration order, which is what makes this a guarantee rather than a timing guess.
-    - **Shape.** One `EventProcessorModule` per read model, named as the read slice's
-      `configure` already names it, whose `eventHandlingComponents` list the projection first
-      and each reaction after it. In the running app, one `EventProcessorDefinition` bean per
-      read model, declared in the read slice's package, selects the projection bean and every
-      reaction bean for that processor.
+    - **Shape.** The reaction is not an event-handling component of its own. The read slice
+      declares a reaction interface (`<ViewName>Reaction`, one method per event the list can
+      change on, or one `onListChanged(event)`), and its projection invokes every registered
+      reaction at the end of each `@EventHandler`, after the repository write, inside the
+      projection's own handler invocation. The reaction therefore runs on the list's processor,
+      after the write, without depending on the order of handling components. (Clarified
+      2026-10-31: the first shape — projection and reaction as two components on one
+      `EventProcessorModule`, ordered by registration — holds in a fixture but not in the
+      running app, where Axon Spring 5.2.0 collects handler beans into an unordered set before
+      building the processor; neither `@Order` nor bean-definition order survives it. The
+      critic's finding on fulfill-hold.)
     - **Who owns the binding.** The read slice owns the processor and the binding point: its
-      `configure` takes the reactions to register after the projection (for example
-      `reactions: List<Any> = emptyList()`), and it declares the marker type or selector the
-      Spring definition uses to admit a reaction. The automation slice supplies its handler and
-      implements the marker. Adding that binding point to the read slice is part of implementing
-      the first automation that reads it, and is the one edit to another slice's code that
+      `configure` takes the reactions (`reactions: List<<ViewName>Reaction> = emptyList()`)
+      and passes them to the projection; in the running app the projection is constructed with
+      every `<ViewName>Reaction` bean (`List<<ViewName>Reaction>` injection), so no
+      `EventProcessorDefinition` is needed. The automation slice supplies the reaction class and
+      nothing else. Adding that binding point to the read slice is part of implementing the
+      first automation that reads it, and is the one edit to another slice's code that
       Amendment 1 permits.
     - **Reading and acting.** The reaction reads the list in-process through what the read slice
       exposes (its query handler or repository); it does not go through a separate processor's
