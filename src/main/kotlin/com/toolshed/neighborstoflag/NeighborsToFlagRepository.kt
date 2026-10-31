@@ -3,6 +3,7 @@ package com.toolshed.neighborstoflag
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -23,6 +24,7 @@ class NeighborsToFlagRepository {
     private val suspended = HashSet<NeighborId>()
     private val closed = HashSet<NeighborId>()
     private val returnsSeen = HashSet<LoanId>()
+    private val resetsSeen = HashSet<Pair<NeighborId, Instant>>()
     private val rows = LinkedHashMap<LoanId, Row>()
 
     @Synchronized
@@ -56,16 +58,28 @@ class NeighborsToFlagRepository {
         loanIds.forEach { rows.remove(it) }
     }
 
-    /** Neighbor Suspended: the neighbor's rows go, and returns while suspended aren't counted (INV-NTF-7). */
+    /**
+     * Neighbor Suspended: the neighbor's rows go, and returns while suspended aren't counted (INV-NTF-7). The event
+     * is identified by its neighbor and [at]; one already applied is a no-op, so a redelivery can't wipe rows made
+     * since (INV-NTF-8).
+     */
     @Synchronized
-    fun suspend(neighborId: NeighborId) {
+    fun suspend(
+        neighborId: NeighborId,
+        at: Instant,
+    ) {
+        if (!resetsSeen.add(neighborId to at)) return
         suspended.add(neighborId)
         removeRows(neighborId)
     }
 
-    /** Neighbor Reinstated: the count starts again from zero (INV-NTF-5). */
+    /** Neighbor Reinstated: the count starts again from zero (INV-NTF-5). A redelivery is a no-op (INV-NTF-8). */
     @Synchronized
-    fun reinstate(neighborId: NeighborId) {
+    fun reinstate(
+        neighborId: NeighborId,
+        at: Instant,
+    ) {
+        if (!resetsSeen.add(neighborId to at)) return
         suspended.remove(neighborId)
         removeRows(neighborId)
     }
@@ -73,7 +87,7 @@ class NeighborsToFlagRepository {
     /** Neighbor Account Closed: the neighbor leaves the list and is never flagged (INV-NTF-6). */
     @Synchronized
     fun close(neighborId: NeighborId) {
-        closed.add(neighborId)
+        if (!closed.add(neighborId)) return
         removeRows(neighborId)
     }
 

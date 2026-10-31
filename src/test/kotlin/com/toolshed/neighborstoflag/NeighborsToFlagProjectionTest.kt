@@ -4,6 +4,7 @@ import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -16,6 +17,10 @@ class NeighborsToFlagProjectionTest {
     private val l3 = loan(3)
     private val l4 = loan(4)
     private val oct5 = LocalDate.of(2026, 10, 5)
+
+    private var clock = 0L
+
+    private fun tick(): Instant = Instant.ofEpochSecond(1_000_000 + clock++)
 
     private fun loan(n: Int) = LoanId(UUID.fromString("00000000-0000-0000-0000-0000000001%02d".format(n)))
 
@@ -195,8 +200,8 @@ class NeighborsToFlagProjectionTest {
         val r = NeighborsToFlagRepository()
         r.lateReturn(ana, l1, LocalDate.of(2026, 9, 1))
         r.lateReturn(ana, l2, LocalDate.of(2026, 9, 20))
-        r.suspend(ana)
-        r.reinstate(ana)
+        r.suspend(ana, tick())
+        r.reinstate(ana, tick())
 
         r.lateReturn(ana, l3, LocalDate.of(2026, 10, 10))
 
@@ -206,8 +211,8 @@ class NeighborsToFlagProjectionTest {
     @Test
     fun `INV-NTF-5 - after reinstatement a new late return counts again`() {
         val r = NeighborsToFlagRepository()
-        r.suspend(ana)
-        r.reinstate(ana)
+        r.suspend(ana, tick())
+        r.reinstate(ana, tick())
         r.lateReturn(ana, l1, oct5)
         r.lateReturn(ana, l2, oct5)
         r.lateReturn(ana, l3, oct5)
@@ -243,7 +248,7 @@ class NeighborsToFlagProjectionTest {
     fun `INV-NTF-6 - a closed account stays out of the list after a reinstatement event`() {
         val r = NeighborsToFlagRepository()
         r.close(ana)
-        r.reinstate(ana)
+        r.reinstate(ana, tick())
         r.lateReturn(ana, l1, oct5)
         r.lateReturn(ana, l2, oct5)
         r.lateReturn(ana, l3, oct5)
@@ -257,7 +262,7 @@ class NeighborsToFlagProjectionTest {
     fun `INV-NTF-7 - given Ana is listed, when Neighbor Suspended, then her rows are removed and she is not listed`() {
         val r = threeLateReturns()
 
-        r.suspend(ana)
+        r.suspend(ana, tick())
 
         assertThat(r.listed()).isEmpty()
     }
@@ -268,12 +273,12 @@ class NeighborsToFlagProjectionTest {
         r.checkOut(l1, ana)
         r.checkOut(l2, ana)
         r.checkOut(l3, ana)
-        r.suspend(ana)
+        r.suspend(ana, tick())
 
         r.returned(l1, oct5, true)
         r.returned(l2, oct5, true)
         r.returned(l3, oct5, true)
-        r.reinstate(ana)
+        r.reinstate(ana, tick())
 
         assertThat(r.listed()).isEmpty()
     }
@@ -295,15 +300,48 @@ class NeighborsToFlagProjectionTest {
     }
 
     @Test
-    fun `INV-NTF-8 - applying suspend, close and flagged twice leaves the list as after once`() {
+    fun `INV-NTF-8 - applying flagged and close twice leaves the list as after once`() {
         val r = threeLateReturns()
         r.flagged(listOf(l1, l2, l3))
         r.flagged(listOf(l1, l2, l3))
-        r.suspend(ben)
-        r.suspend(ben)
+        r.lateReturn(ben, l4, oct5)
         r.close(ben)
         r.close(ben)
 
         assertThat(r.listed()).isEmpty()
+    }
+
+    @Test
+    fun `INV-NTF-8 - given Ana reinstated then L3 returned late, when the reinstatement is delivered again, then L3 still counts`() {
+        val r = NeighborsToFlagRepository()
+        val reinstatedAt = tick()
+        r.lateReturn(ana, l1, LocalDate.of(2026, 9, 1))
+        r.reinstate(ana, reinstatedAt)
+        r.lateReturn(ana, l2, LocalDate.of(2026, 9, 20))
+        r.lateReturn(ana, l3, oct5)
+
+        // redelivered batch [Reinstated, ToolReturned L3]
+        r.reinstate(ana, reinstatedAt)
+        r.returned(l3, oct5, true)
+        r.checkOut(l3, ana)
+
+        assertThat(r.listed()).isEmpty()
+        r.lateReturn(ana, l4, oct5)
+        assertThat(r.listed().single().loanIds).containsExactlyInAnyOrder(l2, l3, l4)
+    }
+
+    @Test
+    fun `INV-NTF-8 - given suspended, reinstated, then L3 returned late, when the suspension is delivered again, then Ana is not suspended and L3 counts`() {
+        val r = NeighborsToFlagRepository()
+        val suspendedAt = tick()
+        r.suspend(ana, suspendedAt)
+        r.reinstate(ana, tick())
+        r.lateReturn(ana, l3, oct5)
+
+        r.suspend(ana, suspendedAt)
+        r.lateReturn(ana, l4, oct5)
+        r.lateReturn(ana, l1, oct5)
+
+        assertThat(r.listed().single().loanIds).containsExactlyInAnyOrder(l1, l3, l4)
     }
 }
