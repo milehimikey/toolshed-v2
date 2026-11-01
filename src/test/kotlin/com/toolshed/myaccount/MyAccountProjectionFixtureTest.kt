@@ -1,11 +1,13 @@
 package com.toolshed.myaccount
 
+import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.placehold.HoldPlaced
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
 import com.toolshed.suspendneighbor.NeighborSuspended
@@ -50,12 +52,12 @@ class MyAccountProjectionFixtureTest {
         neighbor: NeighborId,
         check: (MyAccountRow) -> Boolean,
     ): MyAccountRow {
-        var last: MyAccountRow? = null
+        var found: MyAccountRow? = null
         Awaitility.await().atMost(Duration.ofSeconds(30)).until {
-            last = gateway.query(GetMyAccount(neighbor), MyAccount::class.java).join().account
-            last != null && check(last!!)
+            found = gateway.query(GetMyAccount(neighbor), MyAccount::class.java).join().account
+            found?.let(check) == true
         }
-        return last!!
+        return requireNotNull(found) { "no account $neighbor" }
     }
 
     private fun registered(
@@ -225,13 +227,14 @@ class MyAccountProjectionFixtureTest {
     }
 
     @Test
-    fun `INV-MYAC-7 - loans do not change My Account`() {
+    fun `INV-MYAC-7 - loans and holds do not change My Account`() {
         fixture
             .given()
             .recorded(
                 listOf(
                     registered(n1),
                     ToolCheckedOut(LoanId(UUID.randomUUID()), ToolId(UUID.randomUUID()), n1, 7, LocalDate.of(2026, 10, 12), now),
+                    HoldPlaced(HoldId(UUID.randomUUID()), ToolId(UUID.randomUUID()), n1, now),
                     registered(n2, "Ben Ortiz", "ben@example.org"),
                 ),
             ).execute { config ->
