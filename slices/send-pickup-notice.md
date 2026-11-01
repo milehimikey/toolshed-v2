@@ -4,6 +4,9 @@ pattern: translation
 swimlane: System → Holds
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/c44110594b70cc09e0ad028737b02133cf938b78
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
 ratifiedBy: Mike Key

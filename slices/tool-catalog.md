@@ -4,6 +4,9 @@ pattern: state-view
 swimlane: Neighbor → Tools
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/01689d1fc90e13b2356e10def6605b8c08aff62a
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
 ratifiedBy: Mike Key

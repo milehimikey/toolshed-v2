@@ -133,7 +133,7 @@ slice "My Loans — overdue notice sent" {
 }
 
 slice "Record Overdue Notice Failure" {
-  translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md" issue "conformance: no inbound transport and the verifier fails closed until an email provider is chosen (Amendment 8) — annotate as a divergence or track wiring the transport"
+  translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md" divergence "No email provider selected yet (constitution Amendment 8): no inbound transport reaches this translation and its verifier fails closed until a provider is chosen; the mapping code is in place (conformance 2026-11-01, rulings 2 and 3)"
   command Record Overdue Notice Failure { loanId: LoanId, reason: Text }
   event Overdue Notice Failed { loanId: LoanId, reason: Text, failedAt: Instant assigned } @Loans
 }
@@ -223,7 +223,7 @@ slice "My Holds — pickup notice sent" {
 }
 
 slice "Record Pickup Notice Failure" {
-  translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md" issue "conformance: no inbound transport and the verifier fails closed until an email provider is chosen (Amendment 8) — annotate as a divergence or track wiring the transport"
+  translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md" divergence "No email provider selected yet (constitution Amendment 8): no inbound transport reaches this translation and its verifier fails closed until a provider is chosen; the mapping code is in place (conformance 2026-11-01, rulings 2 and 3)"
   command Record Pickup Notice Failure { holdId: HoldId, reason: Text }
   event Pickup Notice Failed { holdId: HoldId, reason: Text, failedAt: Instant assigned } @Holds
 }

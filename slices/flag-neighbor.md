@@ -4,6 +4,9 @@ pattern: automation
 swimlane: System → Neighbors
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/49e73dd7051c66f844a967c12b5c732ff88da063
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
 ratifiedBy: Mike Key
