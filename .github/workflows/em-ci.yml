@@ -115,6 +115,20 @@ jobs:
       - name: Check slice doc version/content agreement
         run: npx @milehimikey/em@1.19.7 ledger "toolshed.em" --from "${{ github.event.pull_request.base.sha }}"
 
+  roster:
+    name: "em roster check (recorded signers are on ratifiers.yaml)"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check every recorded ratifiedBy/reviewedBy against the roster
+        # Whole-model gate (GH #259): ratifiedBy on ready-to-implement and implemented docs,
+        # reviewedBy on any doc. The grandfathered placeholder is exempt. See docs/ci.md.
+        run: npx @milehimikey/em@1.19.7 roster check "toolshed.em"
+
   skill-check:
     name: em skill check (vendored skill / plugin drift)
     if: github.event_name == 'pull_request'

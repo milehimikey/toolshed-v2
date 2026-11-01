@@ -1,0 +1,8 @@
+# ratifiers.yaml -- who may sign slice docs for this model (em roster init).
+# Seeded from the names already recorded in the slice docs. Narrow an entry with
+# `contexts: [Name, ...]` (omit = whole model). Delete the file to lift the restriction.
+rosterSchemaVersion: "1.0"
+ratifiers:
+  - name: "Mike Key"
+reviewers:
+  - name: "Mike Key"
