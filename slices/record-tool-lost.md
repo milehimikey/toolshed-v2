@@ -183,3 +183,4 @@ There are no external calls, retries or compensations in this slice. Nothing is 
 
 ## Open Questions
 None.
+- [x] Declare toolId on Record Tool Lost (taken from the route, Amendment 10) and extend INV-LOST-11: a route toolId that is not the loan's tool is refused loan-not-found (conformance 2026-11-01, finding 1) — v1: v1 ships the route check undocumented; no code change; deferred to v2 (2026-11-01, Mike Key)

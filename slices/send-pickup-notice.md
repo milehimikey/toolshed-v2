@@ -280,3 +280,4 @@ recorded, one at a time per hold, so at most one Pickup Notice Sent is recorded 
 
 ## Open Questions
 None.
+- [x] Bad input: blank sentTo, holderName or toolName is rejected as bad input; the email subject is 'Your <tool> is ready for pickup' (conformance 2026-11-01, finding 7) — v1: v1 code keeps both; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)

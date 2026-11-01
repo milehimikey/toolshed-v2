@@ -212,3 +212,4 @@ There are no external calls, retries or compensations in this slice. Cancelling 
 
 ## Open Questions
 None.
+- [x] Dependencies: Tool Lost is matched by its own toolId, not through Tool Checked Out.loanId (conformance 2026-11-01, finding 5) — v1: wording only; behaviour unchanged; deferred to v2 (2026-11-01, Mike Key)

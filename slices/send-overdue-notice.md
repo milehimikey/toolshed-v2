@@ -269,3 +269,4 @@ recorded, one at a time per loan, so at most one Overdue Notice Sent is recorded
 
 ## Open Questions
 None.
+- [x] Bad input: blank sentTo, borrowerName or toolName is rejected as bad input, not only a malformed loan id (conformance 2026-11-01, finding 6) — v1: v1 code keeps the rejection; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)
