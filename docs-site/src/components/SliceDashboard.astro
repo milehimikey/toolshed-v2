@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+
+const slices = (await getCollection('docs', (entry) => entry.id.startsWith('slices/'))).sort(
+  (a, b) => a.data.title.localeCompare(b.data.title)
+);
+
+const prLabel = (url: string) => {
+  const m = url.match(/\/pull\/(\d+)/);
+  return m ? `#${m[1]}` : 'link';
+};
+---
+
+<table>
+  <thead>
+    <tr>
+      <th>Slice</th>
+      <th>Pattern</th>
+      <th>Swimlane</th>
+      <th>Status</th>
+      <th>Ratified</th>
+      <th>PR</th>
+    </tr>
+  </thead>
+  <tbody>
+    {
+      slices.map((s) => (
+        <tr>
+          <td>
+            <a href={`/${s.id}/`}>{s.data.title}</a>
+          </td>
+          <td>
+            <span class={`pattern pattern-${s.data.pattern ?? 'unknown'}`}>
+              {s.data.pattern ?? '—'}
+            </span>
+          </td>
+          <td>{s.data.swimlane ?? '—'}</td>
+          <td>
+            <span class={`status status-${s.data.status ?? 'unknown'}`}>{s.data.status ?? '—'}</span>
+          </td>
+          <td>
+            {s.data.ratifiedBy
+              ? `${s.data.ratifiedBy}, ${s.data.ratifiedOn?.toISOString().slice(0, 10) ?? ''}`
+              : '—'}
+          </td>
+          <td>{s.data.implementedIn ? <a href={s.data.implementedIn}>{prLabel(s.data.implementedIn)}</a> : '—'}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+
+<style>
+  .pattern,
+  .status {
+    display: inline-block;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    font-size: var(--sl-text-xs);
+    white-space: nowrap;
+    border: 1px solid var(--sl-color-hairline);
+  }
+  .pattern-state-change {
+    background: color-mix(in srgb, var(--sl-color-blue) 18%, transparent);
+  }
+  .pattern-state-view {
+    background: color-mix(in srgb, var(--sl-color-green) 18%, transparent);
+  }
+  .pattern-automation {
+    background: color-mix(in srgb, var(--sl-color-orange) 18%, transparent);
+  }
+  .pattern-translation {
+    background: color-mix(in srgb, var(--sl-color-purple) 18%, transparent);
+  }
+  .status-implemented {
+    background: color-mix(in srgb, var(--sl-color-green) 25%, transparent);
+  }
+</style>

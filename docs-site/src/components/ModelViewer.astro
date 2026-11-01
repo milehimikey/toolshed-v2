@@ -1,0 +1,117 @@
+---
+interface Props {
+  src: string;
+  alt?: string;
+}
+const { src, alt = 'Event model diagram' } = Astro.props;
+---
+
+<div class="model-viewer" data-model-viewer>
+  <div class="mv-canvas">
+    <img src={src} alt={alt} draggable="false" />
+  </div>
+  <p class="mv-hint">drag to pan · scroll to zoom · double-click to fit</p>
+</div>
+
+<style is:global>
+  /* Event models are wide: let any page embedding the viewer use the full pane. */
+  main:has([data-model-viewer]) {
+    --sl-content-width: 100%;
+  }
+</style>
+
+<style>
+  .model-viewer {
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--sl-color-bg-nav);
+  }
+  .mv-canvas {
+    height: 78vh;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+  }
+  .mv-canvas:active {
+    cursor: grabbing;
+  }
+  .mv-canvas img {
+    max-width: none;
+    transform-origin: 0 0;
+    user-select: none;
+  }
+  .mv-hint {
+    margin: 0;
+    padding: 0.4rem 0.8rem;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+</style>
+
+<script>
+  for (const viewer of document.querySelectorAll('[data-model-viewer]')) {
+    const canvas = viewer.querySelector('.mv-canvas') as HTMLElement;
+    const img = canvas.querySelector('img') as HTMLImageElement;
+    let scale = 1;
+    let tx = 0;
+    let ty = 0;
+
+    const apply = () => {
+      img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+    };
+
+    const fit = () => {
+      if (!img.naturalWidth || !img.naturalHeight) return;
+      scale = Math.min(
+        canvas.clientWidth / img.naturalWidth,
+        canvas.clientHeight / img.naturalHeight
+      );
+      tx = (canvas.clientWidth - img.naturalWidth * scale) / 2;
+      ty = (canvas.clientHeight - img.naturalHeight * scale) / 2;
+      apply();
+    };
+    if (img.complete) fit();
+    else img.addEventListener('load', fit);
+
+    canvas.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        const next = Math.min(8, Math.max(0.02, scale * factor));
+        tx = cx - ((cx - tx) * next) / scale;
+        ty = cy - ((cy - ty) * next) / scale;
+        scale = next;
+        apply();
+      },
+      { passive: false }
+    );
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    canvas.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      tx += e.clientX - lastX;
+      ty += e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      apply();
+    });
+    canvas.addEventListener('pointerup', () => {
+      dragging = false;
+    });
+    canvas.addEventListener('dblclick', fit);
+  }
+</script>

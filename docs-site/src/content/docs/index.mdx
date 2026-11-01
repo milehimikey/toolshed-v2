@@ -1,0 +1,39 @@
+---
+title: Toolshed Event Model
+description: A browsable, cross-linked view of the toolshed event model — slices, invariants, and the full diagram.
+template: splash
+hero:
+  tagline: A neighborhood tool-lending library, specified as an event model. This site is a generated view over the canonical em artifacts — the slice docs and toolshed.em stay the source of truth.
+  actions:
+    - text: Explore the model
+      link: /model/
+      icon: right-arrow
+    - text: Find an invariant
+      link: /invariants/
+      icon: magnifier
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+	<Card title="The Model" icon="puzzle">
+		The full event model diagram with pan and zoom — every slice in timeline
+		order across the Tools, Loans, Holds and Neighbors contexts. [Open the
+		viewer](/model/).
+	</Card>
+	<Card title="Invariant Index" icon="approve-check">
+		Every business rule in one place, grouped by the slice that defines it.
+		Each `INV-*` mention anywhere on this site links here. [Browse
+		invariants](/invariants/).
+	</Card>
+	<Card title="Slice Status" icon="list-format">
+		All slices with pattern, swimlane, ratification and implementing PR,
+		straight from the slice-doc frontmatter. [See the dashboard](/status/).
+	</Card>
+	<Card title="Slice Docs" icon="open-book">
+		The ratified specification for each slice — field tables, invariants and
+		Given/When/Then scenarios — rendered from the canonical markdown in
+		`slices/`. Start with [Add Tool](/slices/add-tool/).
+	</Card>
+</CardGrid>
