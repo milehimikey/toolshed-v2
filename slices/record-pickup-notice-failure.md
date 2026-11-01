@@ -4,6 +4,9 @@ pattern: translation
 swimlane: System → Holds
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/19
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
@@ -199,3 +202,4 @@ know another way.
 
 ## Open Questions
 None.
+- [x] INV-PNF-9: Tool Lost also ends a set-aside; a loan-keyed failure report is routed to Record Overdue Notice Failure, not recorded here (conformance 2026-11-01, finding 8) — v1: v1 code keeps both rules; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)

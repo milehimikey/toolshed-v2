@@ -4,6 +4,9 @@ pattern: state-view
 swimlane: System → Holds
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/e627d2500f6dd65a69323f893f4bfcce125921a9
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
 ratifiedBy: Mike Key

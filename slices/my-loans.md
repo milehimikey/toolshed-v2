@@ -4,6 +4,9 @@ pattern: state-view
 swimlane: Neighbor → Loans
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/b1485c8a98f0f2a4b4f48fce0be87ad4cfb6b284
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
 ratifiedBy: Mike Key
@@ -285,3 +288,4 @@ stable name, and the sentence shown on the screen. The checks run in this order:
 
 ## Open Questions
 None.
+- [x] INV-MYL-12 (Return offered on every loan) has no enforcement site in this slice; rephrase it to cite Return Tool's INV-RET-5/7/9, which it relies on, or drop it (conformance 2026-11-01, uncertainty) — v1: v1 keeps the sentence; no code change; deferred to v2 (2026-11-01, Mike Key)

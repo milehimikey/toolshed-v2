@@ -4,6 +4,9 @@ pattern: state-change
 swimlane: Shed Manager → Tools
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/24
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
@@ -183,3 +186,4 @@ There are no external calls, retries or compensations in this slice. Nothing is 
 
 ## Open Questions
 None.
+- [x] Declare toolId on Record Tool Lost (taken from the route, Amendment 10) and extend INV-LOST-11: a route toolId that is not the loan's tool is refused loan-not-found (conformance 2026-11-01, finding 1) — v1: v1 ships the route check undocumented; no code change; deferred to v2 (2026-11-01, Mike Key)

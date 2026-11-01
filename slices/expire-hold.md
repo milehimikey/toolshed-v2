@@ -4,6 +4,9 @@ pattern: automation
 swimlane: System → Holds
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/33b880061c6bb7c2805599a53207dfe58c69bffe
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
 ratifiedBy: Mike Key

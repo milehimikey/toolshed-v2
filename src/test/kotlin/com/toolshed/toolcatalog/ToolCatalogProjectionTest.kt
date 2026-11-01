@@ -315,6 +315,15 @@ class ToolCatalogProjectionTest {
         assertThat(r.rows()).isEmpty()
     }
 
+    @Test
+    fun `INV-TCAT-8 INV-TCAT-12 a Tool Added delivered again after the retirement never brings the tool back`() {
+        val r = ToolCatalogRepository()
+        r.add(drill, "Cordless drill")
+        r.retire(drill)
+        r.add(drill, "Cordless drill")
+        assertThat(r.rows()).isEmpty()
+    }
+
     // --- INV-TCAT-10: a tool recorded lost drops off, other tools unchanged ---
 
     @Test
@@ -325,6 +334,16 @@ class ToolCatalogProjectionTest {
         r.checkOut(l1, drill, ana, oct12)
         r.placeHold(h1, drill, ben)
         r.recordLost(drill)
+        assertThat(r.rows().map { it.toolId }).containsExactly(ladder)
+    }
+
+    @Test
+    fun `INV-TCAT-10 INV-TCAT-12 a Tool Added delivered again after the loss never brings the tool back`() {
+        val r = ToolCatalogRepository()
+        r.add(drill, "Cordless drill")
+        r.add(ladder, "Ladder")
+        r.recordLost(drill)
+        r.add(drill, "Cordless drill")
         assertThat(r.rows().map { it.toolId }).containsExactly(ladder)
     }
 

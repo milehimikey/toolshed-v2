@@ -4,6 +4,9 @@ pattern: translation
 swimlane: System → Loans
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-11-01
 ratifiedBy: Mike Key
@@ -269,3 +272,4 @@ recorded, one at a time per loan, so at most one Overdue Notice Sent is recorded
 
 ## Open Questions
 None.
+- [x] Bad input: blank sentTo, borrowerName or toolName is rejected as bad input, not only a malformed loan id (conformance 2026-11-01, finding 6) — v1: v1 code keeps the rejection; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)

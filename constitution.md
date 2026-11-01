@@ -248,6 +248,11 @@ Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.le
         `context.decideAndAppend { ... }`.
 
       Slices never reference `EventAppender`. `AppendDisciplineTest` enforces this.
+
+      A slice's `<Concept>State` may be a single shed-wide ledger (criteria by event type,
+      `havingAnyTag`) rather than a per-thing boundary; that is coarser than the slice doc's
+      stated rule, never looser, and is the house idiom. (Noted 2026-11-01 from the first
+      conformance sweep, with Mike Key's approval.)
     - **Dispatch.** REST controllers send commands through `com.toolshed.web.CommandDispatcher`.
       It retries a server-side failure up to 3 times, which is safe because Amendment 7 makes
       commands safe to repeat. It never retries a refusal or a timeout.

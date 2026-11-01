@@ -4,6 +4,9 @@ pattern: state-change
 swimlane: Shed Manager → Tools
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/20
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key

@@ -20,3 +20,4 @@ CLAUDE.local.md
 .claude/plugins/
 .openrig/
 .percheron/
+*-asis.em

@@ -15,7 +15,8 @@ import java.util.concurrent.atomic.AtomicLong
  * (INV-TCAT-12): a replayed event leaves the entry as it was after the first. A tool's status is
  * worked out at read time from its current facts (loan, holds), never stored, so the order events
  * arrive in doesn't matter. Retiring or recording a tool lost removes its entry outright
- * (INV-TCAT-8, INV-TCAT-10); a later event for a removed tool is a no-op, never re-creating it.
+ * (INV-TCAT-8, INV-TCAT-10) and remembers the tool as dropped, so a later event for it — even a
+ * Tool Added delivered again out of order — is a no-op, never re-creating it (INV-TCAT-12).
  */
 @Component
 class ToolCatalogRepository {
@@ -42,6 +43,7 @@ class ToolCatalogRepository {
     )
 
     private val tools = ConcurrentHashMap<ToolId, Tool>()
+    private val dropped = ConcurrentHashMap.newKeySet<ToolId>()
     private val toolOfLoan = ConcurrentHashMap<LoanId, ToolId>()
     private val toolOfHold = ConcurrentHashMap<HoldId, ToolId>()
     private val sequence = AtomicLong()
@@ -53,6 +55,7 @@ class ToolCatalogRepository {
         defaultCheckoutPeriodDays: Int,
         addedAt: Instant,
     ) {
+        if (toolId in dropped) return
         tools.computeIfAbsent(toolId) { Tool(toolId, name, description, defaultCheckoutPeriodDays, addedAt, sequence.getAndIncrement()) }
     }
 
@@ -115,10 +118,16 @@ class ToolCatalogRepository {
     }
 
     fun retire(toolId: ToolId) {
-        tools.remove(toolId)
+        drop(toolId)
     }
 
     fun recordLost(toolId: ToolId) {
+        drop(toolId)
+    }
+
+    /** A dropped tool never comes back, whatever arrives for it later (INV-TCAT-8, INV-TCAT-10, INV-TCAT-12). */
+    private fun drop(toolId: ToolId) {
+        dropped.add(toolId)
         tools.remove(toolId)
     }
 

@@ -20,7 +20,7 @@ class OverdueHandOffNotAccepted(
 /**
  * The outbox: every recorded Overdue Notice Sent is handed to the email provider, keyed by the loan id, from the event itself
  * and not from the list (INV-OVN-4). A refused or erroring hand-off throws, so this processor does not advance past the event
- * and repeats it, with the same key, until the provider accepts; its token carries that across a restart. The provider sends
+ * and repeats it, with the same key, until the provider accepts. Tokens are in memory (TokenStoreConfiguration), so a restart replays every recorded notice through this hand-off; the provider sends at most one email per key, which is what makes that safe (Amendment 8). The provider sends
  * at most one email per key (Amendment 8). The email is built only from what the event recorded (INV-OVN-3, INV-OVN-7).
  */
 @Component

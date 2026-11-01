@@ -133,7 +133,7 @@ slice "My Loans — overdue notice sent" {
 }
 
 slice "Record Overdue Notice Failure" {
-  translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md"
+  translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md" divergence "No email provider selected yet (constitution Amendment 8): no inbound transport reaches this translation and its verifier fails closed until a provider is chosen; the mapping code is in place (conformance 2026-11-01, rulings 2 and 3)"
   command Record Overdue Notice Failure { loanId: LoanId, reason: Text }
   event Overdue Notice Failed { loanId: LoanId, reason: Text, failedAt: Instant assigned } @Loans
 }
@@ -223,7 +223,7 @@ slice "My Holds — pickup notice sent" {
 }
 
 slice "Record Pickup Notice Failure" {
-  translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md"
+  translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md" divergence "No email provider selected yet (constitution Amendment 8): no inbound transport reaches this translation and its verifier fails closed until a provider is chosen; the mapping code is in place (conformance 2026-11-01, rulings 2 and 3)"
   command Record Pickup Notice Failure { holdId: HoldId, reason: Text }
   event Pickup Notice Failed { holdId: HoldId, reason: Text, failedAt: Instant assigned } @Holds
 }
@@ -344,7 +344,7 @@ slice "Undelivered Notices — tool retired" {
 
 slice "Record Tool Lost" {
   ui Tool Inventory @Shed Manager
-  command Record Tool Lost { loanId: LoanId } note "slices/record-tool-lost.md"
+  command Record Tool Lost { loanId: LoanId } note "slices/record-tool-lost.md" issue "conformance: code carries toolId from the route and refuses loan-not-found when it is not the loan's tool (Amendment 10 URL layout) — declare toolId on the command and extend INV-LOST-11, or drop the route check"
   event Tool Lost { loanId: LoanId, toolId: ToolId assigned, lostAt: Instant assigned } loops-to "Overdue Loans To Notify", "Holds To Fulfill" @Tools
 }
 slice "Tool Inventory — tool lost" {

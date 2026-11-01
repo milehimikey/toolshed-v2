@@ -4,6 +4,9 @@ pattern: state-change
 swimlane: Neighbor → Holds
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/10
+conformedVersion: 1
+conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedOn: 2026-11-01
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
@@ -212,3 +215,4 @@ There are no external calls, retries or compensations in this slice. Cancelling 
 
 ## Open Questions
 None.
+- [x] Dependencies: Tool Lost is matched by its own toolId, not through Tool Checked Out.loanId (conformance 2026-11-01, finding 5) — v1: wording only; behaviour unchanged; deferred to v2 (2026-11-01, Mike Key)
