@@ -5,7 +5,7 @@ swimlane: Neighbor → Neighbors
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/5
 conformedVersion: 1
-conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedAt: d78f8326a04b4eda4da5c755223272103eed1491
 conformedOn: 2026-11-01
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
