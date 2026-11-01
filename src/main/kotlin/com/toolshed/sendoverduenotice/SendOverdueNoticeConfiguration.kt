@@ -3,16 +3,21 @@ package com.toolshed.sendoverduenotice
 import com.toolshed.axon.EmailGateway
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+import org.axonframework.extension.spring.config.EventProcessorDefinition
 import org.axonframework.messaging.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import java.time.Clock
 
 /**
  * Wiring for this slice alone, so a test can build the fixture from the same registrations: the command side, and the outbox
- * on its own processor. In the running app the handlers are Spring beans and the entity is picked up from its stereotype.
+ * on its own processor. In the running app the handlers are Spring beans and the entity is picked up from its stereotype;
+ * the outbox's processor is pinned by [OverdueNoticeOutboxProcessorConfiguration] to the same name the fixture uses.
  */
 object SendOverdueNoticeConfiguration {
-    private const val OUTBOX_PROCESSOR = "SendOverdueNotice_Outbox_Processor"
+    /** The outbox's own pooled-streaming processor, in the fixture and in the running app alike. */
+    const val OUTBOX_PROCESSOR = "SendOverdueNotice_Outbox_Processor"
 
     fun configure(
         configurer: EventSourcingConfigurer,
@@ -43,4 +48,19 @@ object SendOverdueNoticeConfiguration {
             m.messaging { ms -> ms.eventProcessing { ep -> ep.pooledStreaming { ps -> ps.processor(outbox) } } }
         }
     }
+}
+
+/**
+ * The running app's processor for the outbox. Without this, Axon's Spring starter would put the outbox on a processor
+ * named after its package, shared with any other event handler that lands there. A refused hand-off stops the outbox's
+ * processor on purpose (INV-OVN-4), so it must stall nothing else: the outbox, and only the outbox, rides this one.
+ */
+@Configuration
+class OverdueNoticeOutboxProcessorConfiguration {
+    @Bean
+    fun overdueNoticeOutboxProcessor(): EventProcessorDefinition =
+        EventProcessorDefinition
+            .pooledStreaming(SendOverdueNoticeConfiguration.OUTBOX_PROCESSOR)
+            .assigningHandlers { handler -> handler.beanType()?.let { OverdueNoticeOutbox::class.java.isAssignableFrom(it) } ?: false }
+            .notCustomized()
 }
