@@ -35,7 +35,10 @@ class ToolInventoryProjection(
 
     @EventHandler
     fun on(event: ToolCheckedOut) {
-        logger.debug { "tool-inventory tool-checked-out loanId=${event.loanId.value} toolId=${event.toolId.value} neighborId=${event.neighborId.value}" }
+        logger.debug {
+            "tool-inventory tool-checked-out loanId=${event.loanId.value} " +
+                "toolId=${event.toolId.value} neighborId=${event.neighborId.value}"
+        }
         repository.checkOut(event.loanId, event.toolId, event.neighborId, event.dueDate)
     }
 
