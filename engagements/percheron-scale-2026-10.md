@@ -8,7 +8,7 @@ tracking: "percheron-scale"
 parallel: 3
 status: open
 slices:
-  - {key: send-overdue-notice, state: building, branch: "impl/send-overdue-notice", base: "main", pr: null}
+  - {key: send-overdue-notice, state: merged, branch: "impl/send-overdue-notice", base: "main", pr: null}
   - {key: undelivered-notices, state: merged, branch: "impl/undelivered-notices", base: "main", pr: null}
   - {key: holds-to-fulfill, state: merged, branch: "impl/holds-to-fulfill", base: "main", pr: null}
   - {key: fulfill-hold, state: merged, branch: "impl/fulfill-hold", base: "main", pr: null}
@@ -30,7 +30,7 @@ never hand-edit the frontmatter `slices:` entries or the Ledger table (see docs/
 <!-- GENERATED:em-engagement-ledger:start -->
 | Slice | Pattern | Doc status | State | Branch | Base | PR |
 |---|---|---|---|---|---|---|
-| `send-overdue-notice` | translation | ready-to-implement | building | impl/send-overdue-notice | main | — |
+| `send-overdue-notice` | translation | ready-to-implement | merged | impl/send-overdue-notice | main | — |
 | `undelivered-notices` | state-view | implemented | merged | impl/undelivered-notices | main | — |
 | `holds-to-fulfill` | state-view | implemented | merged | impl/holds-to-fulfill | main | — |
 | `fulfill-hold` | automation | implemented | merged | impl/fulfill-hold | main | — |
