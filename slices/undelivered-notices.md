@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Shed Manager → Loans
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/commit/4831929b38a3b68b09d2ecbbff122e795f05b971
+shippedVersion: 1
+shippedOn: 2026-10-31
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key

@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: automation
 swimlane: System → Holds
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/commit/33b880061c6bb7c2805599a53207dfe58c69bffe
+shippedVersion: 1
+shippedOn: 2026-10-31
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
