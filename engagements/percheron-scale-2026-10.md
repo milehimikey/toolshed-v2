@@ -6,7 +6,7 @@ created: 2026-10-31
 createdBy: "percheron"
 tracking: "percheron-scale"
 parallel: 3
-status: open
+status: closed
 slices:
   - {key: send-overdue-notice, state: merged, branch: "impl/send-overdue-notice", base: "main", pr: null}
   - {key: undelivered-notices, state: merged, branch: "impl/undelivered-notices", base: "main", pr: null}

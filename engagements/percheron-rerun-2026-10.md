@@ -6,7 +6,7 @@ created: 2026-10-31
 createdBy: "percheron"
 tracking: "percheron-rerun"
 parallel: 3
-status: open
+status: closed
 slices:
   - {key: tool-inventory, state: merged, branch: "percheron/tool-inventory", base: "main", pr: null}
   - {key: neighbors, state: merged, branch: "percheron/neighbors", base: "main", pr: null}

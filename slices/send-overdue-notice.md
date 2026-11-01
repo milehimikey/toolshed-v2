@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Loans
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb
+shippedVersion: 1
+shippedOn: 2026-11-01
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
