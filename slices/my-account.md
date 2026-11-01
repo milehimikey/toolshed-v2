@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Neighbor → Neighbors
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/commit/bdeaac10b78e42ab294c71f441d152974b09da35
+shippedVersion: 1
+shippedOn: 2026-10-31
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key

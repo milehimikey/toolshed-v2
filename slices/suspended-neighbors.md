@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Shed Manager → Neighbors
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/commit/030182873ff44081469907042fd8424d6aaf2364
+shippedVersion: 1
+shippedOn: 2026-10-31
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key

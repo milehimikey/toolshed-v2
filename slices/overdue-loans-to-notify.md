@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: System → Loans
-status: ready-to-implement
+status: implemented
+implementedIn: https://github.com/milehimikey/toolshed-v2/commit/6e4e0f39ac24e1842a1103d83dbc9153221d4683
+shippedVersion: 1
+shippedOn: 2026-10-31
 ratifiedBy: Mike Key
 ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
