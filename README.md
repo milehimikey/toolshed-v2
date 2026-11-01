@@ -63,7 +63,7 @@ never connected to one another.
 | 22 | Tool Catalog — hold cancelled | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 23 | My Loans — hold cancelled | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 24 | Overdue Loans To Notify | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/6e4e0f39ac24e1842a1103d83dbc9153221d4683 | — | [slices/overdue-loans-to-notify.md](slices/overdue-loans-to-notify.md) |
-| 25 | Send Overdue Notice | Translation | ready-to-implement | Mike Key | Mike Key | — | — | — | — | [slices/send-overdue-notice.md](slices/send-overdue-notice.md) |
+| 25 | Send Overdue Notice | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb | — | [slices/send-overdue-notice.md](slices/send-overdue-notice.md) |
 | 26 | My Loans — overdue notice sent | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 27 | Record Overdue Notice Failure | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/11 | — | [slices/record-overdue-notice-failure.md](slices/record-overdue-notice-failure.md) |
 | 28 | My Loans — overdue notice failed | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
