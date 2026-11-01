@@ -1,0 +1,108 @@
+{
+  "findings": [
+    {
+      "class": "Model gap",
+      "evidence": "em diff field-added command Record Tool Lost toolId: ToolId; src/main/kotlin/com/toolshed/recordtoollost/RecordToolLost.kt:12-13; src/main/kotlin/com/toolshed/recordtoollost/RecordToolLostDecider.kt:23-26 (route toolId not the loan's tool -> loan-not-found); constitution Amendment 10 URL layout; no ruling in .event-modeling.md",
+      "id": 1,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "record-tool-lost",
+      "surface": "structural"
+    },
+    {
+      "class": "Real drift",
+      "evidence": "src/main/kotlin/com/toolshed/recordoverduenoticefailure/OverdueNoticeFailureTranslation.kt receive() has no caller in src/main; src/main/kotlin/com/toolshed/axon/SharedPorts.kt:36-45 only verifier is FailClosedFailureReportVerifier; constitution Amendment 8 (stub until a provider is chosen); no divergence annotation on the translation element",
+      "id": 2,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "record-overdue-notice-failure",
+      "surface": "structural"
+    },
+    {
+      "class": "Real drift",
+      "evidence": "src/main/kotlin/com/toolshed/recordpickupnoticefailure/PickupFailureReportTranslation.kt:16-17 and receive() has no caller in src/main; src/main/kotlin/com/toolshed/axon/SharedPorts.kt:36-45; constitution Amendment 8; no divergence annotation on the translation element",
+      "id": 3,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "record-pickup-notice-failure",
+      "surface": "structural"
+    },
+    {
+      "class": "Real drift",
+      "evidence": "src/main/kotlin/com/toolshed/toolcatalog/ToolCatalogRepository.kt:56 computeIfAbsent on add, :118 and :122 tools.remove with no dropped set; contrast src/main/kotlin/com/toolshed/toolinventory/ToolInventoryRepository.kt:37,49; no test (ToolCatalogProjectionTest.kt:307 replays Tool Returned only); contradicts INV-TCAT-12 and INV-TCAT-8 on a Tool Added redelivered after Tool Retired/Tool Lost",
+      "id": 4,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "tool-catalog",
+      "surface": "spec"
+    },
+    {
+      "class": "Real drift",
+      "evidence": "slices/cancel-hold.md:205 says Tool Lost is matched through Tool Checked Out.loanId; src/main/kotlin/com/toolshed/cancelhold/CancelHoldState.kt:74 matches ToolLost.toolId directly (toolshed.em:348 carries toolId assigned); behaviour equivalent, doc wording differs",
+      "id": 5,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "cancel-hold",
+      "surface": "spec"
+    },
+    {
+      "class": "Model gap",
+      "evidence": "src/main/kotlin/com/toolshed/sendoverduenotice/SendOverdueNotice.kt:18 init rejects blank sentTo/borrowerName/toolName as bad input; doc names only a malformed loan id as bad input (trimming at SendOverdueNoticeDecider.kt:17 is Amendment 7, not a gap)",
+      "id": 6,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "send-overdue-notice",
+      "surface": "spec"
+    },
+    {
+      "class": "Model gap",
+      "evidence": "src/main/kotlin/com/toolshed/sendpickupnotice/SendPickupNotice.kt:19-21 blank text rejected as bad input; src/main/kotlin/com/toolshed/sendpickupnotice/PickupNoticeOutbox.kt:49 subject line code-defined; doc names only a malformed hold id as bad input and specifies the body (INV-PKN-7) but no subject",
+      "id": 7,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "send-pickup-notice",
+      "surface": "spec"
+    },
+    {
+      "class": "Model gap",
+      "evidence": "src/main/kotlin/com/toolshed/recordpickupnoticefailure/PickupNoticeState.kt:87-89,120 Tool Lost ends a set-aside (not in INV-PNF-9's list; sibling docs say a lost tool is never set aside); src/main/kotlin/com/toolshed/recordpickupnoticefailure/PickupFailureReportTranslation.kt:42 loan-keyed reports dropped (routing not described)",
+      "id": 8,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "record-pickup-notice-failure",
+      "surface": "spec"
+    },
+    {
+      "class": "Model gap",
+      "evidence": "src/main/kotlin/com/toolshed/expirehold/PickupExpirerConfiguration.kt:34 interval configurable via toolshed.pickup-expirer.interval (default PT5M); doc states every 5 minutes as fixed",
+      "id": 9,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": "expire-hold",
+      "surface": "spec"
+    },
+    {
+      "class": "Model gap",
+      "evidence": "Defensive guards for orderings the docs declare impossible: src/main/kotlin/com/toolshed/pickupnoticestosend/PickupNoticesToSendRepository.kt:137-139; src/main/kotlin/com/toolshed/recordpickupnoticefailure/PickupNoticeState.kt:46; src/main/kotlin/com/toolshed/undeliverednotices/UndeliveredNoticesRepository.kt:215,226; src/main/kotlin/com/toolshed/flaggedneighbors/ListFlaggedNeighborsQueryHandler.kt:41-45 (slices pickup-notices-to-send, record-pickup-notice-failure, undelivered-notices, flagged-neighbors)",
+      "id": 10,
+      "locus": null,
+      "resolvedBy": null,
+      "resolvedOn": null,
+      "slice": null,
+      "surface": "spec"
+    }
+  ],
+  "findingsSchemaVersion": "1.0",
+  "model": "toolshed.em",
+  "report": "conformance/2026-11-01-report.md",
+  "revision": "54b94c75b4528330dea08fa62ca7fe63b7f9cc09"
+}
