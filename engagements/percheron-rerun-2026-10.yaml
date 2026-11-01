@@ -1,0 +1,96 @@
+# percheron engagement spec: rerun of the five slices that collided with the factory rig's impl/<key> branches (spec-format v0.2)
+# Validate: percheron validate engagements/percheron-rerun-2026-10.yaml
+# Run:      percheron run      engagements/percheron-rerun-2026-10.yaml
+specVersion: "0.2"
+
+engagement:
+  name: percheron-rerun-2026-10
+  mode: build
+
+work:
+  provider: em
+  config:
+    model: ../toolshed.em             # resolved from this file's directory (run chdirs here)
+    engagement: percheron-rerun-2026-10
+    branchPrefix: percheron/          # finding 10: the rig owns impl/<key>; we build on percheron/<key>
+  transitions:
+    onDispatch: building
+    onGateParked: awaiting-merge
+    onGateCleared: merged
+    onEscalate: held
+    onReopen: planned
+
+tools:
+  em: ">=1.19.5 <2.0.0"
+  schemas: { engagementPlan: ">=1.4", validateSliceReady: ">=1.5" }
+
+policy:
+  ratifiers: [mikey]
+  mergeAuthority: human
+  exceptionRouting: human_only
+  budgets:
+    perNode: { usd: 14, dispatchFloorUsd: 1 }
+    perTask: { usd: 7, maxTurns: 120, wallClock: 25m }
+
+scheduling:
+  dispatchWhen: upstreamsMerged && ready
+  maxConcurrent: 3
+  levels: orderingHintOnly
+
+roles:
+  implementer: { adapter: local-subagent, model: sonnet }
+  reviewer:    { adapter: local-subagent, model: sonnet }
+  critic:
+    adapter: local-subagent
+    model: opus
+    independence: { freshContext: true, modelNot: [implementer], blindTo: [review] }
+
+adapters:
+  local-subagent:
+    repoRoot: ..                      # toolshed-v2
+    stateDir: ../.percheron           # gitignored
+
+pipeline:
+  entry: implement
+  exits: [done, handoff, blocked, failed]
+  guards: { maxRounds: 3, maxHops: 16 }
+  steps:
+    - id: implement
+      kind: agent
+      role: implementer
+      contract: ../../percheron/roles/implementer.md
+      produces: [evidenceMap, continuationNote]
+      on: { done: validate, handoff: validate, blocked: escalate, failed: implement }
+
+    - id: validate                    # runs IN the worktree: paths are workspace-relative
+      kind: check
+      run:
+        - ["./gradlew", "ktlintCheck", "test", "--quiet"]
+        - ["em", "coverage", "toolshed.em", "--tests", "src/test/kotlin", "--slice", "{node.key}", "--strict"]
+      on: { done: review, failed: implement }
+
+    - id: review
+      kind: agent
+      role: reviewer
+      contract: ../../percheron/roles/reviewer.md
+      readOnly: true
+      parallelWith: [critique]
+      produces: [findings]
+      on: { done: merge-gate, failed: implement, blocked: escalate }
+
+    - id: critique
+      kind: agent
+      role: critic
+      contract: ../../percheron/roles/critic.md
+      readOnly: true
+      parallelWith: [review]
+      produces: [findings]
+      on: { done: merge-gate, failed: implement, blocked: escalate }
+
+    - id: merge-gate
+      kind: human
+      gate:
+        summary: "validate PASS, review and critique done: merge percheron/<key> into main"
+        evidenceRef: .percheron/evidence
+      acceptance: { observer: git-merged, candidateRef: branch, verdicts: [merged] }
+      on: { done: node-done, failed: escalate }
