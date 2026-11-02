@@ -1,8 +1,12 @@
 package com.toolshed.pickupstoexpire
 
+import com.toolshed.axon.dedicatedProcessor
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+import org.axonframework.extension.spring.config.EventProcessorDefinition
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import java.time.Clock
 
 /**
@@ -10,7 +14,8 @@ import java.time.Clock
  * projection and query handler are Spring beans, auto-detected from their annotations.
  */
 object PickupsToExpireConfiguration {
-    private const val PROCESSOR_NAME = "Projection_PickupsToExpire_Processor"
+    /** The projection's own pooled-streaming processor, in the fixture and in the running app alike. */
+    const val PROCESSOR = "Projection_PickupsToExpire_Processor"
 
     fun configure(
         configurer: EventSourcingConfigurer,
@@ -19,7 +24,7 @@ object PickupsToExpireConfiguration {
     ): EventSourcingConfigurer {
         val projectionProcessor =
             EventProcessorModule
-                .pooledStreaming(PROCESSOR_NAME)
+                .pooledStreaming(PROCESSOR)
                 .eventHandlingComponents { components ->
                     components.autodetected { PickupsToExpireProjection(repository) }
                 }.notCustomized()
@@ -36,4 +41,12 @@ object PickupsToExpireConfiguration {
                 m.messaging { ms -> ms.eventProcessing { ep -> ep.pooledStreaming { ps -> ps.processor(projectionProcessor) } } }
             }
     }
+}
+
+/** The running app's processor for the projection: the fixture's name, the projection alone (see [dedicatedProcessor]). */
+@Configuration
+class PickupsToExpireProjectionProcessorConfiguration {
+    @Bean
+    fun pickupsToExpireProjectionProcessor(): EventProcessorDefinition =
+        dedicatedProcessor(PickupsToExpireConfiguration.PROCESSOR, PickupsToExpireProjection::class.java)
 }

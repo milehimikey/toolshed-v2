@@ -1,8 +1,12 @@
 package com.toolshed.toolinventory
 
+import com.toolshed.axon.dedicatedProcessor
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+import org.axonframework.extension.spring.config.EventProcessorDefinition
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import java.time.Clock
 
 /**
@@ -11,6 +15,9 @@ import java.time.Clock
  * In the running app the beans are picked up by annotation scanning.
  */
 object ToolInventoryConfiguration {
+    /** The projection's own pooled-streaming processor, in the fixture and in the running app alike. */
+    const val PROCESSOR = "Projection_ToolInventory_Processor"
+
     fun configure(
         configurer: EventSourcingConfigurer,
         clock: Clock,
@@ -18,7 +25,7 @@ object ToolInventoryConfiguration {
         val repository = ToolInventoryRepository()
         val projection =
             EventProcessorModule
-                .pooledStreaming("ToolInventoryProjection")
+                .pooledStreaming(PROCESSOR)
                 .eventHandlingComponents { it.autodetected { ToolInventoryProjection(repository) } }
                 .notCustomized()
         val queryHandling =
@@ -35,4 +42,12 @@ object ToolInventoryConfiguration {
                 }
             }
     }
+}
+
+/** The running app's processor for the projection: the fixture's name, the projection alone (see [dedicatedProcessor]). */
+@Configuration
+class ToolInventoryProjectionProcessorConfiguration {
+    @Bean
+    fun toolInventoryProjectionProcessor(): EventProcessorDefinition =
+        dedicatedProcessor(ToolInventoryConfiguration.PROCESSOR, ToolInventoryProjection::class.java)
 }

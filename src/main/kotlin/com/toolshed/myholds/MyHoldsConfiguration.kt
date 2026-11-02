@@ -1,8 +1,12 @@
 package com.toolshed.myholds
 
+import com.toolshed.axon.dedicatedProcessor
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+import org.axonframework.extension.spring.config.EventProcessorDefinition
 import org.axonframework.messaging.eventhandling.configuration.EventProcessorModule
 import org.axonframework.messaging.queryhandling.configuration.QueryHandlingModule
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import java.time.Clock
 
 /**
@@ -10,6 +14,9 @@ import java.time.Clock
  * the projection and query handler are Spring beans, auto-detected from their annotations.
  */
 object MyHoldsConfiguration {
+    /** The projection's own pooled-streaming processor, in the fixture and in the running app alike. */
+    const val PROCESSOR = "Projection_MyHolds_Processor"
+
     fun configure(
         configurer: EventSourcingConfigurer,
         repository: MyHoldsRepository,
@@ -17,7 +24,7 @@ object MyHoldsConfiguration {
     ): EventSourcingConfigurer {
         val projectionProcessor =
             EventProcessorModule
-                .pooledStreaming("Projection_MyHolds_Processor")
+                .pooledStreaming(PROCESSOR)
                 .eventHandlingComponents { it.autodetected { MyHoldsProjection(repository) } }
                 .notCustomized()
 
@@ -33,4 +40,12 @@ object MyHoldsConfiguration {
                 m.messaging { ms -> ms.eventProcessing { ep -> ep.pooledStreaming { ps -> ps.processor(projectionProcessor) } } }
             }
     }
+}
+
+/** The running app's processor for the projection: the fixture's name, the projection alone (see [dedicatedProcessor]). */
+@Configuration
+class MyHoldsProjectionProcessorConfiguration {
+    @Bean
+    fun myHoldsProjectionProcessor(): EventProcessorDefinition =
+        dedicatedProcessor(MyHoldsConfiguration.PROCESSOR, MyHoldsProjection::class.java)
 }
