@@ -154,7 +154,7 @@ Pickup Notice's rules.
   - Pickup Notice Sent (Send Pickup Notice): holdId.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.
-  - Hold Collected (Check Out Tool): holdId.
+  - Hold Collected (Collect Hold): holdId.
   - Hold Cancelled is also recorded by Retire Tool and Close Account, one per hold they end.
   - These match slices/add-tool.md, slices/register-neighbor.md, slices/change-email.md,
     slices/check-out-tool.md, and Hold Fulfilled as recorded in the conventions. The others are

@@ -157,7 +157,7 @@ drill on 10 October, with a collect-by date of 13 October.
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
   - Hold Fulfilled (Fulfill Hold): holdId, toolId, neighborId, collectByDate.
-  - Hold Collected (Check Out Tool): holdId.
+  - Hold Collected (Collect Hold): holdId.
   - Hold Cancelled (Cancel Hold), Hold Expired (Expire Hold): holdId.
   - Hold Cancelled is also recorded by Retire Tool and Close Account, one per hold they end.
   - These keys match the deep-passed docs and the Hold Fulfilled convention.

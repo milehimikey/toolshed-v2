@@ -18,7 +18,8 @@ version: 2
 Let a neighbor borrow a tool, self-service, from the Tool Catalog. The checkout opens a loan with
 a due date set from the tool's default checkout period, or from a shorter period the neighbor
 chooses. It is also how a holder collects a tool set aside for them: there is no separate pickup
-command, and the one decision records the loan's start and the hold's end.
+command. The checkout records only Tool Checked Out; the hold's end is recorded by the Hold
+Collector (Collect Hold), which reacts to the checkout.
 
 ## Trigger & Actor
 The neighbor who will borrow the tool, from the Tool Catalog screen, on a tool the catalog offers
@@ -45,7 +46,8 @@ checkedOutAt is that same moment.
 ## Event(s) Emitted
 **Event:** `Tool Checked Out` → context `Loans`
 **Read by:** Tool Inventory, Tool Catalog and My Loans; Holds To Fulfill (the tool is out);
-Overdue Loans To Notify (the loan's due date).
+Overdue Loans To Notify (the loan's due date); Holds To Collect (the borrower's hold on the tool,
+if any, is now collected).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
@@ -59,28 +61,11 @@ Overdue Loans To Notify (the loan's due date).
 | dueDate | Date | yes | Set by the system: the checkout date (today) plus loanPeriodDays. A later Loan Extended sets a new dueDate; this one never changes. |
 | checkedOutAt | Instant | yes | Set by the system: the UTC moment of the clock reading above. Its date in the shed's local time zone is the checkout date. |
 
-**Event:** `Hold Collected` → context `Holds`
-**Read by:** My Holds, Holds To Fulfill, Pickup Notices To Send, Pickups To Expire and Undelivered
-Notices (the hold ends).
-
-Recorded in the same decision as Tool Checked Out, only when the borrower had a hold on the tool
-(INV-CHK-9): a set-aside they are collecting, or a waiting hold at the front of the queue taken
-before the set-aside was recorded. A checkout by a neighbor with no hold on the tool records no
-Hold Collected.
-
-| Field | Type | Immutable Fact? | Source / Notes |
-|-------|------|-----------------|----------------|
-| holdId | HoldId | yes | Set by the system: the borrower's hold on this tool, from its Hold Placed. A holder has at most one hold on a tool. |
-| toolId | ToolId | yes | From the command. |
-| neighborId | NeighborId | yes | From the command: the holder, now the borrower. |
-| loanId | LoanId | yes | From the command: the loan the collection started. |
-| collectedAt | Instant | yes | Set by the system: the same moment as Tool Checked Out.checkedOutAt. |
-
 ## Read Model / View
 This slice produces no view of its own. Tool Checked Out changes the tool's entry in Tool
-Inventory and Tool Catalog and starts the loan's entry in My Loans; Hold Collected ends the
-borrower's hold on the tool in My Holds and the hold to-do lists. Each view is specified in its
-own doc. All are eventually consistent.
+Inventory and Tool Catalog, starts the loan's entry in My Loans, and puts the borrower's hold on
+the tool, if any, on Holds To Collect for the Hold Collector. Each view is specified in its own
+doc. All are eventually consistent.
 
 ## Invariants / Business Rules
 - **INV-CHK-1:** A neighbor checks a tool out themselves, for themselves.
@@ -134,8 +119,9 @@ own doc. All are eventually consistent.
   it had been fulfilled.
   - The tool is then on loan, so it is not set aside for anyone, and the next hold waits for its
     return. When the tool comes back, the former holder is no longer in the queue.
-  - The hold's end is recorded as Hold Collected, naming the hold, in the same decision as Tool
-    Checked Out. The views that show holds end it from that event.
+  - The hold's end is recorded as Hold Collected by the Hold Collector (Collect Hold), which
+    reacts to the checkout through Holds To Collect. The views that show holds end it from that
+    event; this slice records nothing about the hold.
 - **INV-CHK-11:** The tool must have been added, and the borrower must be a registered account.
 - **INV-CHK-12:** Checking out with a loan ID that is already used opens no new loan.
   - A repeat with the same tool, borrower and loan period succeeds and records nothing new,
@@ -237,12 +223,12 @@ October.
   - **Given:** Hold Fulfilled was recorded for Ben's hold on the drill with a collect-by date of
     6 October, so the drill is set aside for him
   - **When:** Ben checks out the drill on 5 October
-  - **Then:** Tool Checked Out is recorded for the drill and Ben, due 12 October, and Hold
-    Collected for Ben's hold, the same loan and the same moment.
+  - **Then:** Tool Checked Out is recorded for the drill and Ben, due 12 October. Nothing else is
+    recorded; the Hold Collector then records Hold Collected for Ben's hold.
 - **Holder collects on the collect-by date (INV-CHK-3)**
   - **Given:** the drill is set aside for Ben, to collect by 5 October
   - **When:** Ben checks out the drill on 5 October
-  - **Then:** Tool Checked Out is recorded for the drill and Ben, and Hold Collected for his hold.
+  - **Then:** Tool Checked Out is recorded for the drill and Ben.
 - **Someone else tries to take a set-aside tool (INV-CHK-3)**
   - **Given:** the drill is set aside for Ben, to collect by 6 October
   - **When:** Ana tries to check out the drill on 5 October
@@ -261,8 +247,8 @@ October.
   - **Given:** the drill has just been returned, Ben's hold is at the front of its queue and
     Cara's is behind it, and Hold Fulfilled has not yet been recorded
   - **When:** Ben checks out the drill
-  - **Then:** Tool Checked Out is recorded for the drill and Ben, and Hold Collected for Ben's
-    hold, which ends without ever being fulfilled.
+  - **Then:** Tool Checked Out is recorded for the drill and Ben. Ben's hold ends without ever
+    being fulfilled, by the Hold Collected the collector then records.
 - **An early collector is out of the queue when the tool returns (INV-CHK-9, INV-CHK-3a)**
   - **Given:** Ben checked out the drill as the front holder before his hold was fulfilled, with
     Cara's hold behind his. He has since returned it, and Cara's hold is still waiting.
@@ -289,8 +275,8 @@ October.
 - **Next holder takes a lapsed set-aside before the expiry is recorded (INV-CHK-3a, INV-CHK-3b)**
   - **Given:** as above, on 18 October, before Hold Expired is recorded
   - **When:** Cara checks out the drill
-  - **Then:** Tool Checked Out is recorded for the drill and Cara, and Hold Collected for her
-    hold. Ben's hold still gets its Hold Expired.
+  - **Then:** Tool Checked Out is recorded for the drill and Cara; the collector then records Hold
+    Collected for her hold. Ben's hold still gets its Hold Expired.
 - **Lapsed set-aside, no hold waiting, taken by someone else (INV-CHK-3b)**
   - **Given:** the drill was set aside for Ben, to collect by 17 October, no other hold is
     waiting, and Hold Expired has not yet been recorded

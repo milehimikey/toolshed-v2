@@ -227,7 +227,7 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
   - Neighbor Email Changed (Change Email): neighborId, email.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Tool Returned (Return Tool), Tool Lost (Record Tool Lost): loanId.
-  - Hold Collected (Check Out Tool): holdId (the holder collecting ends the set-aside).
+  - Hold Collected (Collect Hold): holdId (the holder collecting ends the set-aside).
   - Hold Cancelled (Cancel Hold), Hold Expired (Expire Hold): holdId.
   - Hold Cancelled is also recorded by Retire Tool and Close Account, one per hold they end.
   - These keys match the deep-passed docs; the two failure events carrying the notice's details

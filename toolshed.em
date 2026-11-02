@@ -66,7 +66,6 @@ storyline "Borrow and return a tool" {
     ui Tool Catalog @Neighbor
     command Check Out Tool { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int } note "slices/check-out-tool.md"
     event Tool Checked Out { loanId: LoanId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, neighborName: Text assigned, neighborEmail: Text assigned, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
-    event Hold Collected { holdId: HoldId assigned, toolId: ToolId, neighborId: NeighborId, loanId: LoanId, collectedAt: Instant assigned } @Holds
   }
   slice "Tool Inventory — tool checked out" {
     view Tool Inventory again from "Tool Checked Out"
@@ -77,7 +76,7 @@ storyline "Borrow and return a tool" {
     ui Tool Catalog @Neighbor
   }
   slice "My Loans" {
-    view My Loans from "Tool Checked Out", "Hold Collected" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text, checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
+    view My Loans from "Tool Checked Out" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text, checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
     ui My Loans @Neighbor
   }
 
@@ -144,7 +143,7 @@ storyline "Chase an overdue loan" after "Borrow and return a tool" {
     ui My Loans @Neighbor
   }
   slice "Undelivered Notices" {
-    view Undelivered Notices from "Overdue Notice Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Hold Collected" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text, neighborEmail: Text derived from "Overdue Notice Failed", "Neighbor Email Changed", toolId: ToolId derived, toolName: Text, dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
+    view Undelivered Notices from "Overdue Notice Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text, neighborEmail: Text derived from "Overdue Notice Failed", "Neighbor Email Changed", toolId: ToolId derived, toolName: Text, dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
     ui Undelivered Notices @Shed Manager
   }
 }
@@ -156,7 +155,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
     event Hold Placed { holdId: HoldId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, neighborName: Text assigned, neighborEmail: Text assigned, placedAt: Instant assigned } @Holds
   }
   slice "My Holds" {
-    view My Holds from "Hold Placed", "Hold Collected" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text, placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
+    view My Holds from "Hold Placed" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text, placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
     ui My Holds @Neighbor
   }
   slice "Tool Catalog — hold placed" {
@@ -168,10 +167,29 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
     ui My Loans @Neighbor
   }
 
+  slice "Holds To Collect" {
+    view Holds To Collect from "Hold Placed", "Tool Checked Out" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, loanId: LoanId derived from "Tool Checked Out" } note "slices/holds-to-collect.md"
+  }
+
+  # The holder taking the tool out is an ordinary checkout; the collector then closes their hold.
+  slice "Collect Hold" {
+    processor Hold Collector from "Holds To Collect" note "slices/collect-hold.md"
+    command Collect Hold { holdId: HoldId, loanId: LoanId }
+    event Hold Collected { holdId: HoldId, toolId: ToolId assigned, neighborId: NeighborId assigned, loanId: LoanId, collectedAt: Instant assigned } loops-to "Holds To Collect" @Holds
+  }
+  slice "My Holds — hold collected" {
+    view My Holds again from "Hold Collected"
+    ui My Holds @Neighbor
+  }
+  slice "Undelivered Notices — hold collected" {
+    view Undelivered Notices again from "Hold Collected"
+    ui Undelivered Notices @Shed Manager
+  }
+
   slice "Cancel Hold" {
     ui My Holds @Neighbor
     command Cancel Hold { neighborId: NeighborId, holdId: HoldId } note "slices/cancel-hold.md"
-    event Hold Cancelled { holdId: HoldId, cancelledAt: Instant assigned } @Holds
+    event Hold Cancelled { holdId: HoldId, cancelledAt: Instant assigned } loops-to "Holds To Collect" @Holds
   }
   slice "My Holds — hold cancelled" {
     view My Holds again from "Hold Cancelled"

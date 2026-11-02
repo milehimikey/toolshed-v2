@@ -289,7 +289,7 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Pickup Notice Sent (Send Pickup Notice): holdId.
   - Pickup Notice Failed (Record Pickup Notice Failure): holdId.
   - Hold Expired (Expire Hold): holdId.
-  - Hold Collected (Check Out Tool): holdId.
+  - Hold Collected (Collect Hold): holdId.
   - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
     hold they end; this view can't tell those from a holder's own cancellation and needn't.
   - Hold Placed and Hold Collected match slices/place-hold.md and slices/check-out-tool.md. The others are specified in slices not yet written in depth; these

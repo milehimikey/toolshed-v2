@@ -199,7 +199,7 @@ never skips anyone.
   - Hold Fulfilled (Fulfill Hold): holdId, toolId.
   - Hold Expired (Expire Hold): holdId.
   - Tool Checked Out (Check Out Tool): loanId, toolId (a loan is open).
-  - Hold Collected (Check Out Tool): holdId (the hold leaves the queue).
+  - Hold Collected (Collect Hold): holdId (the hold leaves the queue).
   - Tool Returned (Return Tool): loanId, toolId.
   - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
     hold they end.

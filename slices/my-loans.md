@@ -32,7 +32,7 @@ be delivered. It is the screen the neighbor extends and returns loans from.
 ## Read Model / View
 - **View:** `My Loans` built from events: "Tool Checked Out", "Loan Extended",
   "Hold Placed", "Hold Cancelled", "Overdue Notice Sent", "Overdue Notice Failed", "Tool
-  Returned", "Hold Collected", "Hold Expired", "Tool Retired", "Tool Lost"
+  Returned", "Hold Expired", "Tool Retired", "Tool Lost"
 - **Consumed by:** the My Loans screen (Neighbor)
 - **Freshness / consistency expectation:** eventual for everything that comes from events: a
   change shows shortly after its event is recorded (seconds, not minutes). `overdue` is worked out
@@ -64,7 +64,10 @@ fulfilled hold, except in the brief gap described under Alternate & Error Flows.
 counts as waiting from Hold Placed until it ends. A hold ends when:
 - Hold Cancelled is recorded for it;
 - Hold Expired is recorded for it;
-- Hold Collected is recorded for it (its holder checked the tool out).
+
+A hold held by the loan's own borrower never counts as waiting on that loan: it is the hold they
+collected by this checkout, and the Hold Collector ends it (Collect Hold). This view needn't hear
+Hold Collected for that.
 
 Retiring the tool, recording it lost and closing the holder's account each end holds by
 recording Hold Cancelled for them (Retire Tool, Record Tool Lost, Close Account).
@@ -109,14 +112,14 @@ is bookkeeping, not part of the row, and is never returned.
 - **INV-MYL-8:** A loan's entry changes only through its own checkout, extension, overdue notice,
   return or loss, and through holds starting or ending on its tool.
   - That is: Tool Checked Out, Loan Extended, Overdue Notice Sent, Overdue Notice Failed, Tool
-    Returned, Tool Lost, Hold Placed, Hold Collected, Hold Cancelled, Hold Expired and Tool
-    Retired.
+    Returned, Tool Lost, Hold Placed, Hold Cancelled, Hold Expired and Tool Retired.
   - The tool's name comes with Tool Checked Out.
 - **INV-MYL-9:** While any hold is waiting on a loan's tool, My Loans shows that the loan can't
   be extended because someone is waiting.
   - A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when it is
-    cancelled, expires or is collected; a tool retired or recorded lost, and a holder closing
-    their account, end holds by recording Hold Cancelled. A tool on loan has no fulfilled hold,
+    cancelled or expires; a tool retired or recorded lost, and a holder closing their account,
+    end holds by recording Hold Cancelled. The borrower's own hold on the tool never counts (it
+    is being collected). A tool on loan has no fulfilled hold,
     so for a loan's tool a hold waits until it ends.
   - This includes holds that were already waiting when the loan began. When no hold is waiting
     any more, the loan can be extended again.
@@ -276,7 +279,6 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Hold Placed (Place Hold): holdId, toolId, neighborId.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.
-  - Hold Collected (Check Out Tool): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
     hold they end.
