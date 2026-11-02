@@ -43,8 +43,7 @@ were filters of the same accounts, and each offered one action this screen now o
 
 ## Read Model / View
 - **View:** `Neighbors` built from events: "Neighbor Registered", "Neighbor Email Changed",
-  "Neighbor Flagged", "Neighbor Suspended", "Neighbor Reinstated", "Neighbor Account Closed",
-  and, to name the late returns behind a flag, "Tool Returned"
+  "Neighbor Flagged", "Neighbor Suspended", "Neighbor Reinstated", "Neighbor Account Closed"
 - **Consumed by:** the Neighbors screen (Shed Manager)
 - **Freshness / consistency expectation:** eventual. An entry reflects an event shortly after it
   is recorded (seconds, not minutes). Suspend and Reinstate check their own rules when they run,
@@ -72,15 +71,13 @@ Each LateReturn item:
 
 | Field | Type | Source / Notes |
 |-------|------|-----------------|
-| loanId | LoanId | One of Neighbor Flagged.loanIds. |
-| toolName | Text | Tool Returned.toolName for the loan. |
-| dueDate | Date | Tool Returned.dueDate for the loan: the due date in force when it was returned. |
-| returnedOn | Date | Tool Returned.returnedOn for the loan. |
+| loanId | LoanId | Neighbor Flagged.lateReturns[].loanId. |
+| toolName | Text | Neighbor Flagged.lateReturns[].toolName. |
+| dueDate | Date | Neighbor Flagged.lateReturns[].dueDate: the due date in force when it was returned. |
+| returnedOn | Date | Neighbor Flagged.lateReturns[].returnedOn. |
 | flaggedAt | Instant | flaggedAt of the Neighbor Flagged that named this loan. |
 
-To fill the late returns when a flag lands, the view also keeps, beyond its rows, each returned
-loan's tool name, due date and return date as Tool Returned carried them. These are bookkeeping,
-not rows, and are never returned (INV-NBRS-14).
+The view keeps nothing beyond its rows: a flag carries its late returns (INV-NBRS-14).
 
 **Status rules.** An account's status is a test of its current facts, taken in this order. The
 first that holds wins:
@@ -131,9 +128,8 @@ recorded after a reinstatement starts the account's flags afresh.
 - **INV-NBRS-10:** A flagged account shows how many open flags it has, the date of the latest,
   and the late returns behind every open flag, each with the tool's name, its due date, the date
   it was returned, and the date of the flag that named it.
-  - Neighbor Flagged names the late returns it uses up, as the loans they belong to. It carries
-    no copies of names or dates. The view takes those from each loan's Tool Returned, which
-    carries the tool's name, the due date in force at the return, and the return date.
+  - Neighbor Flagged carries the late returns it uses up: each loan with the tool's name, the
+    due date in force at the return, and the return date. The view copies them.
   - Being flagged never suspends anyone by itself, and there is no dismiss action: a flag the
     shed manager decides not to act on stays open.
 - **INV-NBRS-11:** Suspending or closing the account clears its open flags; a flag recorded after
@@ -146,8 +142,8 @@ recorded after a reinstatement starts the account's flags afresh.
     suspended again after a reinstatement shows the new date.
 - **INV-NBRS-13:** The screen offers Reinstate on every suspended account, and on no other.
   - Reinstate Neighbor checks its own rules when it runs.
-- **INV-NBRS-14:** To name late returns, the view keeps every returned loan's tool name, due date
-  and return date, whether or not the borrower is flagged; none of it is returned on its own.
+- **INV-NBRS-14:** The view keeps no bookkeeping beyond its rows: every event that changes a row
+  carries what the row shows.
 
 ## Scenarios (Given / When / Then)
 Unless a scenario says otherwise: Ana Ruiz registered with ana@example.org and Ben Ito with
@@ -286,8 +282,7 @@ ben@example.org. Ana returned the ladder (L1, due 31 August) on 1 September, the
   shed-manager role; only a caller with it may read this view.
 - **PII & compliance:** shows every account's name, current email, sign-up date, status,
   suspension date and late-return history to the shed manager, including closed accounts, which
-  stay listed. A replaced email is not kept in the view. To name late returns, the view keeps
-  every returned loan's tool name and dates, whether or not the borrower is flagged.
+  stay listed. A replaced email is not kept in the view.
   Names and emails are kept with the shed's loan and hold history and are never erased.
 - **Performance / SLA:** none beyond the freshness above.
 
@@ -295,11 +290,11 @@ ben@example.org. Ana returned the ladder (L1, due 31 August) on 1 September, the
 - **Upstream events this slice relies on**, and the fields it reads from each:
   - Neighbor Registered (Register Neighbor): neighborId, name, email, registeredAt.
   - Neighbor Email Changed (Change Email): neighborId, email.
-  - Neighbor Flagged (Flag Neighbor): neighborId, loanIds (LoanId[]), flaggedAt.
+  - Neighbor Flagged (Flag Neighbor): neighborId, lateReturns (loanId, toolName, dueDate,
+    returnedOn), flaggedAt.
   - Neighbor Suspended (Suspend Neighbor): neighborId, suspendedAt.
   - Neighbor Reinstated (Reinstate Neighbor): neighborId.
   - Neighbor Account Closed (Close Account): neighborId.
-  - Tool Returned (Return Tool): loanId, toolName, dueDate, returnedOn.
   - These keys match slices/register-neighbor.md, flag-neighbor.md, suspend-neighbor.md and the
     loan slices' docs.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Suspend

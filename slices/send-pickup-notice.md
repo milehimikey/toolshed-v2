@@ -55,6 +55,7 @@ date at the moment the command is handled.
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | holdId | HoldId | yes | The set-aside hold. Must be a hold that has been placed (INV-PKN-9) and fulfilled (INV-PKN-10), whose set-aside hasn't ended (INV-PKN-5) and whose collect-by date hasn't passed (INV-PKN-12). |
+| neighborId | NeighborId | yes | The holder, from the list item. Carried onto the event so readers about neighbors match on it directly. |
 | sentTo | Text | yes | The address to send to: the holder's current email, from the list item's holderEmail. |
 | holderName | Text | yes | From the list item. Shown in the email. |
 | toolName | Text | yes | From the list item. Shown in the email. |
@@ -72,6 +73,7 @@ holder that they were emailed).
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | holdId | HoldId | yes | From the command. Also the key of the hand-off, which the provider's failure report quotes back. |
+| neighborId | NeighborId | yes | From the command: the holder. |
 | sentTo | Text | yes | From the command: the address the email went to. |
 | holderName | Text | yes | From the command: the name the email was addressed to. |
 | toolName | Text | yes | From the command: the tool named in the email. |

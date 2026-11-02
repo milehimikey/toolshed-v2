@@ -33,8 +33,8 @@ there is something to follow up.
 
 ## Read Model / View
 - **View:** `Undelivered Notices` built from events: "Overdue Notice Failed", "Pickup Notice
-  Failed", "Neighbor Email Changed", "Tool Checked Out",
-  "Loan Extended", "Tool Returned", "Tool Lost", "Hold Fulfilled", "Hold Cancelled", "Hold
+  Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Tool Lost", "Tool Checked
+  Out", "Hold Cancelled", "Hold
   Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Undelivered Notices screen (Shed Manager)
 - **Freshness / consistency expectation:** eventual. An entry appears, changes or drops off
@@ -49,13 +49,13 @@ marked optional can be empty.
 | kind | Text | `overdue-notice` or `pickup-notice`. `Derived:` from which failure event created the entry. |
 | loanId | LoanId | Optional; overdue-notice entries only. Overdue Notice Failed.loanId. |
 | holdId | HoldId | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.holdId. |
-| neighborId | NeighborId | The borrower (Tool Checked Out.neighborId for the loan) or the holder (Hold Fulfilled.neighborId for the hold). |
-| neighborName | Text | `Derived:` Tool Checked Out.neighborName for an overdue notice, Hold Fulfilled.neighborName for a pickup notice. |
-| neighborEmail | Text | `Derived:` Tool Checked Out.neighborEmail or Hold Fulfilled.neighborEmail, replaced by each later Neighbor Email Changed.email. Always the current one. |
-| toolId | ToolId | Tool Checked Out.toolId for the loan, or Hold Fulfilled.toolId for the hold. |
-| toolName | Text | `Derived:` Tool Checked Out.toolName for an overdue notice, Hold Fulfilled.toolName for a pickup notice. |
-| dueDate | Date | Optional; overdue-notice entries only. Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for the loan. |
-| collectByDate | Date | Optional; pickup-notice entries only. `Derived:` Hold Fulfilled.collectByDate for the hold. |
+| neighborId | NeighborId | The failure event's neighborId: the borrower or the holder. |
+| neighborName | Text | The failure event's neighborName: the name the notice was addressed to. |
+| neighborEmail | Text | `Derived:` the failure event's neighborEmail (the address that failed), replaced by each later Neighbor Email Changed.email for that neighbor. Always the current one. |
+| toolId | ToolId | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.toolId, matched by Tool Retired. |
+| toolName | Text | The failure event's toolName. |
+| dueDate | Date | Optional; overdue-notice entries only. Overdue Notice Failed.dueDate, replaced by each later Loan Extended.dueDate for the loan. |
+| collectByDate | Date | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.collectByDate. |
 | reason | Text | `refused` or `bounced`, from the failure event's reason. |
 | failedAt | Instant | From the failure event's failedAt. Shown as the failure date: its calendar date in the shed's local time zone. |
 
@@ -89,13 +89,13 @@ Nothing brings an entry back.
     change it from My Account.
 - **INV-UDN-3:** An overdue-notice entry shows the borrower's name and current email, the tool's
   name, and the loan's current due date.
-  - The name, the email, the tool's name and the due date come from Tool Checked Out, the email
-    as replaced by any later Neighbor Email Changed and the due date as moved by any Loan
-    Extended.
+  - The name, the email, the tool's name and the due date come with Overdue Notice Failed, the
+    email as replaced by any later Neighbor Email Changed and the due date as moved by any later
+    Loan Extended.
 - **INV-UDN-3a:** A pickup-notice entry shows the holder's name and current email, the tool's
   name, and the collect-by date.
-  - The collect-by date is the one recorded on Hold Fulfilled. Name, email and tool name come
-    from the same events as for an overdue-notice entry.
+  - Name, email, tool name and collect-by date come with Pickup Notice Failed; the email is
+    replaced by any later Neighbor Email Changed.
 - **INV-UDN-4:** An overdue-notice entry drops off when its loan ends: the tool is returned, or
   the shed manager records it lost.
   - Either way the loan has ended, and there is nothing left to follow up. A tool retired while
@@ -223,19 +223,17 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Overdue Notice Failed (Record Overdue Notice Failure): loanId, reason, failedAt.
-  - Pickup Notice Failed (Record Pickup Notice Failure): holdId, reason, failedAt.
+  - Overdue Notice Failed (Record Overdue Notice Failure): loanId, neighborId, neighborName, neighborEmail, toolName, dueDate, reason, failedAt.
+  - Pickup Notice Failed (Record Pickup Notice Failure): holdId, toolId, neighborId, neighborName, neighborEmail, toolName, collectByDate, reason, failedAt.
   - Neighbor Email Changed (Change Email): neighborId, email.
-  - Tool Checked Out (Check Out Tool): loanId, toolId, toolName, neighborId, neighborName, neighborEmail, dueDate.
   - Loan Extended (Extend Loan): loanId, dueDate.
-  - Tool Returned (Return Tool), Tool Lost (Record Tool Lost): loanId, toolId.
-  - Hold Fulfilled (Fulfill Hold): holdId, toolId, neighborId, collectByDate.
+  - Tool Returned (Return Tool), Tool Lost (Record Tool Lost): loanId.
+  - Tool Checked Out (Check Out Tool): toolId, neighborId (the holder collecting ends the set-aside).
   - Hold Cancelled (Cancel Hold), Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Neighbor Account Closed (Close Account): neighborId.
-  - These keys match the deep-passed docs. Hold Fulfilled carrying toolId and neighborId is this
-    view's assumption, because it doesn't hear Hold Placed; Fulfill Hold is checked against it
-    when it is written in depth.
+  - These keys match the deep-passed docs; the two failure events carrying the notice's details
+    is agreed with slices/record-overdue-notice-failure.md and record-pickup-notice-failure.md.
 - **Downstream read models / slices affected:** none. The screen issues no commands.
 
 ## Open Questions

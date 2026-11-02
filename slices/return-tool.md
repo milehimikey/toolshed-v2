@@ -53,6 +53,7 @@ was late, and the late return behind a flag).
 | loanId | LoanId | yes | From the command. |
 | toolId | ToolId | yes | The loan's tool, from its Tool Checked Out. Carried so views about tools and holds match on the tool directly. |
 | toolName | Text | yes | Set by the system: the tool's name on the loan's Tool Checked Out. |
+| neighborId | NeighborId | yes | Set by the system: the borrower on the loan's Tool Checked Out (the same as the command's, by INV-RET-1). Carried so readers about neighbors match on the borrower directly. |
 | dueDate | Date | yes | Set by the system: the loan's due date in force at the moment of return (Tool Checked Out.dueDate, moved by any Loan Extended), the date `late` was judged against. |
 | returnedAt | Instant | yes | The UTC moment the event is recorded, set by the system. |
 | returnedOn | Date | yes | Set by the system: the calendar date of returnedAt in the shed's local time zone. |

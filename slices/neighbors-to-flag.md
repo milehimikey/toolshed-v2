@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: System → Neighbors
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/5ceee111012aafc9e36695a74977c1a6a16958bb
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Neighbors To Flag
 
@@ -22,8 +18,9 @@ version: 1
 ## Intent
 The late-return flagger's to-do list: every neighbor whose late returns have reached the
 threshold (3 within 90 days) and who hasn't yet been flagged for them, with the loans those late
-returns belong to. The flagger works through it, so the shed manager sees each of these neighbors
-on Flagged Neighbors and decides whether to suspend them.
+returns belong to, each with the tool's name, the due date it missed and the date it came back.
+The flagger works through it, so the shed manager sees each of these neighbors flagged on
+Neighbors and decides whether to suspend them.
 
 ## Trigger & Actor
 - **Actor:** the Late Return Flagger, a system processor in the Flag Neighbor slice
@@ -32,8 +29,7 @@ on Flagged Neighbors and decides whether to suspend them.
   the loans returned, which the flag uses up.
 
 ## Read Model / View
-- **View:** `Neighbors To Flag` built from events: "Tool Checked Out", "Tool Returned", "Neighbor
-  Flagged", "Neighbor Suspended", "Neighbor Reinstated", "Neighbor Account Closed"
+- **View:** `Neighbors To Flag` built from events: "Tool Returned", "Neighbor Flagged", "Neighbor Suspended", "Neighbor Reinstated", "Neighbor Account Closed"
 - **Consumed by:** the Late Return Flagger (Flag Neighbor). Internal: no ui.
 - **Freshness / consistency expectation:** eventual for everything that comes from events
   (seconds, not minutes). Which late returns are still within the 90 days is worked out when the
@@ -45,15 +41,16 @@ local time zone.
 
 | Field | Type | Source / Notes |
 |-------|------|-----------------|
-| neighborId | NeighborId | Tool Checked Out.neighborId for the loan: the borrower. |
+| neighborId | NeighborId | Tool Returned.neighborId: the borrower. |
 | loanId | LoanId | Tool Returned.loanId. |
+| toolName | Text | Tool Returned.toolName. Carried onto the flag. |
+| dueDate | Date | Tool Returned.dueDate: the due date in force at the return. Carried onto the flag. |
 | returnedOn | Date | Tool Returned.returnedOn. |
 | inWindow | Bool | `Derived:` yes while returnedOn is today or one of the 89 days before it, in the shed's local time zone (INV-NTF-2). Worked out when the list is read. |
 
-To decide whether a return creates a row, the view also keeps, beyond its rows, every loan's
-borrower (from Tool Checked Out) and every neighbor's current status: active, suspended (from
-Neighbor Suspended until Neighbor Reinstated) or closed (from Neighbor Account Closed). These are
-bookkeeping, not rows, and are never returned.
+To decide whether a return creates a row, the view also keeps, beyond its rows, every neighbor's
+current status: active, suspended (from Neighbor Suspended until Neighbor Reinstated) or closed
+(from Neighbor Account Closed). This is bookkeeping, not rows, and is never returned.
 
 **When a row is created.** Tool Returned with late = yes creates a row for the loan's borrower,
 unless the borrower is suspended or their account is closed (INV-NTF-6, INV-NTF-7). An on-time
@@ -70,8 +67,9 @@ Nothing puts a row back.
 
 **Queries**
 - **List neighbors to flag.** Takes nothing. Returns each neighbor who has at least 3 rows with
-  inWindow yes, with their neighborId and the loanIds of those rows (all of them, if more than
-  3). There is no paging. The order doesn't matter to the flagger.
+  inWindow yes, with their neighborId and those rows as late returns (loanId, toolName, dueDate,
+  returnedOn; all of them, if more than 3). There is no paging. The order doesn't matter to the
+  flagger.
 
 ## Invariants / Business Rules
 - **INV-NTF-1:** Only late returns count toward the threshold.
@@ -89,12 +87,12 @@ Nothing puts a row back.
     through 29 August.
 - **INV-NTF-3:** Once Neighbor Flagged is recorded for a neighbor, the late returns it names are
   used up and never count again.
-  - Neighbor Flagged names, by loan, every late return that counted when the flag was recorded.
-    This list and Flagged Neighbors both read that set.
+  - Neighbor Flagged carries every late return that counted when the flag was recorded. This
+    list uses them up by loan; Neighbors shows them.
   - The neighbor leaves the list, and is flagged again only after 3 new late returns within 90
     days.
-  - A flag the shed manager doesn't act on stays on Flagged Neighbors. It doesn't put the
-    neighbor back on this list.
+  - A flag the shed manager doesn't act on stays open on Neighbors. It doesn't put the neighbor
+    back on this list.
 - **INV-NTF-5:** Reinstatement starts a neighbor's late-return count again from zero.
   - Late returns from before Neighbor Reinstated never count toward a later flag.
 - **INV-NTF-6:** A neighbor whose account is closed is never flagged.
@@ -107,7 +105,7 @@ Nothing puts a row back.
 - **INV-NTF-8:** Applying the same event twice leaves the list as if it had been applied once.
 
 The list has no screen; only the Late Return Flagger reads it. The shed manager sees flagged
-neighbors on Flagged Neighbors.
+neighbors on Neighbors.
 
 ## Scenarios (Given / When / Then)
 Unless a scenario says otherwise: Ana is an active neighbor with no late returns counting, and
@@ -188,16 +186,15 @@ today is 5 October.
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Tool Checked Out (Check Out Tool): loanId, neighborId (whose loan it was).
-  - Tool Returned (Return Tool): loanId, returnedOn, late.
-  - Neighbor Flagged (Flag Neighbor): neighborId, loanIds (LoanId[]): the loans it uses up.
+  - Tool Returned (Return Tool): loanId, neighborId, toolName, dueDate, returnedOn, late.
+  - Neighbor Flagged (Flag Neighbor): neighborId, lateReturns (loanId, toolName, dueDate,
+    returnedOn): the late returns it uses up.
   - Neighbor Suspended (Suspend Neighbor), Neighbor Reinstated (Reinstate Neighbor), Neighbor
     Account Closed (Close Account): neighborId.
-  - These keys match check-out-tool.md and return-tool.md. Loan Extended is no longer read here:
+  - These keys match return-tool.md. Loan Extended is no longer read here:
     lateness comes from Tool Returned.late.
 - **Downstream read models / slices affected:** none. The Late Return Flagger reads it and issues
   Flag Neighbor.
 
 ## Open Questions
-None.
-- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v1: v1 keeps the old view names in prose; the views named no longer exist in the model; deferred to v2 (2026-11-01, Mike Key)
+- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v2: reworded to Neighbors (2026-11-01)

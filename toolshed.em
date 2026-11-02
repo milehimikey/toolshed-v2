@@ -8,6 +8,7 @@ context Loans
 context Holds
 context Neighbors
 
+type LateReturnFact { loanId: LoanId, toolName: Text, dueDate: Date, returnedOn: Date }
 type LateReturn { loanId: LoanId, toolName: Text, dueDate: Date, returnedOn: Date, flaggedAt: Instant }
 
 # Timeline order, left to right, grouped into storylines: the main journey (Borrow and return a
@@ -100,7 +101,7 @@ storyline "Borrow and return a tool" {
   slice "Return Tool" {
     ui My Loans @Neighbor
     command Return Tool { neighborId: NeighborId, loanId: LoanId } note "slices/return-tool.md"
-    event Tool Returned { loanId: LoanId, toolId: ToolId assigned, toolName: Text assigned, dueDate: Date assigned, returnedAt: Instant assigned, returnedOn: Date assigned, late: Bool assigned } @Loans
+    event Tool Returned { loanId: LoanId, toolId: ToolId assigned, toolName: Text assigned, neighborId: NeighborId assigned, dueDate: Date assigned, returnedAt: Instant assigned, returnedOn: Date assigned, late: Bool assigned } @Loans
   }
   slice "Tool Inventory — tool returned" {
     view Tool Inventory again from "Tool Returned"
@@ -124,8 +125,8 @@ storyline "Chase an overdue loan" after "Borrow and return a tool" {
   # Internally triggered translation: the gateway watches the to-do view and hands notices to the provider.
   slice "Send Overdue Notice" {
     translation Overdue Notice Gateway from "Overdue Loans To Notify" note "slices/send-overdue-notice.md"
-    command Send Overdue Notice { loanId: LoanId, sentTo: Text, borrowerName: Text, toolName: Text, dueDate: Date }
-    event Overdue Notice Sent { loanId: LoanId, sentTo: Text, borrowerName: Text, toolName: Text, dueDate: Date, sentAt: Instant assigned } loops-to "Overdue Loans To Notify" @Loans
+    command Send Overdue Notice { loanId: LoanId, neighborId: NeighborId, sentTo: Text, borrowerName: Text, toolName: Text, dueDate: Date }
+    event Overdue Notice Sent { loanId: LoanId, neighborId: NeighborId, sentTo: Text, borrowerName: Text, toolName: Text, dueDate: Date, sentAt: Instant assigned } loops-to "Overdue Loans To Notify" @Loans
   }
   slice "My Loans — overdue notice sent" {
     view My Loans again from "Overdue Notice Sent"
@@ -135,14 +136,14 @@ storyline "Chase an overdue loan" after "Borrow and return a tool" {
   slice "Record Overdue Notice Failure" {
     translation Email Provider Failure Report note "slices/record-overdue-notice-failure.md" divergence "No email provider selected yet (constitution Amendment 8): no inbound transport reaches this translation and its verifier fails closed until a provider is chosen; the mapping code is in place (conformance 2026-11-01, rulings 2 and 3)"
     command Record Overdue Notice Failure { loanId: LoanId, reason: Text }
-    event Overdue Notice Failed { loanId: LoanId, reason: Text, failedAt: Instant assigned } @Loans
+    event Overdue Notice Failed { loanId: LoanId, neighborId: NeighborId assigned, neighborName: Text assigned, neighborEmail: Text assigned, toolName: Text assigned, dueDate: Date assigned, reason: Text, failedAt: Instant assigned } @Loans
   }
   slice "My Loans — overdue notice failed" {
     view My Loans again from "Overdue Notice Failed"
     ui My Loans @Neighbor
   }
   slice "Undelivered Notices" {
-    view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Neighbor Email Changed", "Loan Extended", "Tool Returned" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text derived from "Tool Checked Out", neighborEmail: Text derived from "Tool Checked Out", "Neighbor Email Changed", toolId: ToolId, toolName: Text derived from "Tool Checked Out", dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
+    view Undelivered Notices from "Overdue Notice Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Tool Checked Out" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text, neighborEmail: Text derived from "Overdue Notice Failed", "Neighbor Email Changed", toolId: ToolId derived, toolName: Text, dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
     ui Undelivered Notices @Shed Manager
   }
 }
@@ -197,10 +198,6 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
     command Fulfill Hold { holdId: HoldId }
     event Hold Fulfilled { holdId: HoldId, toolId: ToolId assigned, toolName: Text assigned, neighborId: NeighborId assigned, neighborName: Text assigned, neighborEmail: Text assigned, collectByDate: Date assigned, fulfilledAt: Instant assigned } loops-to "Holds To Fulfill" @Holds
   }
-  slice "Undelivered Notices — hold fulfilled" {
-    view Undelivered Notices again from "Hold Fulfilled"
-    ui Undelivered Notices @Shed Manager
-  }
   slice "Tool Catalog — hold fulfilled" {
     view Tool Catalog again from "Hold Fulfilled"
     ui Tool Catalog @Neighbor
@@ -216,8 +213,8 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
 
   slice "Send Pickup Notice" {
     translation Pickup Notice Gateway from "Pickup Notices To Send" note "slices/send-pickup-notice.md"
-    command Send Pickup Notice { holdId: HoldId, sentTo: Text, holderName: Text, toolName: Text, collectByDate: Date }
-    event Pickup Notice Sent { holdId: HoldId, sentTo: Text, holderName: Text, toolName: Text, collectByDate: Date, sentAt: Instant assigned } loops-to "Pickup Notices To Send" @Holds
+    command Send Pickup Notice { holdId: HoldId, neighborId: NeighborId, sentTo: Text, holderName: Text, toolName: Text, collectByDate: Date }
+    event Pickup Notice Sent { holdId: HoldId, neighborId: NeighborId, sentTo: Text, holderName: Text, toolName: Text, collectByDate: Date, sentAt: Instant assigned } loops-to "Pickup Notices To Send" @Holds
   }
   slice "My Holds — pickup notice sent" {
     view My Holds again from "Pickup Notice Sent"
@@ -227,7 +224,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   slice "Record Pickup Notice Failure" {
     translation Pickup Email Failure Report note "slices/record-pickup-notice-failure.md" divergence "No email provider selected yet (constitution Amendment 8): no inbound transport reaches this translation and its verifier fails closed until a provider is chosen; the mapping code is in place (conformance 2026-11-01, rulings 2 and 3)"
     command Record Pickup Notice Failure { holdId: HoldId, reason: Text }
-    event Pickup Notice Failed { holdId: HoldId, reason: Text, failedAt: Instant assigned } @Holds
+    event Pickup Notice Failed { holdId: HoldId, toolId: ToolId assigned, neighborId: NeighborId assigned, neighborName: Text assigned, neighborEmail: Text assigned, toolName: Text assigned, collectByDate: Date assigned, reason: Text, failedAt: Instant assigned } @Holds
   }
   slice "My Holds — pickup notice failed" {
     view My Holds again from "Pickup Notice Failed"
@@ -267,16 +264,16 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
 
 storyline "Keep late returners in check" after "Borrow and return a tool" {
   slice "Neighbors To Flag" {
-    view Neighbors To Flag from "Tool Returned", "Tool Checked Out" { neighborId: NeighborId, loanId: LoanId, returnedOn: Date, inWindow: Bool derived } note "slices/neighbors-to-flag.md"
+    view Neighbors To Flag from "Tool Returned" { neighborId: NeighborId, loanId: LoanId, toolName: Text, dueDate: Date, returnedOn: Date, inWindow: Bool derived } note "slices/neighbors-to-flag.md"
   }
 
   slice "Flag Neighbor" {
     processor Late Return Flagger from "Neighbors To Flag" note "slices/flag-neighbor.md"
-    command Flag Neighbor { neighborId: NeighborId, loanIds: LoanId[] }
-    event Neighbor Flagged { neighborId: NeighborId, loanIds: LoanId[], flaggedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
+    command Flag Neighbor { neighborId: NeighborId, lateReturns: LateReturnFact[] }
+    event Neighbor Flagged { neighborId: NeighborId, lateReturns: LateReturnFact[], flaggedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
   }
   slice "Neighbors — neighbor flagged" {
-    view Neighbors again from "Neighbor Flagged", "Tool Returned"
+    view Neighbors again from "Neighbor Flagged"
     ui Neighbors @Shed Manager
   }
 

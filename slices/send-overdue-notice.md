@@ -54,6 +54,7 @@ command is handled.
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | loanId | LoanId | yes | The overdue loan. Must be a loan that has been checked out (INV-OVN-10), still open (INV-OVN-5) and overdue today (INV-OVN-6). |
+| neighborId | NeighborId | yes | The borrower, from the list item. Carried onto the event so readers about neighbors match on it directly. |
 | sentTo | Text | yes | The address to send to: the borrower's current email, from the list item's borrowerEmail. |
 | borrowerName | Text | yes | From the list item. Shown in the email. |
 | toolName | Text | yes | From the list item. Shown in the email. |
@@ -71,6 +72,7 @@ borrower that a notice was sent).
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | loanId | LoanId | yes | From the command. Also the key of the hand-off, which the provider's failure report quotes back. |
+| neighborId | NeighborId | yes | From the command: the borrower. |
 | sentTo | Text | yes | From the command: the address the notice went to. |
 | borrowerName | Text | yes | From the command: the name the notice was addressed to. |
 | toolName | Text | yes | From the command: the tool named in the notice. |

@@ -53,6 +53,12 @@ Notices (the shed manager's follow-up list).
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | holdId | HoldId | yes | From the command. |
+| toolId | ToolId | yes | Set by the system: the tool on the hold's Hold Fulfilled. |
+| neighborId | NeighborId | yes | Set by the system: the holder on the hold's Pickup Notice Sent. |
+| neighborName | Text | yes | Set by the system: the name the email was addressed to (Pickup Notice Sent.holderName). |
+| neighborEmail | Text | yes | Set by the system: the address the email went to (Pickup Notice Sent.sentTo). Readers that show a current address keep it current themselves. |
+| toolName | Text | yes | Set by the system: the tool the email named (Pickup Notice Sent.toolName). |
+| collectByDate | Date | yes | Set by the system: the collect-by date the email gave (Pickup Notice Sent.collectByDate). |
 | reason | Text | yes | From the command: `refused` or `bounced`. |
 | failedAt | Instant | yes | The UTC moment the event is recorded, set by the system. Shown as the failure date: its calendar date in the shed's local time zone. |
 
@@ -184,9 +190,10 @@ know another way.
 ## Non-Functional Requirements
 - **Security / authz:** only the email provider's failure report can trigger this command,
   through the translation. The provider signs each final report, under the shed's house email-port contract; the translation checks the signature and drops an unsigned or wrongly signed report without issuing any command. The provider's signature, not a sign-in, is what guards this command.
-- **PII & compliance:** Pickup Notice Failed holds no name or email: only the hold, the reason and
-  the time. The address the email went to is already on Pickup Notice Sent, so the address in the
-  provider's report is not recorded again.
+- **PII & compliance:** Pickup Notice Failed carries the name and address the notice was sent to, the tool and
+  the date it named, so Undelivered Notices can show the shed manager whom to reach without looking
+  anything up. Nothing else from the provider's report is kept. Names and emails are kept with the
+  shed's loan and hold history and never erased.
 - **Performance / SLA:** none. A failure shows on Undelivered Notices shortly after the report
   arrives, about an hour after the email was handed over.
 

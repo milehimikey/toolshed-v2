@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: automation
 swimlane: System → Neighbors
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/49e73dd7051c66f844a967c12b5c732ff88da063
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Flag Neighbor
 
@@ -21,7 +17,7 @@ version: 1
 
 ## Intent
 When a neighbor's late returns reach the late-return threshold, record that they crossed it,
-naming the late returns behind the flag, so the shed manager sees them on Flagged Neighbors and
+carrying the late returns behind the flag, so the shed manager sees them on Neighbors and
 decides whether to suspend them. The system flags; a person decides.
 
 ## Trigger & Actor
@@ -41,20 +37,20 @@ same moment.
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | neighborId | NeighborId | yes | The neighbor to flag. Must be a registered account (INV-FLG-10), not closed and not suspended (INV-FLG-5). |
-| loanIds | LoanId[] | yes | The late returns behind the flag, by loan, as Neighbors To Flag gave them. Must be exactly the neighbor's counting late returns today (INV-FLG-4), and at least 3 of them (INV-FLG-2). Order doesn't matter. |
+| lateReturns | LateReturnFact[] | yes | The late returns behind the flag, as Neighbors To Flag gave them: each a loanId, toolName, dueDate and returnedOn. Must be exactly the neighbor's counting late returns today, matched by loan (INV-FLG-4), and at least 3 of them (INV-FLG-2). Order doesn't matter. |
 
 ## Trigger
 **Triggered by:** processor `Late Return Flagger`, also in this slice, reading Neighbors To Flag.
 
 ## Event(s) Emitted
 **Event:** `Neighbor Flagged` → context `Neighbors`
-**Read by:** Flagged Neighbors (the neighbor's entry, flag count and latest flag date, and the late
-returns behind the flag) and Neighbors To Flag (the named late returns are used up).
+**Read by:** Neighbors (the account's open flags: count, latest flag date and the late returns
+behind each) and Neighbors To Flag (the named late returns are used up).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | neighborId | NeighborId | yes | From the command. |
-| loanIds | LoanId[] | yes | From the command: the late returns this flag uses up. At least 3. |
+| lateReturns | LateReturnFact[] | yes | From the command: the late returns this flag uses up, each with its loanId, toolName, dueDate and returnedOn. At least 3. Carried so Neighbors shows them without looking anything up. |
 | flaggedAt | Instant | yes | The UTC moment the event is recorded, set by the system. Shown as the flag date: its calendar date in the shed's local time zone. |
 
 The event never changes. It carries the loans, not copies of names or dates; readers find each
@@ -62,9 +58,8 @@ loan's tool and return date from its own events. A later flag records a new Neig
 
 ## Read Model / View
 This slice produces no view of its own. Its processor reads Neighbors To Flag
-(slices/neighbors-to-flag.md). Neighbor Flagged feeds Flagged Neighbors
-(slices/flagged-neighbors.md) and takes the named late returns off Neighbors To Flag. Both are
-eventually consistent.
+(slices/neighbors-to-flag.md). Neighbor Flagged feeds Neighbors (slices/neighbors.md) and takes
+the named late returns off Neighbors To Flag. Both are eventually consistent.
 
 ## Invariants / Business Rules
 A **counting late return**, for a neighbor today, is a loan of theirs whose Tool Returned has late
@@ -75,9 +70,9 @@ yes, and which:
 - was returned after their latest Neighbor Reinstated, if any;
 - was not returned while they were suspended.
 
-A tool recorded lost has no Tool Returned, so it never counts. Once flagged, the neighbor appears
-on Flagged Neighbors and stays there until the shed manager acts; there is no dismiss action
-(Flagged Neighbors owns how it shows). Neighbors are flagged by the system only, through the
+A tool recorded lost has no Tool Returned, so it never counts. Once flagged, the neighbor shows
+as flagged on Neighbors until the shed manager acts; there is no dismiss action (Neighbors owns
+how it shows). Neighbors are flagged by the system only, through the
 processor above.
 
 - **INV-FLG-2:** A neighbor is flagged when they have at least 3 counting late returns.
@@ -88,17 +83,17 @@ processor above.
   - Flag Neighbor records only Neighbor Flagged. The shed manager decides whether to suspend a
     flagged neighbor (Suspend Neighbor).
 - **INV-FLG-4:** A flag uses up the late returns that caused it.
-  - Neighbor Flagged names, by loan, every counting late return the neighbor has when it is
-    recorded, even if there are more than 3. Those loans never count again.
+  - Neighbor Flagged carries every counting late return the neighbor has when it is recorded,
+    even if there are more than 3. Those loans never count again.
   - The neighbor is flagged again only after 3 new counting late returns.
 - **INV-FLG-5:** A neighbor is flagged only while they are still due a flag.
   - A neighbor whose account is closed is never flagged, and nor is a suspended neighbor. A
     neighbor whose count was reset by reinstatement after they joined Neighbors To Flag is not
     flagged for those late returns.
-- **INV-FLG-7:** A neighbor flagged again while an earlier flag is still waiting on Flagged
-  Neighbors gets a second Neighbor Flagged.
-  - An earlier flag never stops a new one. Flagged Neighbors keeps one entry for the neighbor,
-    with the count and the latest date.
+- **INV-FLG-7:** A neighbor flagged again while an earlier flag is still open on Neighbors gets
+  a second Neighbor Flagged.
+  - An earlier flag never stops a new one. Neighbors keeps one row for the neighbor, with the
+    count and the latest date.
 - **INV-FLG-9:** Flagging a neighbor again for exactly the loans an earlier Neighbor Flagged
   already names succeeds and records nothing.
 - **INV-FLG-10:** The neighbor must be a registered account.
@@ -225,20 +220,18 @@ neighbor is flagged.
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, to apply its rules, and the fields it reads from each:
   - Neighbor Registered (Register Neighbor): neighborId.
-  - Tool Checked Out (Check Out Tool): loanId, neighborId.
-  - Tool Returned (Return Tool): loanId, returnedOn, late.
-  - Neighbor Flagged (this slice): neighborId, loanIds.
+  - Tool Returned (Return Tool): loanId, neighborId, toolName, dueDate, returnedOn, late.
+  - Neighbor Flagged (this slice): neighborId, lateReturns.
   - Neighbor Suspended (Suspend Neighbor): neighborId.
   - Neighbor Reinstated (Reinstate Neighbor): neighborId.
   - Neighbor Account Closed (Close Account): neighborId.
-  - These match slices/register-neighbor.md, slices/check-out-tool.md and slices/return-tool.md.
+  - These match slices/register-neighbor.md and slices/return-tool.md.
     The others are specified in slices not yet written in depth; each is checked against these
     keys when it is.
 - **Read model this slice's processor reads:** Neighbors To Flag (slices/neighbors-to-flag.md):
-  each neighbor due a flag, with the loans of all their counting late returns.
-- **Downstream read models / slices affected:** Flagged Neighbors and Neighbors To Flag. Suspend
-  Neighbor is offered on Flagged Neighbors.
+  each neighbor due a flag, with all their counting late returns.
+- **Downstream read models / slices affected:** Neighbors and Neighbors To Flag. Suspend Neighbor
+  is offered on Neighbors.
 
 ## Open Questions
-None.
-- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v1: v1 keeps the old view names in prose; the views named no longer exist in the model; deferred to v2 (2026-11-01, Mike Key)
+- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v2: reworded to Neighbors (2026-11-01)

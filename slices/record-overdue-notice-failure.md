@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Loans
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/11
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Record Overdue Notice Failure
 
@@ -54,6 +51,11 @@ triggered by the email provider's final failure report).
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | loanId | LoanId | yes | From the command. |
+| neighborId | NeighborId | yes | Set by the system: the borrower on the loan's Overdue Notice Sent. |
+| neighborName | Text | yes | Set by the system: the name the notice was addressed to (Overdue Notice Sent.borrowerName). |
+| neighborEmail | Text | yes | Set by the system: the address the notice went to (Overdue Notice Sent.sentTo). Readers that show a current address keep it current themselves. |
+| toolName | Text | yes | Set by the system: the tool the notice named (Overdue Notice Sent.toolName). |
+| dueDate | Date | yes | Set by the system: the due date the notice gave (Overdue Notice Sent.dueDate). |
 | reason | Text | yes | From the command: `refused` or `bounced`. |
 | failedAt | Instant | yes | The UTC moment the event is recorded, set by the system. Shown as the failure date: its calendar date in the shed's local time zone. |
 
@@ -163,9 +165,10 @@ job, in person.
 ## Non-Functional Requirements
 - **Security / authz:** only the email provider's failure report can trigger this command,
   through the translation. The provider signs each final report, under the shed's house email-port contract; the translation checks the signature and drops an unsigned or wrongly signed report without issuing any command. The provider's signature, not a sign-in, is what guards this command.
-- **PII & compliance:** Overdue Notice Failed holds no name or email: only the loan, the reason
-  and the time. The address the notice went to is already on Overdue Notice Sent (sentTo), so
-  the email address in the provider's report is not recorded again.
+- **PII & compliance:** Overdue Notice Failed carries the name and address the notice was sent to, the tool and
+  the date it named, so Undelivered Notices can show the shed manager whom to reach without looking
+  anything up. Nothing else from the provider's report is kept. Names and emails are kept with the
+  shed's loan and hold history and never erased.
 - **Performance / SLA:** none. A failure shows on Undelivered Notices shortly after the report
   arrives, about an hour after the notice was handed over.
 
