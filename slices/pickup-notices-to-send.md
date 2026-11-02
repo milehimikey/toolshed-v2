@@ -29,7 +29,7 @@ holder is emailed once, as soon as a tool is set aside for them.
 ## Read Model / View
 - **View:** `Pickup Notices To Send` built from events: "Hold Fulfilled",
   "Hold Cancelled", "Hold Collected", "Neighbor Email Changed", "Pickup Notice
-  Sent", "Hold Expired", "Tool Retired", "Neighbor Account Closed"
+  Sent", "Hold Expired"
 - **Consumed by:** the Pickup Notice Gateway (Send Pickup Notice). Internal: no ui.
 - **Freshness / consistency expectation:** eventual. A hold joins the list shortly after Hold
   Fulfilled is recorded (seconds, not minutes), and leaves shortly after the event that ends it.
@@ -52,10 +52,9 @@ beyond its rows. Neighbor Email Changed updates the address on that neighbor's r
 
 **When a row leaves the view.** A hold's row is removed when, for that hold:
 - Pickup Notice Sent is recorded (INV-PNS-3);
-- Hold Cancelled or Hold Expired is recorded;
-- Hold Collected is recorded for the hold;
-- Tool Retired is recorded for its tool;
-- Neighbor Account Closed is recorded for its holder (INV-PNS-4).
+- Hold Cancelled or Hold Expired is recorded (retiring the tool or closing the holder's account
+  records Hold Cancelled for it);
+- Hold Collected is recorded for the hold (INV-PNS-4).
 
 Nothing puts it back.
 
@@ -78,8 +77,8 @@ Pickup Notice's rules.
 - **INV-PNS-3:** Once Pickup Notice Sent is recorded for a hold, it leaves the list and never
   comes back.
 - **INV-PNS-4:** A hold leaves the list, unsent, when its set-aside ends first: the holder
-  collects the tool, the hold is cancelled or expires, the tool is retired, or the holder closes
-  their account.
+  collects the tool, or the hold is cancelled or expires. Retiring the tool or closing the
+  holder's account cancels the hold (Retire Tool, Close Account record Hold Cancelled).
   - A tool set aside for a holder is never on loan, so it is never recorded lost while on the
     list.
 - **INV-PNS-7:** Applying the same event twice leaves the list as if it had been applied once.
@@ -110,11 +109,11 @@ Pickup Notice's rules.
   - **Then:** H1 leaves the list, unsent.
 - **Tool retired before the email (INV-PNS-4)**
   - **Given:** H1, on T1, is on the list
-  - **When:** Tool Retired is recorded for T1
+  - **When:** Retire Tool records Hold Cancelled for H1, with Tool Retired for T1
   - **Then:** H1 leaves the list, unsent.
 - **Holder closes their account before the email (INV-PNS-4)**
   - **Given:** H1, Ben's hold, is on the list
-  - **When:** Neighbor Account Closed is recorded for Ben
+  - **When:** Close Account records Hold Cancelled for H1, with Neighbor Account Closed for Ben
   - **Then:** H1 leaves the list, unsent.
 - **Holder changes their email before the email goes out (INV-PNS-2)**
   - **Given:** H1 is on the list with ben@example.org
@@ -156,8 +155,7 @@ Pickup Notice's rules.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.
   - Hold Collected (Check Out Tool): holdId.
-  - Tool Retired (Retire Tool): toolId.
-  - Neighbor Account Closed (Close Account): neighborId.
+  - Hold Cancelled is also recorded by Retire Tool and Close Account, one per hold they end.
   - These match slices/add-tool.md, slices/register-neighbor.md, slices/change-email.md,
     slices/check-out-tool.md, and Hold Fulfilled as recorded in the conventions. The others are
     specified in slices not yet written in depth; each is checked against these keys when it is.

@@ -32,8 +32,7 @@ them, and the screen they cancel holds from.
 
 ## Read Model / View
 - **View:** `My Holds` built from events: "Hold Placed", "Hold Collected", "Hold
-  Cancelled", "Hold Fulfilled", "Pickup Notice Sent", "Pickup Notice Failed", "Hold Expired",
-  "Tool Retired", "Tool Lost", "Neighbor Account Closed"
+  Cancelled", "Hold Fulfilled", "Pickup Notice Sent", "Pickup Notice Failed", "Hold Expired"
 - **Consumed by:** the My Holds screen (Neighbor)
 - **Freshness / consistency expectation:** eventual for everything that comes from events: a
   change shows shortly after its event is recorded (seconds, not minutes). Whether a set-aside's
@@ -67,12 +66,13 @@ that holds wins:
 3. **waiting** — otherwise.
 
 **When a hold leaves the view.** A hold is listed from Hold Placed until it ends. A hold ends
-when it is cancelled or expires, when the holder checks the tool out, when the tool is retired or
-recorded lost, or when the holder closes their account. In events:
+when it is cancelled or expires, or when the holder checks the tool out. In events:
 - Hold Cancelled or Hold Expired for the hold;
-- Hold Collected for the hold (the holder checked the tool out);
-- Tool Retired or Tool Lost for the hold's tool;
-- Neighbor Account Closed for the holder.
+- Hold Collected for the hold (the holder checked the tool out).
+
+Retiring the tool, recording it lost and closing the holder's account each end holds by
+recording Hold Cancelled for them (Retire Tool, Record Tool Lost, Close Account).
+This view hears only the Holds events.
 
 **Queue order.** A tool's queue is the order in which Hold Placed was recorded for it. To work out
 positions, the view keeps, for each tool, every hold on it that hasn't ended, with its holder and
@@ -122,9 +122,11 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
     expiry.
 - **INV-MYHD-7:** Retiring a tool, or recording it lost, ends every hold on it, and those holds
   drop off My Holds.
-  - The holders are not told.
+  - Retire Tool and Record Tool Lost record Hold Cancelled for each hold; this view hears those.
+    The holders are not told.
 - **INV-MYHD-8:** Closing an account ends all of that neighbor's holds. Their holds drop off My
   Holds, and holds behind them move up.
+  - Close Account records Hold Cancelled for each of the neighbor's holds; this view hears those.
   - A tool that was ready for pickup for them passes to the next hold, the same as expiry.
 - **INV-MYHD-13:** Once a tool is set aside for a neighbor, My Holds shows whether the pickup
   email was sent or couldn't be delivered.
@@ -133,8 +135,7 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
 - **INV-MYHD-14:** Each hold shows the tool's name.
   - The name comes with Hold Placed, which carries it.
 - **INV-MYHD-11:** Only Hold Placed, Hold Collected, Hold Cancelled, Hold Fulfilled, Pickup
-  Notice Sent, Pickup Notice Failed, Hold Expired, Tool Retired, Tool Lost and Neighbor Account
-  Closed change My Holds.
+  Notice Sent, Pickup Notice Failed and Hold Expired change My Holds.
   - A checkout records Hold Collected only when the borrower had a hold on the tool; a checkout
     by anyone else is not heard here at all.
 - **INV-MYHD-15:** Applying the same event twice leaves My Holds as if it had been applied once.
@@ -218,15 +219,15 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
     recorded for it.
 - **Tool retired (INV-MYHD-7)**
   - **Given:** Ben's H1 and Cara's H2 are on T1
-  - **When:** Tool Retired is recorded for T1
+  - **When:** Retire Tool records Hold Cancelled for H1 and for H2, with Tool Retired for T1
   - **Then:** H1 and H2 drop off both neighbors' My Holds.
 - **Tool recorded lost (INV-MYHD-7)**
   - **Given:** Ana has T1 on loan as loan L1, and Ben's H1 and Cara's H2 are on T1
-  - **When:** Tool Lost is recorded for L1, the loan of T1
+  - **When:** Record Tool Lost records Hold Cancelled for H1 and for H2, with Tool Lost for L1
   - **Then:** H1 and H2 drop off both neighbors' My Holds.
 - **Holder closes their account (INV-MYHD-8)**
   - **Given:** Ben's H1 is at position 1 and Cara's H2 at position 2 on T1
-  - **When:** Neighbor Account Closed is recorded for Ben
+  - **When:** Close Account records Hold Cancelled for H1, with Neighbor Account Closed for Ben
   - **Then:** H1 drops off. Cara's H2 is at position 1.
 - **Hold again after expiry (INV-MYHD-2)**
   - **Given:** Ben's H1 expired, and T1 is now set aside for Cara's H2
@@ -289,9 +290,8 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Pickup Notice Failed (Record Pickup Notice Failure): holdId.
   - Hold Expired (Expire Hold): holdId.
   - Hold Collected (Check Out Tool): holdId.
-  - Tool Retired (Retire Tool): toolId.
-  - Tool Lost (Record Tool Lost): loanId, toolId. This view matches it by toolId.
-  - Neighbor Account Closed (Close Account): neighborId.
+  - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
+    hold they end; this view can't tell those from a holder's own cancellation and needn't.
   - Hold Placed and Hold Collected match slices/place-hold.md and slices/check-out-tool.md. The others are specified in slices not yet written in depth; these
     keys are this view's assumptions, and each is checked when that slice is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Cancel Hold.

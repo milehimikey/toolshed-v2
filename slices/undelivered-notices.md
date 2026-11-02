@@ -34,8 +34,7 @@ there is something to follow up.
 ## Read Model / View
 - **View:** `Undelivered Notices` built from events: "Overdue Notice Failed", "Pickup Notice
   Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Tool Lost", "Hold
-  Collected", "Hold Cancelled", "Hold
-  Expired", "Tool Retired", "Neighbor Account Closed"
+  Collected", "Hold Cancelled", "Hold Expired"
 - **Consumed by:** the Undelivered Notices screen (Shed Manager)
 - **Freshness / consistency expectation:** eventual. An entry appears, changes or drops off
   shortly after its event is recorded (seconds, not minutes).
@@ -52,7 +51,7 @@ marked optional can be empty.
 | neighborId | NeighborId | The failure event's neighborId: the borrower or the holder. |
 | neighborName | Text | The failure event's neighborName: the name the notice was addressed to. |
 | neighborEmail | Text | `Derived:` the failure event's neighborEmail (the address that failed), replaced by each later Neighbor Email Changed.email for that neighbor. Always the current one. |
-| toolId | ToolId | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.toolId, matched by Tool Retired. |
+| toolId | ToolId | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.toolId. |
 | toolName | Text | The failure event's toolName. |
 | dueDate | Date | Optional; overdue-notice entries only. Overdue Notice Failed.dueDate, replaced by each later Loan Extended.dueDate for the loan. |
 | collectByDate | Date | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.collectByDate. |
@@ -66,9 +65,9 @@ collect-by date. These are bookkeeping, not rows, and are never returned.
 **When an entry drops off.**
 - An overdue-notice entry drops off when its loan ends: Tool Returned or Tool Lost for that
   loan. Retiring the tool while it is out doesn't end the loan, so the entry stays.
-- A pickup-notice entry drops off when its set-aside ends: the holder checks the tool out (Tool
-  Checked Out for that tool and holder), or Hold Cancelled or Hold Expired for the hold, or Tool
-  Retired for the tool, or Neighbor Account Closed for the holder.
+- A pickup-notice entry drops off when its set-aside ends: Hold Collected, Hold Cancelled or
+  Hold Expired for the hold. Retiring the tool or closing the holder's account ends it by
+  recording Hold Cancelled (Retire Tool, Close Account).
 
 Nothing brings an entry back.
 
@@ -101,8 +100,8 @@ Nothing brings an entry back.
   - Either way the loan has ended, and there is nothing left to follow up. A tool retired while
     out keeps its entry until one of these happens.
 - **INV-UDN-5:** A pickup-notice entry drops off when its set-aside ends.
-  - A set-aside ends when the holder collects the tool, or the hold is cancelled or expires, or
-    it ends because the tool was retired or the holder closed their account.
+  - A set-aside ends when the holder collects the tool, or the hold is cancelled or expires;
+    retiring the tool or closing the holder's account records Hold Cancelled for it.
 - **INV-UDN-9:** Entries are listed by neighbor name, ignoring case, then by when the failure was
   recorded.
   - The same order as every list in the shed.
@@ -166,11 +165,11 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
   - **Then:** Ben's entry drops off.
 - **Tool retired while set aside (INV-UDN-5)**
   - **Given:** Undelivered Notices lists Ben's pickup-notice entry for H1
-  - **When:** Tool Retired is recorded for the hedge trimmer
+  - **When:** Retire Tool records Hold Cancelled for H1, with Tool Retired for the hedge trimmer
   - **Then:** Ben's entry drops off.
 - **Holder closes their account (INV-UDN-5)**
   - **Given:** Undelivered Notices lists Ben's pickup-notice entry for H1
-  - **When:** Neighbor Account Closed is recorded for Ben
+  - **When:** Close Account records Hold Cancelled for H1, with Neighbor Account Closed for Ben
   - **Then:** Ben's entry drops off.
 - **Neighbor corrects their email (INV-UDN-3)**
   - **Given:** Undelivered Notices lists Ana's overdue-notice entry, showing ana@example.org, the
@@ -230,8 +229,7 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
   - Tool Returned (Return Tool), Tool Lost (Record Tool Lost): loanId.
   - Hold Collected (Check Out Tool): holdId (the holder collecting ends the set-aside).
   - Hold Cancelled (Cancel Hold), Hold Expired (Expire Hold): holdId.
-  - Tool Retired (Retire Tool): toolId.
-  - Neighbor Account Closed (Close Account): neighborId.
+  - Hold Cancelled is also recorded by Retire Tool and Close Account, one per hold they end.
   - These keys match the deep-passed docs; the two failure events carrying the notice's details
     is agreed with slices/record-overdue-notice-failure.md and record-pickup-notice-failure.md.
 - **Downstream read models / slices affected:** none. The screen issues no commands.

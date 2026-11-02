@@ -45,8 +45,8 @@ request counts as a new request.
 ## Event(s) Emitted
 **Event:** `Tool Lost` → context `Tools`
 **Read by:** Tool Inventory and Tool Catalog (the tool drops off), My Loans (the loan drops off),
-Overdue Loans To Notify (the loan leaves the list), Undelivered Notices (an overdue-notice entry
-for the loan drops off), My Holds and Holds To Fulfill (the tool's holds end).
+Overdue Loans To Notify (the loan leaves the list) and Undelivered Notices (an overdue-notice
+entry for the loan drops off).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
@@ -54,12 +54,25 @@ for the loan drops off), My Holds and Holds To Fulfill (the tool's holds end).
 | toolId | ToolId | yes | The loan's tool, from its Tool Checked Out (the same as the command's, by INV-LOST-11). Carried so views about tools and holds match on the tool directly. |
 | lostAt | Instant | yes | The UTC moment the event is recorded, set by the system. |
 
-The event never changes. Tool Lost is one fact with three consequences: the loan ends, the tool is
-retired, and every hold on the tool ends. No separate Tool Retired or hold event is recorded.
+The event never changes. Tool Lost carries two of its three consequences: the loan ends and the
+tool is retired; every reader treats it as Tool Retired and no separate Tool Retired is recorded.
+The third, every hold on the tool ending, is recorded as its own facts:
+
+**Event:** `Hold Cancelled` → context `Holds`
+**Read by:** My Holds, Tool Catalog, My Loans, Holds To Fulfill, Pickups To Expire, Pickup Notices
+To Send and Undelivered Notices, as any cancellation (the hold ends).
+
+The same event Cancel Hold records, recorded here once per hold on the tool, in the same decision as Tool Lost. The decider reads the holds it ends. With no such hold, none is recorded; the readers can't tell these from a holder's own cancellation and needn't.
+
+| Field | Type | Immutable Fact? | Source / Notes |
+|-------|------|-----------------|----------------|
+| holdId | HoldId | yes | Set by the system: the hold being ended, from its Hold Placed. |
+| cancelledAt | Instant | yes | Set by the system: the same moment as Tool Lost. |
 
 ## Read Model / View
 This slice produces no view of its own. Tool Lost updates Tool Inventory, Tool Catalog, My Loans,
-Overdue Loans To Notify, Undelivered Notices, My Holds and Holds To Fulfill, each specified in its
+Overdue Loans To Notify and Undelivered Notices; the Hold Cancelled recorded with it end the
+tool's holds in My Holds and the hold to-do lists. Each is specified in its
 own doc and eventually consistent.
 
 ## Invariants / Business Rules
@@ -83,9 +96,10 @@ told their hold ended, as for any retired tool.
   - It can be recorded at any time while the tool is out, before or after the loan is overdue.
   - A tool retired while out on loan can still be recorded lost.
   - A loan that has been returned can't be recorded lost.
-- **INV-LOST-3:** Recording a tool lost records only Tool Lost.
-  - No Tool Returned, Tool Retired, Hold Cancelled or other hold event is recorded. The one fact
-    carries all three consequences below.
+- **INV-LOST-3:** Recording a tool lost records Tool Lost and, for each hold on the tool, Hold
+  Cancelled; nothing else.
+  - No Tool Returned or Tool Retired is recorded: Tool Lost itself ends the loan and retires the
+    tool. The holds end as Holds facts, so the views about holds hear only their own events.
 - **INV-LOST-10:** Recording a loan lost that is already recorded lost succeeds and records
   nothing.
   - So a double submit, or a retry after a lost response, never records a second loss.
@@ -100,9 +114,9 @@ told their hold ended, as for any retired tool.
   - **Given:** Ana has the ladder (T2) on loan L2, due 12 October, and it is overdue. Ben's hold H1
     on T2 is waiting.
   - **When:** on 20 October the shed manager records L2 lost from Tool Inventory
-  - **Then:** Tool Lost is recorded for L2, with toolId T2 and the time it was recorded. No Tool
-    Returned, Tool Retired or hold event is recorded: this one fact ends L2, retires T2 and ends
-    H1.
+  - **Then:** Tool Lost is recorded for L2, with toolId T2 and the time it was recorded, and Hold
+    Cancelled for H1. No Tool Returned or Tool Retired is recorded: Tool Lost ends L2 and
+    retires T2.
 - **Lost before the due date (INV-LOST-2)**
   - **Given:** Ana has the hedge trimmer (T3) on loan L3, due 25 October, and it is 15 October
   - **When:** the shed manager records L3 lost
@@ -186,7 +200,8 @@ There are no external calls, retries or compensations in this slice. Nothing is 
   - Tool Lost (this slice): loanId.
   - These match slices/check-out-tool.md and slices/return-tool.md.
 - **Downstream read models / slices affected:** Tool Inventory, Tool Catalog, My Loans, Overdue
-  Loans To Notify, Undelivered Notices, My Holds and Holds To Fulfill. Return Tool and Extend Loan
+  Loans To Notify and Undelivered Notices (Tool Lost); My Holds, Tool Catalog, My Loans and the
+  hold to-do lists (the Hold Cancelled recorded here). Return Tool and Extend Loan
   refuse the ended loan; Check Out Tool, Place Hold and Retire Tool treat the tool as retired.
 
 ## Open Questions

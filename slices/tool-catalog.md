@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Neighbor → Tools
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/01689d1fc90e13b2356e10def6605b8c08aff62a
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Tool Catalog
 
@@ -37,7 +33,7 @@ holds from it.
 ## Read Model / View
 - **View:** `Tool Catalog` built from events: "Tool Added", "Tool Checked Out", "Loan Extended",
   "Hold Placed", "Hold Cancelled", "Tool Returned", "Hold Fulfilled", "Hold Expired", "Tool
-  Retired", "Tool Lost", "Neighbor Account Closed"
+  Retired", "Tool Lost"
 - **Consumed by:** the Tool Catalog screen (Neighbor)
 - **Freshness / consistency expectation:** eventual. An entry reflects an event shortly after it
   is recorded (seconds, not minutes). No action on this screen depends on it being instant,
@@ -68,9 +64,9 @@ first that holds wins:
 3. **reserved** — otherwise, at least one hold on the tool is waiting.
 4. **available** — otherwise.
 
-A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when it is
-cancelled or expires, the holder checks the tool out, the tool is retired or recorded lost, or
-the holder closes their account. Because the test reads current facts, the order events arrive
+A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when Hold
+Cancelled, Hold Expired or Hold Collected is recorded for it; retiring the tool, recording it lost
+and closing the holder's account each record Hold Cancelled for the holds they end. Because the test reads current facts, the order events arrive
 in doesn't matter. For example, a lapsed set-aside whose tool has already gone out to someone
 else is checked-out, even before its Hold Expired lands.
 
@@ -130,8 +126,8 @@ and are never returned.
     back or is recorded lost (INV-TINV-2). Neighbors can do nothing with a retired tool; the shed
     manager may still need to record it lost.
 - **INV-TCAT-9:** Only Tool Added, Tool Checked Out, Loan Extended, Hold Placed, Hold Cancelled,
-  Tool Returned, Hold Fulfilled, Hold Expired, Tool Retired, Tool Lost and Neighbor Account
-  Closed change the catalog.
+  Tool Returned, Hold Fulfilled, Hold Collected, Hold Expired, Tool Retired and Tool Lost change
+  the catalog.
   - Overdue notices, pickup emails and email changes are shown elsewhere, not here.
 - **INV-TCAT-10:** A tool recorded lost drops off the catalog.
   - Recording a tool lost ends its loan, retires it and ends its holds, all at once.
@@ -233,12 +229,12 @@ and are never returned.
   - **Then:** the catalog shows the drill as reserved, with 1 hold waiting.
 - **Set-aside holder closes their account, no hold waiting (INV-TCAT-4)**
   - **Given:** the catalog shows the drill as set aside for Cara, with no holds waiting
-  - **When:** Neighbor Account Closed is recorded for Cara
+  - **When:** Close Account records Hold Cancelled for Cara's hold
   - **Then:** the catalog lists the drill as available.
 - **Waiting holder closes their account (INV-TCAT-6)**
   - **Given:** the catalog shows the drill as checked out, with 2 holds waiting, one of them
     Cara's, and the hedge trimmer as checked out with 1 hold waiting, Cara's
-  - **When:** Neighbor Account Closed is recorded for Cara
+  - **When:** Close Account records Hold Cancelled for each of Cara's two holds
   - **Then:** the catalog shows the drill with 1 hold waiting and the hedge trimmer with none.
     Both are still checked out.
 - **Tool retired in the shed (INV-TCAT-8)**
@@ -314,9 +310,10 @@ and are never returned.
   - Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId.
-  - Neighbor Account Closed (Close Account): neighborId.
+  - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
+    hold they end.
   - Tool Added and the loan events' keys match slices/add-tool.md and slices/tool-inventory.md.
-    The hold events and Neighbor Account Closed are specified in slices not yet written in depth;
+    The hold events are specified in slices not yet written in depth;
     these keys are this view's assumptions, and each of those slices is checked against them when
     it is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Check Out Tool

@@ -28,8 +28,7 @@ so a returned tool is set aside for the neighbor at the front of its queue.
 
 ## Read Model / View
 - **View:** `Holds To Fulfill` built from events: "Hold Placed", "Hold Collected", "Tool Returned",
-  "Hold Cancelled", "Tool Checked Out", "Hold Fulfilled", "Hold Expired", "Tool Retired", "Tool Lost",
-  "Neighbor Account Closed"
+  "Hold Cancelled", "Tool Checked Out", "Hold Fulfilled", "Hold Expired"
 - **Consumed by:** the Hold Fulfiller (Fulfill Hold). Internal: no ui.
 - **Freshness / consistency expectation:** eventual. A tool joins or leaves the list shortly after
   the event that causes it is recorded (seconds, not minutes). Fulfill Hold checks its own rules
@@ -45,13 +44,11 @@ One row per tool on the list. ToolId, HoldId and NeighborId are UUIDs.
 
 **Bookkeeping.** For every tool that has holds, the view keeps: whether a loan of it is open (from
 Tool Checked Out until Tool Returned or Tool Lost for that loan); whether a hold on it is set
-aside (from Hold Fulfilled until that hold ends); whether it is retired; and its waiting holds,
+aside (from Hold Fulfilled until that hold ends); and its waiting holds,
 with holder, in the order Hold Placed was recorded. None of this is returned except the row.
 
 **Waiting and ending.** A hold is waiting from Hold Placed until it is fulfilled or ends. A hold
-ends when it is cancelled or expires, when the holder checks the tool out, when the tool is
-retired or recorded lost, or when the holder closes their account. In events: Hold Cancelled or
-Hold Expired or Hold Collected for the hold; Tool Retired or Tool Lost for its tool; Neighbor Account Closed for its holder.
+ends when Hold Cancelled, Hold Expired or Hold Collected is recorded for it. Retiring the tool, recording it lost and closing the holder's account each end holds by recording Hold Cancelled for them (Retire Tool, Record Tool Lost, Close Account). This list hears only the Holds events for holds.
 
 **Queries**
 - **List tools to fulfill.** Takes nothing. Returns every row: toolId, and the front hold's holdId
@@ -66,8 +63,8 @@ Hold, INV-FUL-8; Expire Hold). This view doesn't hear suspension or loans of oth
 never skips anyone.
 
 - **INV-HTF-1:** A tool is on the list exactly when all of these hold, tested against its current
-  facts: no loan of it is open, it isn't retired, no hold on it is set aside, and at least one
-  hold on it is waiting.
+  facts: no loan of it is open, no hold on it is set aside, and at least one hold on it is
+  waiting.
   - A loan is open from Tool Checked Out until Tool Returned or Tool Lost for that loan. A hold is
     set aside from Hold Fulfilled until it ends; a set-aside whose collect-by date has passed still
     counts until Hold Expired is recorded for it.
@@ -80,7 +77,7 @@ never skips anyone.
 - **INV-HTF-3:** When one of its holds is fulfilled, the tool leaves the list: the hold is now set
   aside (INV-HTF-1).
 - **INV-HTF-4:** When a set-aside ends without the holder collecting it (the hold expires or is
-  cancelled, or the holder closes their account), the tool joins the list if INV-HTF-1 then
+  cancelled, including by the holder closing their account), the tool joins the list if INV-HTF-1 then
   holds: no loan open and another hold waiting.
   - With no hold waiting, the tool becomes available and stays off the list. If someone checked
     it out after the collect-by date and before Hold Expired, it stays off the list until that
@@ -90,12 +87,13 @@ never skips anyone.
   - The next hold waits for the tool's return.
 - **INV-HTF-6:** When a waiting hold ends, the next waiting hold becomes the front. If no hold is
   left waiting, the tool leaves the list (INV-HTF-1).
-- **INV-HTF-7:** Retiring a tool, or recording it lost, ends all its holds. A retired tool leaves
-  the list.
+- **INV-HTF-7:** Retiring a tool, or recording it lost, ends all its holds: Retire Tool and Record
+  Tool Lost record Hold Cancelled for each. With no hold left waiting, the tool leaves the list,
+  or never joins it.
   - A tool is recorded lost only while it is on loan, so it is never on the list at that moment.
-    Its holds end, and it never comes back onto the list.
-  - A tool retired while on loan never joins the list when it is returned: retiring it ended its
-    holds.
+    Its holds are cancelled, and it never comes onto the list.
+  - A tool retired while on loan never joins the list when it is returned: its holds were
+    cancelled with it.
 - **INV-HTF-9:** Applying the same event twice leaves the list as if it had been applied once.
 
 ## Scenarios (Given / When / Then)
@@ -145,7 +143,7 @@ never skips anyone.
   - **Then:** T1 is back on the list, with front hold H2.
 - **Set-aside holder closes their account (INV-HTF-4)**
   - **Given:** T1 is set aside for Ben's H1, and Cleo's H2 is waiting
-  - **When:** Neighbor Account Closed is recorded for Ben
+  - **When:** Close Account records Hold Cancelled for H1, because Ben closed his account
   - **Then:** T1 is back on the list, with front hold H2.
 - **Front hold cancelled before it is fulfilled (INV-HTF-6)**
   - **Given:** T1 is on the list, with front hold H1 and H2 behind it
@@ -162,16 +160,17 @@ never skips anyone.
     T1's next return.
 - **Tool retired (INV-HTF-7)**
   - **Given:** T1 is on the list, with front hold H1
-  - **When:** Tool Retired is recorded for T1
+  - **When:** Retire Tool records Hold Cancelled for H1, with Tool Retired for T1
   - **Then:** T1 leaves the list.
 - **Retired while on loan, then returned (INV-HTF-7)**
-  - **Given:** Ana has T1 on loan with H1 waiting, and Tool Retired was recorded for T1
+  - **Given:** Ana has T1 on loan with H1 waiting, and the shed manager retired T1, which
+    recorded Hold Cancelled for H1
   - **When:** Tool Returned is recorded for Ana's loan
   - **Then:** T1 is not on the list.
 - **Tool recorded lost while holds wait (INV-HTF-7)**
   - **Given:** Ana has T1 on loan L1, and H1 is waiting on it
-  - **When:** Tool Lost is recorded for L1, tool T1
-  - **Then:** H1 ends, and T1 never joins the list.
+  - **When:** Record Tool Lost records Hold Cancelled for H1, with Tool Lost for L1
+  - **Then:** H1 is gone, and T1 never joins the list.
 - **Same event applied twice (INV-HTF-9)**
   - **Given:** T1 is on the list once, with front hold H1
   - **When:** the same Tool Returned is applied again
@@ -202,9 +201,8 @@ never skips anyone.
   - Tool Checked Out (Check Out Tool): loanId, toolId (a loan is open).
   - Hold Collected (Check Out Tool): holdId (the hold leaves the queue).
   - Tool Returned (Return Tool): loanId, toolId.
-  - Tool Retired (Retire Tool): toolId.
-  - Tool Lost (Record Tool Lost): loanId, toolId.
-  - Neighbor Account Closed (Close Account): neighborId.
+  - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
+    hold they end.
   - These match slices/place-hold.md, slices/check-out-tool.md and slices/return-tool.md, and
     Hold Fulfilled as Fulfill Hold is being written. The others are specified in slices not yet
     written in depth; each is checked against these keys when it is.

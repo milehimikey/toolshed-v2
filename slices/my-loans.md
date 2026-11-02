@@ -32,7 +32,7 @@ be delivered. It is the screen the neighbor extends and returns loans from.
 ## Read Model / View
 - **View:** `My Loans` built from events: "Tool Checked Out", "Loan Extended",
   "Hold Placed", "Hold Cancelled", "Overdue Notice Sent", "Overdue Notice Failed", "Tool
-  Returned", "Hold Expired", "Tool Retired", "Tool Lost", "Neighbor Account Closed"
+  Returned", "Hold Collected", "Hold Expired", "Tool Retired", "Tool Lost"
 - **Consumed by:** the My Loans screen (Neighbor)
 - **Freshness / consistency expectation:** eventual for everything that comes from events: a
   change shows shortly after its event is recorded (seconds, not minutes). `overdue` is worked out
@@ -64,9 +64,11 @@ fulfilled hold, except in the brief gap described under Alternate & Error Flows.
 counts as waiting from Hold Placed until it ends. A hold ends when:
 - Hold Cancelled is recorded for it;
 - Hold Expired is recorded for it;
-- its holder checks the tool out (Tool Checked Out for this tool by the hold's neighbor);
-- Tool Retired or Tool Lost is recorded for the tool;
-- Neighbor Account Closed is recorded for the holder.
+- Hold Collected is recorded for it (its holder checked the tool out).
+
+Retiring the tool, recording it lost and closing the holder's account each end holds by
+recording Hold Cancelled for them (Retire Tool, Record Tool Lost, Close Account).
+This view hears only the Holds events for holds.
 
 Holds placed before the loan began count the same as holds placed during it. To apply these
 rules, the view keeps, for each tool, the hold ID and holder of each hold that hasn't ended. This
@@ -107,14 +109,14 @@ is bookkeeping, not part of the row, and is never returned.
 - **INV-MYL-8:** A loan's entry changes only through its own checkout, extension, overdue notice,
   return or loss, and through holds starting or ending on its tool.
   - That is: Tool Checked Out, Loan Extended, Overdue Notice Sent, Overdue Notice Failed, Tool
-    Returned, Tool Lost, Hold Placed, Hold Cancelled, Hold Expired, Tool Retired, and Neighbor
-    Account Closed of a holder.
+    Returned, Tool Lost, Hold Placed, Hold Collected, Hold Cancelled, Hold Expired and Tool
+    Retired.
   - The tool's name comes with Tool Checked Out.
 - **INV-MYL-9:** While any hold is waiting on a loan's tool, My Loans shows that the loan can't
   be extended because someone is waiting.
   - A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when it is
-    cancelled or expires, when the holder checks the tool out, when the tool is retired or
-    recorded lost, or when the holder closes their account. A tool on loan has no fulfilled hold,
+    cancelled, expires or is collected; a tool retired or recorded lost, and a holder closing
+    their account, end holds by recording Hold Cancelled. A tool on loan has no fulfilled hold,
     so for a loan's tool a hold waits until it ends.
   - This includes holds that were already waiting when the loan began. When no hold is waiting
     any more, the loan can be extended again.
@@ -183,13 +185,13 @@ is bookkeeping, not part of the row, and is never returned.
   - **Then:** L1 shows no hold waiting and is extendable again.
 - **The waiting holder closes their account (INV-MYL-9)**
   - **Given:** L1 shows a hold waiting, from Ben's hold H1 only
-  - **When:** Neighbor Account Closed is recorded for Ben
+  - **When:** Close Account records Hold Cancelled for H1, because Ben closed his account
   - **Then:** L1 shows no hold waiting.
 - **Tool retired while on loan (INV-MYL-9, INV-MYL-10, INV-MYL-12)**
   - **Given:** L1 shows a hold waiting, from Ben's hold H1, due 12 October
-  - **When:** Tool Retired is recorded for the drill
-  - **Then:** L1 is still listed, due 12 October, with the tool retired, no hold waiting (retiring
-    ended H1), not extendable, and Return still offered.
+  - **When:** Tool Retired is recorded for the drill, with Hold Cancelled for H1
+  - **Then:** L1 is still listed, due 12 October, with the tool retired, no hold waiting, not
+    extendable, and Return still offered.
 - **Loan starts with a hold already waiting (INV-MYL-9)**
   - **Given:** the drill was returned with Ben's hold H1 at position 1 and Cara's hold H2 at
     position 2, and it was set aside for Ben
@@ -274,8 +276,10 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Hold Placed (Place Hold): holdId, toolId, neighborId.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.
+  - Hold Collected (Check Out Tool): holdId.
   - Tool Retired (Retire Tool): toolId.
-  - Neighbor Account Closed (Close Account): neighborId.
+  - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
+    hold they end.
   - The loan and hold events' keys match slices/tool-inventory.md and slices/tool-catalog.md. checkedOutAt matches Check Out Tool
     (slices/check-out-tool.md). The other events are specified in slices not yet written in
     depth; these keys are this view's assumptions, and each is checked when that slice is.

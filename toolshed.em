@@ -77,7 +77,7 @@ storyline "Borrow and return a tool" {
     ui Tool Catalog @Neighbor
   }
   slice "My Loans" {
-    view My Loans from "Tool Checked Out" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text, checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
+    view My Loans from "Tool Checked Out", "Hold Collected" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text, checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
     ui My Loans @Neighbor
   }
 
@@ -311,7 +311,12 @@ storyline "Take a tool or a neighbor out of the shed" {
   slice "Retire Tool" {
     ui Tool Inventory @Shed Manager
     command Retire Tool { toolId: ToolId } note "slices/retire-tool.md"
-    event Tool Retired { toolId: ToolId, retiredAt: Instant assigned } loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send" @Tools
+    event Tool Retired { toolId: ToolId, retiredAt: Instant assigned } @Tools
+    event Hold Cancelled @Holds
+  }
+  slice "My Holds — tool retired" {
+    view My Holds again from "Hold Cancelled"
+    ui My Holds @Neighbor
   }
   slice "Tool Inventory — tool retired" {
     view Tool Inventory again from "Tool Retired"
@@ -321,23 +326,20 @@ storyline "Take a tool or a neighbor out of the shed" {
     view Tool Catalog again from "Tool Retired"
     ui Tool Catalog @Neighbor
   }
-  slice "My Holds — tool retired" {
-    view My Holds again from "Tool Retired"
-    ui My Holds @Neighbor
-  }
   slice "My Loans — tool retired" {
     view My Loans again from "Tool Retired"
     ui My Loans @Neighbor
-  }
-  slice "Undelivered Notices — tool retired" {
-    view Undelivered Notices again from "Tool Retired"
-    ui Undelivered Notices @Shed Manager
   }
 
   slice "Record Tool Lost" {
     ui Tool Inventory @Shed Manager
     command Record Tool Lost { loanId: LoanId, toolId: ToolId } note "slices/record-tool-lost.md"
-    event Tool Lost { loanId: LoanId, toolId: ToolId assigned, lostAt: Instant assigned } loops-to "Overdue Loans To Notify", "Holds To Fulfill" @Tools
+    event Tool Lost { loanId: LoanId, toolId: ToolId assigned, lostAt: Instant assigned } loops-to "Overdue Loans To Notify" @Tools
+    event Hold Cancelled @Holds
+  }
+  slice "My Holds — tool lost" {
+    view My Holds again from "Hold Cancelled"
+    ui My Holds @Neighbor
   }
   slice "Tool Inventory — tool lost" {
     view Tool Inventory again from "Tool Lost"
@@ -351,10 +353,6 @@ storyline "Take a tool or a neighbor out of the shed" {
     view My Loans again from "Tool Lost"
     ui My Loans @Neighbor
   }
-  slice "My Holds — tool lost" {
-    view My Holds again from "Tool Lost"
-    ui My Holds @Neighbor
-  }
   slice "Undelivered Notices — tool lost" {
     view Undelivered Notices again from "Tool Lost"
     ui Undelivered Notices @Shed Manager
@@ -363,7 +361,12 @@ storyline "Take a tool or a neighbor out of the shed" {
   slice "Close Account" {
     ui My Account @Neighbor
     command Close Account { neighborId: NeighborId } note "slices/close-account.md"
-    event Neighbor Account Closed { neighborId: NeighborId, whileSuspended: Bool assigned, closedAt: Instant assigned } loops-to "Holds To Fulfill", "Pickups To Expire", "Pickup Notices To Send", "Neighbors To Flag" @Neighbors
+    event Neighbor Account Closed { neighborId: NeighborId, whileSuspended: Bool assigned, closedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
+    event Hold Cancelled @Holds
+  }
+  slice "My Holds — account closed" {
+    view My Holds again from "Hold Cancelled"
+    ui My Holds @Neighbor
   }
   slice "My Account — account closed" {
     view My Account again from "Neighbor Account Closed"
@@ -372,21 +375,5 @@ storyline "Take a tool or a neighbor out of the shed" {
   slice "Neighbors — account closed" {
     view Neighbors again from "Neighbor Account Closed"
     ui Neighbors @Shed Manager
-  }
-  slice "My Holds — account closed" {
-    view My Holds again from "Neighbor Account Closed"
-    ui My Holds @Neighbor
-  }
-  slice "Tool Catalog — account closed" {
-    view Tool Catalog again from "Neighbor Account Closed"
-    ui Tool Catalog @Neighbor
-  }
-  slice "My Loans — account closed" {
-    view My Loans again from "Neighbor Account Closed"
-    ui My Loans @Neighbor
-  }
-  slice "Undelivered Notices — account closed" {
-    view Undelivered Notices again from "Neighbor Account Closed"
-    ui Undelivered Notices @Shed Manager
   }
 }

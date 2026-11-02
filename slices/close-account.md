@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Neighbors
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/27
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Close Account
 
@@ -22,15 +19,15 @@ Let a neighbor who is moving away or no longer wants to take part close their ow
 My Account. Closing is the neighbor's own choice, and it is final: nothing reopens, suspends or
 reinstates a closed account. A neighbor who wants to come back signs up again as a new account.
 
-What follows a closure is decided by the views and slices that read Neighbor Account Closed:
-- All of the neighbor's holds end. Holds waiting behind theirs move up, and a tool set aside for
-  them passes to the next hold, or becomes available if none is waiting, as when a set-aside
-  expires (My Holds, Holds To Fulfill, Tool Catalog).
+Closing records Neighbor Account Closed and, for each of the neighbor's holds, Hold Cancelled;
+what follows is decided by the views and slices that read them:
+- All of the neighbor's holds end, each by its Hold Cancelled. Holds waiting behind theirs move
+  up, and a tool set aside for them passes to the next hold, or becomes available if none is
+  waiting, as when a set-aside expires (My Holds, Holds To Fulfill, Tool Catalog).
 - The neighbor can still view My Account, read-only, and can't borrow, extend or place holds
   (My Account, Check Out Tool, Extend Loan, Place Hold).
-- A closed account is never flagged, and drops off Flagged Neighbors and Suspended Neighbors.
-  The Neighbors screen shows it as closed (Neighbors To Flag, Flagged Neighbors, Suspended
-  Neighbors, Neighbors).
+- A closed account is never flagged. The Neighbors screen shows it as closed, with no action
+  and no open flags (Neighbors To Flag, Neighbors).
 - If the account was suspended when it was closed, its email can't be used to sign up again
   (Register Neighbor, INV-REG-4). Otherwise it can.
 
@@ -55,10 +52,8 @@ A NeighborId is a UUID.
 
 ## Event(s) Emitted
 **Event:** `Neighbor Account Closed` → context `Neighbors`
-**Read by:** My Account, Neighbors, Flagged Neighbors, Suspended Neighbors, My Holds, Tool
-Catalog, My Loans and Undelivered Notices (their continuations after this slice); and Holds To
-Fulfill, Pickups To Expire, Pickup Notices To Send and Neighbors To Flag (the neighbor's holds
-and late-return count end).
+**Read by:** My Account and Neighbors (the account shows as closed), and Neighbors To Flag (the
+late-return count ends).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
@@ -66,11 +61,22 @@ and late-return count end).
 | whileSuspended | Bool | yes | Set by the system: yes if the account was suspended when it was closed (Neighbor Suspended with no Neighbor Reinstated since). Register Neighbor reads it to keep that email from being used again (INV-CLS-9). |
 | closedAt | Instant | yes | Set by the system: the UTC moment the event is recorded. |
 
+**Event:** `Hold Cancelled` → context `Holds`
+**Read by:** My Holds, Tool Catalog, My Loans, Holds To Fulfill, Pickups To Expire, Pickup Notices
+To Send and Undelivered Notices, as any cancellation (the hold ends).
+
+The same event Cancel Hold records, recorded here once per hold the neighbor has, waiting or set aside, in the same decision as Neighbor Account Closed. The decider reads the holds it ends. With no such hold, none is recorded; the readers can't tell these from a holder's own cancellation and needn't.
+
+| Field | Type | Immutable Fact? | Source / Notes |
+|-------|------|-----------------|----------------|
+| holdId | HoldId | yes | Set by the system: the hold being ended, from its Hold Placed. |
+| cancelledAt | Instant | yes | Set by the system: the same moment as Neighbor Account Closed. |
+
 ## Read Model / View
 This slice produces no view of its own. Neighbor Account Closed changes the account's entry in
-My Account and Neighbors, removes it from Flagged Neighbors and Suspended Neighbors, and ends the
-neighbor's holds in My Holds, Tool Catalog, My Loans and the hold to-do lists. Each view is
-specified in its own doc. All are eventually consistent.
+My Account and Neighbors; the Hold Cancelled recorded with it end the neighbor's holds in My
+Holds, Tool Catalog, My Loans and the hold to-do lists. Each view is specified in its own doc.
+All are eventually consistent.
 
 ## Invariants / Business Rules
 - **INV-CLS-1:** A neighbor closes their own account themselves.
@@ -96,11 +102,13 @@ Unless a scenario says otherwise: Ana is registered as N1, is active, and has no
 - **Happy path (INV-CLS-2, INV-CLS-9)**
   - **Given:** Ana has a hold waiting on the cordless drill, at position 1
   - **When:** Ana closes her account from My Account
-  - **Then:** Neighbor Account Closed is recorded for N1, with whileSuspended no.
+  - **Then:** Neighbor Account Closed is recorded for N1, with whileSuspended no, and Hold
+    Cancelled for her hold on the drill.
 - **Suspended neighbor closes their account (INV-CLS-2, INV-CLS-9)**
-  - **Given:** Ana is suspended
+  - **Given:** Ana is suspended, with no holds
   - **When:** Ana closes her account
-  - **Then:** Neighbor Account Closed is recorded for N1, with whileSuspended yes.
+  - **Then:** Neighbor Account Closed is recorded for N1, with whileSuspended yes, and nothing
+    else.
 - **Reinstated neighbor closes their account (INV-CLS-9)**
   - **Given:** Ana was suspended and has since been reinstated
   - **When:** Ana closes her account
@@ -108,8 +116,9 @@ Unless a scenario says otherwise: Ana is registered as N1, is active, and has no
 - **Closing while a tool is set aside (INV-CLS-2)**
   - **Given:** the drill is set aside for Ana, and Cara's hold is waiting
   - **When:** Ana closes her account
-  - **Then:** Neighbor Account Closed is recorded for N1. A set-aside is not a loan, so it doesn't
-    stop the closing.
+  - **Then:** Neighbor Account Closed is recorded for N1, and Hold Cancelled for her set-aside
+    hold. A set-aside is not a loan, so it doesn't stop the closing; the drill passes to Cara's
+    hold.
 - **Closing with a tool still on loan (INV-CLS-7)**
   - **Given:** Ana has the ladder on loan, not overdue
   - **When:** Ana tries to close her account
@@ -196,12 +205,11 @@ There are no external calls in this slice, and no email is sent.
   - These keys match the deep-passed docs. whileSuspended is new on Neighbor Account Closed;
     readers that need only {neighborId} are unaffected, and Register Neighbor can read it
     instead of working out the status itself.
-- **Downstream read models / slices affected:** My Account, Neighbors, Flagged Neighbors,
-  Suspended Neighbors, My Holds, Tool Catalog, My Loans, Undelivered Notices, Holds To Fulfill,
-  Pickups To Expire, Pickup Notices To Send and Neighbors To Flag. Register Neighbor reads
+- **Downstream read models / slices affected:** My Account, Neighbors and Neighbors To Flag
+  (Neighbor Account Closed); My Holds, Tool Catalog, My Loans, Undelivered Notices, Holds To
+  Fulfill, Pickups To Expire and Pickup Notices To Send (the Hold Cancelled recorded here). Register Neighbor reads
   whileSuspended for INV-REG-4. Check Out Tool, Extend Loan, Place Hold, Suspend Neighbor,
   Reinstate Neighbor and Change Email refuse a closed account.
 
 ## Open Questions
-None.
-- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v1: v1 keeps the old view names in prose; the views named no longer exist in the model; deferred to v2 (2026-11-01, Mike Key)
+- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v2: reworded to Neighbors (2026-11-01)
