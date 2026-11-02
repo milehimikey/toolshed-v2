@@ -344,7 +344,7 @@ slice "Undelivered Notices — tool retired" {
 
 slice "Record Tool Lost" {
   ui Tool Inventory @Shed Manager
-  command Record Tool Lost { loanId: LoanId } note "slices/record-tool-lost.md" issue "conformance: code carries toolId from the route and refuses loan-not-found when it is not the loan's tool (Amendment 10 URL layout) — declare toolId on the command and extend INV-LOST-11, or drop the route check"
+  command Record Tool Lost { loanId: LoanId, toolId: ToolId } note "slices/record-tool-lost.md"
   event Tool Lost { loanId: LoanId, toolId: ToolId assigned, lostAt: Instant assigned } loops-to "Overdue Loans To Notify", "Holds To Fulfill" @Tools
 }
 slice "Tool Inventory — tool lost" {

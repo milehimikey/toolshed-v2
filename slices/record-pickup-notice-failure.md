@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/19
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Record Pickup Notice Failure
 
@@ -30,7 +27,9 @@ screen.
 
 What the report carries: the reference the shed gave the email when it handed it over, which is
 the hold's ID, since each set-aside gets at most one pickup email; and the reason, refused or
-bounced. Anything else in the report, such as the email address, is not recorded.
+bounced. Anything else in the report, such as the email address, is not recorded. A report whose
+reference is a loan's ID is about an overdue notice: it belongs to Record Overdue Notice Failure,
+and this translation drops it without issuing a command.
 
 ## Command / Input
 **Command:** `Record Pickup Notice Failure`
@@ -93,7 +92,7 @@ holder's My Holds; those views own how it is shown.
 - **INV-PNF-9:** A failure report that arrives after the set-aside has ended is ignored, and
   nothing is recorded.
   - A set-aside ends when the holder collects the tool, the hold is cancelled or expires, the
-    tool is retired, or the holder closes their account.
+    tool is retired or recorded lost, or the holder closes their account.
   - For example, the holder collected the tool during the hour the provider spent retrying.
 - **INV-PNF-10:** A failure report repeated for a hold whose failure is already recorded, with the
   same reason, succeeds and records nothing new. With a different reason it is ignored, and
@@ -131,6 +130,11 @@ holder's My Holds; those views own how it is shown.
     drill
   - **When:** the provider's final report says the email for H1 bounced
   - **Then:** ignored with `hold-ended`. Nothing is recorded.
+- **Report after the tool was recorded lost (INV-PNF-9)**
+  - **Given:** Pickup Notice Sent was recorded for H1, and Tool Lost was then recorded for the
+    drill, out on another neighbor's loan
+  - **When:** the provider's final report says the email for H1 bounced
+  - **Then:** ignored with `hold-ended`. Nothing is recorded.
 - **Report after the holder closed their account (INV-PNF-9)**
   - **Given:** Pickup Notice Sent was recorded for H1, and Neighbor Account Closed was then
     recorded for Ben
@@ -166,7 +170,8 @@ The checks run in this order, and the first that fails is the reason returned:
 `no-matching-notice` and `failure-already-recorded` mean the same conditions as in Record Overdue
 Notice Failure, keyed here by hold instead of loan. A missing or malformed hold ID, or a reason
 other than `refused` or `bounced`, is bad input, rejected before any rule is checked. It is not a
-refusal and has no reason name.
+refusal and has no reason name. A verified report keyed by a loan's ID never reaches this command:
+the translation drops it as an overdue-notice report (Trigger & Actor).
 
 Idempotency: the provider may deliver the same final report more than once. A repeat with the
 same hold and reason succeeds and records nothing new, even if the set-aside has since ended. So
@@ -193,6 +198,7 @@ know another way.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
+  - Tool Lost (Record Tool Lost): toolId.
   - Neighbor Account Closed (Close Account): neighborId.
   - Pickup Notice Failed (this slice): holdId, reason.
   - Pickup Notice Sent keyed by hold ID is agreed with Send Pickup Notice. Hold Fulfilled and Tool
@@ -201,5 +207,4 @@ know another way.
 - **Downstream read models / slices affected:** My Holds and Undelivered Notices (the failure).
 
 ## Open Questions
-None.
-- [x] INV-PNF-9: Tool Lost also ends a set-aside; a loan-keyed failure report is routed to Record Overdue Notice Failure, not recorded here (conformance 2026-11-01, finding 8) — v1: v1 code keeps both rules; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)
+- [x] INV-PNF-9: Tool Lost also ends a set-aside; a loan-keyed failure report is routed to Record Overdue Notice Failure, not recorded here (conformance 2026-11-01, finding 8) — v2: INV-PNF-9 lists Tool Lost, with a scenario and a Dependencies entry; the loan-keyed routing is stated under Trigger & Actor and Alternate & Error Flows (2026-11-01)

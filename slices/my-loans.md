@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Neighbor → Loans
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/b1485c8a98f0f2a4b4f48fce0be87ad4cfb6b284
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: My Loans
 
@@ -129,9 +125,11 @@ is bookkeeping, not part of the row, and is never returned.
   - Suspension is not shown on My Loans. A suspended neighbor sees it on My Account, and Extend
     Loan refuses an extension they try with its own reason (INV-EXT-7, Extend Loan).
 - **INV-MYL-11:** Applying the same event twice leaves My Loans as if it had been applied once.
-- **INV-MYL-12:** My Loans offers Return on every loan it lists.
-  - That includes overdue loans, loans whose tool has been retired, and loans of a suspended
-    neighbor.
+- **INV-MYL-12:** My Loans offers Return on every loan it lists, because Return Tool accepts a
+  return for every open loan.
+  - That includes overdue loans (INV-RET-5), loans of a suspended neighbor (INV-RET-7) and loans
+    whose tool has been retired (INV-RET-9). The screen offers the action; nothing in this slice's
+    view or query decides it, and Return Tool, not My Loans, is where a return is refused.
 - **INV-MYL-13:** Loans are listed by tool name, ignoring case, then by when they were checked out.
 - **INV-MYL-14:** A request with no sign-in is refused before anything else is checked.
 - **INV-MYL-15:** My Loans is answered only for the signed-in neighbor: a request for any other neighbor ID is refused.
@@ -287,5 +285,4 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   Return Tool.
 
 ## Open Questions
-None.
-- [x] INV-MYL-12 (Return offered on every loan) has no enforcement site in this slice; rephrase it to cite Return Tool's INV-RET-5/7/9, which it relies on, or drop it (conformance 2026-11-01, uncertainty) — v1: v1 keeps the sentence; no code change; deferred to v2 (2026-11-01, Mike Key)
+- [x] INV-MYL-12 (Return offered on every loan) has no enforcement site in this slice; rephrase it to cite Return Tool's INV-RET-5/7/9, which it relies on, or drop it (conformance 2026-11-01, uncertainty) — v2: kept and rephrased to cite INV-RET-5/7/9 and say the screen, not the view, offers it (2026-11-01)

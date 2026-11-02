@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/10
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Cancel Hold
 
@@ -205,7 +202,7 @@ There are no external calls, retries or compensations in this slice. Cancelling 
   - Tool Checked Out (Check Out Tool): toolId, neighborId (the holder's own checkout ends their
     hold on that tool).
   - Tool Retired (Retire Tool): toolId.
-  - Tool Lost (Record Tool Lost): loanId, matched to the tool through Tool Checked Out.loanId.
+  - Tool Lost (Record Tool Lost): toolId.
   - Neighbor Account Closed (Close Account): neighborId.
   - These keys match slices/place-hold.md, check-out-tool.md and tool-catalog.md. Hold Cancelled
     adds cancelledAt; readers that need only {holdId} are unaffected.
@@ -214,5 +211,4 @@ There are no external calls, retries or compensations in this slice. Cancelling 
   new hold from the same neighbor on the same tool once this one is cancelled.
 
 ## Open Questions
-None.
-- [x] Dependencies: Tool Lost is matched by its own toolId, not through Tool Checked Out.loanId (conformance 2026-11-01, finding 5) — v1: wording only; behaviour unchanged; deferred to v2 (2026-11-01, Mike Key)
+- [x] Dependencies: Tool Lost is matched by its own toolId, not through Tool Checked Out.loanId (conformance 2026-11-01, finding 5) — v2: Dependencies reworded; behaviour unchanged (2026-11-01)

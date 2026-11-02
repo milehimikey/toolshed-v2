@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Shed Manager → Tools
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/24
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Record Tool Lost
 
@@ -30,11 +27,12 @@ shed manager doesn't record a return on the borrower's behalf instead.
 ## Command / Input
 **Command:** `Record Tool Lost`
 
-A LoanId is a UUID.
+A LoanId and a ToolId are UUIDs.
 
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
 | loanId | LoanId | yes | The loan the tool is out on, as Tool Inventory shows it. Must be a loan that has been checked out (INV-LOST-11) and is still out (INV-LOST-2). |
+| toolId | ToolId | yes | The tool, as Tool Inventory shows it: the request is made at the tool's address (constitution Amendment 10, tools sit under `/api/tools/{toolId}`). Must be the loan's own tool (INV-LOST-11). |
 
 There is no field for cost, replacement, or what happened: nothing about it is recorded. A
 replacement, or the same tool if it turns up later, is added again as a new tool (Add Tool); the
@@ -53,7 +51,7 @@ for the loan drops off), My Holds and Holds To Fulfill (the tool's holds end).
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | loanId | LoanId | yes | From the command. |
-| toolId | ToolId | yes | The loan's tool, from its Tool Checked Out. Carried so views about tools and holds match on the tool directly. |
+| toolId | ToolId | yes | The loan's tool, from its Tool Checked Out (the same as the command's, by INV-LOST-11). Carried so views about tools and holds match on the tool directly. |
 | lostAt | Instant | yes | The UTC moment the event is recorded, set by the system. |
 
 The event never changes. Tool Lost is one fact with three consequences: the loan ends, the tool is
@@ -91,7 +89,10 @@ told their hold ended, as for any retired tool.
 - **INV-LOST-10:** Recording a loan lost that is already recorded lost succeeds and records
   nothing.
   - So a double submit, or a retry after a lost response, never records a second loss.
-- **INV-LOST-11:** The loan must have been checked out.
+- **INV-LOST-11:** The loan must have been checked out, and the request must name the loan's own
+  tool.
+  - A request at a tool's address for a loan that is not that tool's loan names no loan there, and
+    is refused `loan-not-found` like an unknown loan. The two are not told apart.
 - **INV-LOST-12:** A request with no sign-in is refused before anything else is checked.
 
 ## Scenarios (Given / When / Then)
@@ -127,6 +128,10 @@ told their hold ended, as for any retired tool.
   - **Given:** no loan has ID L9
   - **When:** the shed manager asks to record L9 lost
   - **Then:** refused with `loan-not-found`: "There is no such loan." No event is recorded.
+- **Wrong tool for the loan (INV-LOST-11)**
+  - **Given:** Ana has the ladder (T2) on loan L2
+  - **When:** the shed manager asks to record L2 lost at the hedge trimmer's (T3) address
+  - **Then:** refused with `loan-not-found`: "There is no such loan." No event is recorded.
 - **Not signed in (INV-LOST-12)**
   - **Given:** nobody is signed in
   - **When:** a request for recording a tool lost arrives
@@ -154,8 +159,8 @@ The checks run in this order, and the first that fails is the reason returned:
 
 The names mean the same conditions as in Add Tool, Suspend Neighbor, Return Tool and Extend Loan.
 `loan-not-found` can only come from a faulty caller, not from the screen, which offers "mark lost"
-only on a tool shown as out. A missing or malformed loan ID (not a UUID) is bad input, rejected
-before any rule is checked.
+only on a tool shown as out, at that tool's address. A missing or malformed loan ID or tool ID
+(not a UUID) is bad input, rejected before any rule is checked.
 
 Idempotency: a loss is identified by its loan. A repeat after the loan was recorded lost succeeds
 and records nothing. A loan that was returned is refused, because recording it lost would be a
@@ -185,5 +190,4 @@ There are no external calls, retries or compensations in this slice. Nothing is 
   refuse the ended loan; Check Out Tool, Place Hold and Retire Tool treat the tool as retired.
 
 ## Open Questions
-None.
-- [x] Declare toolId on Record Tool Lost (taken from the route, Amendment 10) and extend INV-LOST-11: a route toolId that is not the loan's tool is refused loan-not-found (conformance 2026-11-01, finding 1) — v1: v1 ships the route check undocumented; no code change; deferred to v2 (2026-11-01, Mike Key)
+- [x] Declare toolId on Record Tool Lost (taken from the route, Amendment 10) and extend INV-LOST-11: a route toolId that is not the loan's tool is refused loan-not-found (conformance 2026-11-01, finding 1) — v2: declared on the command and in the model; INV-LOST-11 extended, with a scenario (2026-11-01)
