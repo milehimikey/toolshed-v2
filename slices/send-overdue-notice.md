@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Loans
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Send Overdue Notice
 
@@ -118,6 +114,7 @@ after its notice is recorded, which is why the command itself refuses a second n
     gateway acted.
 - **INV-OVN-7:** The notice gives the borrower's name, the tool's name, the due date, a request
   to return the tool, and that an overdue loan blocks new checkouts and pickups.
+  - Its subject line is "Your <tool name> is overdue".
 - **INV-OVN-9:** After Overdue Notice Failed, no further notice is attempted for that loan.
   - The loan already has its Overdue Notice Sent, so INV-OVN-2 already stops a second one. The
     shed manager follows up in person.
@@ -230,8 +227,8 @@ The checks run in this order, and the first that fails is the reason returned:
 | `loan-not-overdue` | This loan isn't overdue. | INV-OVN-6 |
 
 `loan-not-found`, `loan-ended` and `due-date-changed` mean the same conditions as in Extend
-Loan. A missing or
-malformed loan ID (not a UUID) is bad input, rejected before any rule is checked.
+Loan. A missing or malformed loan ID (not a UUID), or a blank sentTo, borrowerName or toolName,
+is bad input, rejected before any rule is checked. It is not a refusal and has no reason name.
 
 Idempotency: a repeated Send Overdue Notice for a loan that already has its Overdue Notice Sent,
 with the same content, succeeds and records nothing, and nothing new is handed over. Notices are
@@ -271,5 +268,4 @@ recorded, one at a time per loan, so at most one Overdue Notice Sent is recorded
   failure report to the loan by the hand-off key, the loan ID.
 
 ## Open Questions
-None.
-- [x] Bad input: blank sentTo, borrowerName or toolName is rejected as bad input, not only a malformed loan id (conformance 2026-11-01, finding 6) — v1: v1 code keeps the rejection; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)
+- [x] Bad input: blank sentTo, borrowerName or toolName is rejected as bad input, not only a malformed loan id (conformance 2026-11-01, finding 6) — v2: stated under Alternate & Error Flows; the subject line is also stated under INV-OVN-7, as for the pickup notice (2026-11-01)

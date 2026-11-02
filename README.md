@@ -49,7 +49,7 @@ never connected to one another.
 | 8 | Check Out Tool | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/8 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/check-out-tool.md](slices/check-out-tool.md) |
 | 9 | Tool Inventory — tool checked out | State View | continuation of `tool-inventory` | — | — | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 10 | Tool Catalog — checked out | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
-| 11 | My Loans | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/b1485c8a98f0f2a4b4f48fce0be87ad4cfb6b284 | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/my-loans.md](slices/my-loans.md) |
+| 11 | My Loans | State View | draft | — | — | — | — | https://github.com/milehimikey/toolshed-v2/commit/b1485c8a98f0f2a4b4f48fce0be87ad4cfb6b284 | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/my-loans.md](slices/my-loans.md) |
 | 12 | Extend Loan | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/6 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/extend-loan.md](slices/extend-loan.md) |
 | 13 | Tool Inventory — loan extended | State View | continuation of `tool-inventory` | — | — | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 14 | My Loans — loan extended | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
@@ -58,12 +58,12 @@ never connected to one another.
 | 17 | My Holds | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/d9518711311de805e50704c325a661b527b2845b | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/my-holds.md](slices/my-holds.md) |
 | 18 | Tool Catalog — hold placed | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 19 | My Loans — hold placed | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
-| 20 | Cancel Hold | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/10 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/cancel-hold.md](slices/cancel-hold.md) |
+| 20 | Cancel Hold | State Change | draft | — | — | — | — | https://github.com/milehimikey/toolshed-v2/pull/10 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/cancel-hold.md](slices/cancel-hold.md) |
 | 21 | My Holds — hold cancelled | State View | continuation of `my-holds` | — | — | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 22 | Tool Catalog — hold cancelled | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 23 | My Loans — hold cancelled | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 24 | Overdue Loans To Notify | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/6e4e0f39ac24e1842a1103d83dbc9153221d4683 | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/overdue-loans-to-notify.md](slices/overdue-loans-to-notify.md) |
-| 25 | Send Overdue Notice | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/send-overdue-notice.md](slices/send-overdue-notice.md) |
+| 25 | Send Overdue Notice | Translation | draft | — | — | — | — | https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/send-overdue-notice.md](slices/send-overdue-notice.md) |
 | 26 | My Loans — overdue notice sent | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 27 | Record Overdue Notice Failure | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/11 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/record-overdue-notice-failure.md](slices/record-overdue-notice-failure.md) |
 | 28 | My Loans — overdue notice failed | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
@@ -83,9 +83,9 @@ never connected to one another.
 | 42 | Tool Catalog — hold fulfilled | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 43 | My Holds — hold fulfilled | State View | continuation of `my-holds` | — | — | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 44 | Pickup Notices To Send | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/e627d2500f6dd65a69323f893f4bfcce125921a9 | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/pickup-notices-to-send.md](slices/pickup-notices-to-send.md) |
-| 45 | Send Pickup Notice | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/c44110594b70cc09e0ad028737b02133cf938b78 | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/send-pickup-notice.md](slices/send-pickup-notice.md) |
+| 45 | Send Pickup Notice | Translation | draft | — | — | — | — | https://github.com/milehimikey/toolshed-v2/commit/c44110594b70cc09e0ad028737b02133cf938b78 | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/send-pickup-notice.md](slices/send-pickup-notice.md) |
 | 46 | My Holds — pickup notice sent | State View | continuation of `my-holds` | — | — | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
-| 47 | Record Pickup Notice Failure | Translation | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/19 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/record-pickup-notice-failure.md](slices/record-pickup-notice-failure.md) |
+| 47 | Record Pickup Notice Failure | Translation | draft | — | — | — | — | https://github.com/milehimikey/toolshed-v2/pull/19 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/record-pickup-notice-failure.md](slices/record-pickup-notice-failure.md) |
 | 48 | My Holds — pickup notice failed | State View | continuation of `my-holds` | — | — | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 49 | Undelivered Notices — pickup notice failed | State View | continuation of `undelivered-notices` | — | — | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
 | 50 | Pickups To Expire | State View | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/commit/58ab5d4257fbc545159e6b4e8398ed1938d5d54d | v1 @ 49d67795aabbe79704390bd08ef9925876074139 | [slices/pickups-to-expire.md](slices/pickups-to-expire.md) |
@@ -112,7 +112,7 @@ never connected to one another.
 | 71 | My Holds — tool retired | State View | continuation of `my-holds` | — | — | — | — | — | — | [slices/my-holds.md](slices/my-holds.md) |
 | 72 | My Loans — tool retired | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |
 | 73 | Undelivered Notices — tool retired | State View | continuation of `undelivered-notices` | — | — | — | — | — | — | [slices/undelivered-notices.md](slices/undelivered-notices.md) |
-| 74 | Record Tool Lost | State Change | implemented | Mike Key | Mike Key | — | — | https://github.com/milehimikey/toolshed-v2/pull/24 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/record-tool-lost.md](slices/record-tool-lost.md) |
+| 74 | Record Tool Lost | State Change | draft | — | — | — | — | https://github.com/milehimikey/toolshed-v2/pull/24 | v1 @ 54b94c75b4528330dea08fa62ca7fe63b7f9cc09 | [slices/record-tool-lost.md](slices/record-tool-lost.md) |
 | 75 | Tool Inventory — tool lost | State View | continuation of `tool-inventory` | — | — | — | — | — | — | [slices/tool-inventory.md](slices/tool-inventory.md) |
 | 76 | Tool Catalog — tool lost | State View | continuation of `tool-catalog` | — | — | — | — | — | — | [slices/tool-catalog.md](slices/tool-catalog.md) |
 | 77 | My Loans — tool lost | State View | continuation of `my-loans` | — | — | — | — | — | — | [slices/my-loans.md](slices/my-loans.md) |

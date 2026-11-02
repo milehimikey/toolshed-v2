@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: translation
 swimlane: System → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/c44110594b70cc09e0ad028737b02133cf938b78
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Send Pickup Notice
 
@@ -118,6 +114,7 @@ its email is recorded, which is why the command itself refuses a second email.
     doesn't move.
 - **INV-PKN-7:** The email gives the holder's name, the tool's name, the collect-by date, and
   that the hold expires and the tool passes to the next neighbor if it isn't collected by then.
+  - Its subject line is "Your <tool name> is ready for pickup".
 - **INV-PKN-9:** The hold must exist.
 - **INV-PKN-10:** The hold must have been fulfilled: a waiting hold gets no pickup email.
 - **INV-PKN-11:** The collect-by date given must be the one recorded on the hold's Hold
@@ -240,7 +237,8 @@ The checks run in this order, and the first that fails is the reason returned:
 `notice-already-sent` the same as in Send Overdue Notice; `pickup-window-ended` the same as in
 Check Out Tool (the set-aside's collect-by date has passed). `hold-not-set-aside` and
 `collect-by-date-mismatch` can only come from a stale list or a faulty caller. A missing or
-malformed hold ID (not a UUID) is bad input, rejected before any rule is checked.
+malformed hold ID (not a UUID), or a blank sentTo, holderName or toolName, is bad input, rejected
+before any rule is checked. It is not a refusal and has no reason name.
 
 Idempotency: a repeated Send Pickup Notice for a hold that already has its Pickup Notice Sent,
 with the same content, succeeds and records nothing, and nothing new is handed over. Emails are
@@ -282,5 +280,4 @@ recorded, one at a time per hold, so at most one Pickup Notice Sent is recorded 
   report to the hold by the hand-off key, the hold ID.
 
 ## Open Questions
-None.
-- [x] Bad input: blank sentTo, holderName or toolName is rejected as bad input; the email subject is 'Your <tool> is ready for pickup' (conformance 2026-11-01, finding 7) — v1: v1 code keeps both; doc catches up in v2; deferred to v2 (2026-11-01, Mike Key)
+- [x] Bad input: blank sentTo, holderName or toolName is rejected as bad input; the email subject is 'Your <tool> is ready for pickup' (conformance 2026-11-01, finding 7) — v2: bad input stated under Alternate & Error Flows, the subject line under INV-PKN-7 (2026-11-01)
