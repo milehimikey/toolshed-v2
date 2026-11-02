@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/9
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Place Hold
 
@@ -52,6 +49,7 @@ Holds To Fulfill (the queue the hold fulfiller works from).
 |-------|------|-----------------|----------------|
 | holdId | HoldId | yes | From the command. Identifies the hold everywhere from here on. |
 | toolId | ToolId | yes | From the command. |
+| toolName | Text | yes | Set by the system: the tool's name as recorded by Tool Added, copied so the hold's readers never look it up. |
 | neighborId | NeighborId | yes | From the command: the holder. |
 | placedAt | Instant | yes | The UTC moment the event is recorded, set by the system. For display only: the queue is the order Hold Placed is recorded, since two holds can share a timestamp. |
 

@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Loans
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/15
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Return Tool
 
@@ -48,13 +45,15 @@ tool is the shed manager's to retire.
 **Event:** `Tool Returned` → context `Loans`
 **Read by:** My Loans (the loan drops off), Tool Inventory and Tool Catalog (the tool is back in the
 shed), Holds To Fulfill (a returned tool with holds waiting), Overdue Loans To Notify and
-Undelivered Notices (the loan has ended), and Neighbors To Flag and Flagged Neighbors (whether the
-return was late).
+Undelivered Notices (the loan has ended), and Neighbors To Flag and Neighbors (whether the return
+was late, and the late return behind a flag).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | loanId | LoanId | yes | From the command. |
 | toolId | ToolId | yes | The loan's tool, from its Tool Checked Out. Carried so views about tools and holds match on the tool directly. |
+| toolName | Text | yes | Set by the system: the tool's name on the loan's Tool Checked Out. |
+| dueDate | Date | yes | Set by the system: the loan's due date in force at the moment of return (Tool Checked Out.dueDate, moved by any Loan Extended), the date `late` was judged against. |
 | returnedAt | Instant | yes | The UTC moment the event is recorded, set by the system. |
 | returnedOn | Date | yes | Set by the system: the calendar date of returnedAt in the shed's local time zone. |
 | late | Bool | yes | Set by the system: yes when returnedOn is after the loan's due date in force at the moment of return (INV-RET-4). |
@@ -66,7 +65,7 @@ every view reads the same answer.
 This slice produces no view of its own. Tool Returned ends the loan in My Loans, Overdue Loans To
 Notify and Undelivered Notices; puts the tool back in the shed on Tool Inventory and Tool Catalog
 (or drops a tool retired while out); adds a tool with holds waiting to Holds To Fulfill; and gives
-Neighbors To Flag and Flagged Neighbors a late or on-time return. Each is specified in its own
+Neighbors To Flag and Neighbors a late or on-time return. Each is specified in its own
 doc, and all are eventually consistent.
 
 ## Invariants / Business Rules
@@ -217,9 +216,8 @@ There are no external calls, retries or compensations in this slice.
   - These match slices/check-out-tool.md and slices/extend-loan.md. Record Tool Lost is
     specified in a slice not yet written in depth; it is checked against this key when it is.
 - **Downstream read models / slices affected:** My Loans, Tool Inventory, Tool Catalog, Holds To
-  Fulfill, Overdue Loans To Notify, Undelivered Notices, Neighbors To Flag and Flagged Neighbors.
+  Fulfill, Overdue Loans To Notify, Undelivered Notices, Neighbors To Flag and Neighbors.
   Fulfill Hold reacts to a returned tool with holds waiting.
 
 ## Open Questions
-None.
-- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v1: v1 keeps the old view names in prose; the views named no longer exist in the model; deferred to v2 (2026-11-01, Mike Key)
+- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v2: reworded; Check Out Tool no longer feeds the merged Neighbors view, Return Tool does (2026-11-01)

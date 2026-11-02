@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: System → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/e627d2500f6dd65a69323f893f4bfcce125921a9
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Pickup Notices To Send
 
@@ -32,7 +28,7 @@ holder is emailed once, as soon as a tool is set aside for them.
 
 ## Read Model / View
 - **View:** `Pickup Notices To Send` built from events: "Hold Fulfilled", "Neighbor Registered",
-  "Tool Added", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed", "Pickup Notice
+  "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed", "Pickup Notice
   Sent", "Hold Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Pickup Notice Gateway (Send Pickup Notice). Internal: no ui.
 - **Freshness / consistency expectation:** eventual. A hold joins the list shortly after Hold
@@ -49,7 +45,7 @@ in the shed's local time zone.
 | collectByDate | Date | Hold Fulfilled.collectByDate, read as recorded. |
 | holderName | Text | `Derived:` Neighbor Registered.name for neighborId, copied under this name. |
 | holderEmail | Text | `Derived:` Neighbor Registered.email for neighborId, replaced by each Neighbor Email Changed.email for that neighbor, copied under this name. Always the current one. |
-| toolName | Text | `Derived:` Tool Added.name for toolId, copied under this name. |
+| toolName | Text | Hold Fulfilled.toolName. |
 
 **Bookkeeping.** To fill holderName, holderEmail and toolName the moment a hold is fulfilled, the
 view keeps the name and current email of every registered neighbor, and the name of every tool,
@@ -78,9 +74,9 @@ Pickup Notice's rules.
 - **INV-PNS-2:** Each item carries what the email needs: the holder's name and email, the tool's
   name, and the collect-by date.
   - The name comes from Neighbor Registered, and the email is the holder's current one:
-    Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name comes from
-    Tool Added. The collect-by date is the one Hold Fulfilled carries, read as recorded and never
-    worked out here.
+    Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name and the
+    collect-by date are the ones Hold Fulfilled carries, read as recorded and never worked out
+    here.
 - **INV-PNS-3:** Once Pickup Notice Sent is recorded for a hold, it leaves the list and never
   comes back.
 - **INV-PNS-4:** A hold leaves the list, unsent, when its set-aside ends first: the holder
@@ -132,7 +128,7 @@ Pickup Notice's rules.
     address.
 - **No set-aside, nothing to send (INV-PNS-1)**
   - **Given:** the list is empty
-  - **When:** Neighbor Registered is recorded for Cleo, and Tool Added for a ladder
+  - **When:** Neighbor Registered is recorded for Cleo, and Hold Placed for her hold on a ladder
   - **Then:** the list is still empty.
 - **Same event applied twice (INV-PNS-7)**
   - **Given:** H1 is on the list once
@@ -162,7 +158,6 @@ Pickup Notice's rules.
   - Hold Fulfilled (Fulfill Hold): holdId, toolId, neighborId, collectByDate.
   - Neighbor Registered (Register Neighbor): neighborId, name, email.
   - Neighbor Email Changed (Change Email): neighborId, email.
-  - Tool Added (Add Tool): toolId, name.
   - Pickup Notice Sent (Send Pickup Notice): holdId.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.

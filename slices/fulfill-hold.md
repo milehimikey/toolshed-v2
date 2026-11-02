@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: automation
 swimlane: System → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/03d92a92ecdff305310b869c9b4a173bdcd09fbd
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Fulfill Hold
 
@@ -68,6 +64,7 @@ collect-by date to watch), and Undelivered Notices (a later pickup-email failure
 |-------|------|-----------------|----------------|
 | holdId | HoldId | yes | From the command. |
 | toolId | ToolId | yes | Set by the system: the tool on the hold's Hold Placed. |
+| toolName | Text | yes | Set by the system: the tool's name on the hold's Hold Placed. |
 | neighborId | NeighborId | yes | Set by the system: the holder on the hold's Hold Placed. |
 | collectByDate | Date | yes | Set by the system: today plus 3 days. The set-aside lapses at the start of the day after it, shed local time. |
 | fulfilledAt | Instant | yes | Set by the system: the UTC moment the event is recorded. |

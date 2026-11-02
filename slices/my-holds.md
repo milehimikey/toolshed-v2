@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Neighbor → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/d9518711311de805e50704c325a661b527b2845b
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: My Holds
 
@@ -35,7 +31,7 @@ them, and the screen they cancel holds from.
     from here.
 
 ## Read Model / View
-- **View:** `My Holds` built from events: "Hold Placed", "Tool Checked Out", "Tool Added", "Hold
+- **View:** `My Holds` built from events: "Hold Placed", "Tool Checked Out", "Hold
   Cancelled", "Hold Fulfilled", "Pickup Notice Sent", "Pickup Notice Failed", "Hold Expired",
   "Tool Retired", "Tool Lost", "Neighbor Account Closed"
 - **Consumed by:** the My Holds screen (Neighbor)
@@ -55,7 +51,7 @@ recorded. A field marked optional can be absent.
 | holdId | HoldId | Hold Placed.holdId. |
 | neighborId | NeighborId | Hold Placed.neighborId: the holder. |
 | toolId | ToolId | Hold Placed.toolId. |
-| toolName | Text | `Derived:` Tool Added.name for toolId, copied under this name (INV-MYHD-14). |
+| toolName | Text | Hold Placed.toolName (INV-MYHD-14). |
 | placedAt | Instant | Hold Placed.placedAt. For display only; it doesn't decide the queue. |
 | status | Text | One of `waiting`, `ready-for-pickup`, `pickup-window-ended`. `Derived:` see the status rules below. |
 | position | Int | `Derived:` while status is `waiting`, 1 plus the number of this tool's holds that are waiting, were placed before this one, and haven't ended (INV-MYHD-2). Optional: absent once the hold is fulfilled. |
@@ -135,10 +131,10 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
   - If the email can't be delivered, the tool stays ready for pickup, with the same collect-by
     date.
 - **INV-MYHD-14:** Each hold shows the tool's name.
-  - The name comes from Tool Added, which My Holds hears for that purpose.
+  - The name comes with Hold Placed, which carries it.
 - **INV-MYHD-11:** Only Hold Placed, Hold Cancelled, Hold Fulfilled, Pickup Notice Sent, Pickup
   Notice Failed, Hold Expired, Tool Checked Out by a holder of that tool, Tool Retired, Tool
-  Lost and Neighbor Account Closed change My Holds. Tool Added supplies tool names.
+  Lost and Neighbor Account Closed change My Holds.
   - A checkout by anyone else leaves every neighbor's My Holds unchanged.
 - **INV-MYHD-15:** Applying the same event twice leaves My Holds as if it had been applied once.
 - **INV-MYHD-16:** My Holds offers Cancel on every hold it lists.
@@ -156,9 +152,8 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
 
 ## Scenarios (Given / When / Then)
 - **Hold placed (INV-MYHD-2, INV-MYHD-14, INV-MYHD-16)**
-  - **Given:** Tool Added was recorded for T1 "Cordless drill", Ana has T1 on loan, and nobody
-    has a hold on it
-  - **When:** Hold Placed is recorded for Ben's hold H1 on T1
+  - **Given:** Ana has T1, the "Cordless drill", on loan, and nobody has a hold on it
+  - **When:** Hold Placed is recorded for Ben's hold H1 on T1, carrying the name "Cordless drill"
   - **Then:** Ben's My Holds lists H1: "Cordless drill", `waiting`, position 1, pickup notice
     `none`, with Cancel offered.
 - **A second hold placed (INV-MYHD-2)**
@@ -278,8 +273,6 @@ stable name, and the sentence shown on the screen. The checks run in this order:
 - **Events for a hold that has ended:** once a hold has ended it is gone from this view. A later
   event for it (a replay, or a Pickup Notice Failed that arrives after the set-aside ended)
   changes nothing.
-- **Unknown tool name:** every hold's tool was added before it could be held, so Tool Added always
-  precedes Hold Placed for the same tool.
 - **Stale actions:** Cancel offered on the screen can be out of date by the time it is used (for
   example, just as the hold expires or the tool is collected). Cancel Hold checks its own rules
   and refuses with its own reason; this view raises no errors of its own.
@@ -292,7 +285,6 @@ stable name, and the sentence shown on the screen. The checks run in this order:
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Tool Added (Add Tool): toolId, name.
   - Hold Placed (Place Hold): holdId, toolId, neighborId, placedAt.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Fulfilled (Fulfill Hold): holdId, collectByDate.
@@ -303,8 +295,7 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId, toolId. This view matches it by toolId.
   - Neighbor Account Closed (Close Account): neighborId.
-  - Tool Added, Hold Placed and Tool Checked Out match slices/add-tool.md, slices/place-hold.md and
-    slices/check-out-tool.md. The others are specified in slices not yet written in depth; these
+  - Hold Placed and Tool Checked Out match slices/place-hold.md and slices/check-out-tool.md. The others are specified in slices not yet written in depth; these
     keys are this view's assumptions, and each is checked when that slice is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Cancel Hold.
 

@@ -30,7 +30,7 @@ be delivered. It is the screen the neighbor extends and returns loans from.
   - **Extend** (Extend Loan slice) — offered while canExtend is yes (INV-MYL-9, INV-MYL-10).
 
 ## Read Model / View
-- **View:** `My Loans` built from events: "Tool Added", "Tool Checked Out", "Loan Extended",
+- **View:** `My Loans` built from events: "Tool Checked Out", "Loan Extended",
   "Hold Placed", "Hold Cancelled", "Overdue Notice Sent", "Overdue Notice Failed", "Tool
   Returned", "Hold Expired", "Tool Retired", "Tool Lost", "Neighbor Account Closed"
 - **Consumed by:** the My Loans screen (Neighbor)
@@ -49,7 +49,7 @@ field marked optional can be absent.
 | loanId | LoanId | Tool Checked Out.loanId. |
 | neighborId | NeighborId | Tool Checked Out.neighborId: the borrower. |
 | toolId | ToolId | Tool Checked Out.toolId. |
-| toolName | Text | `Derived:` Tool Added.name for toolId, copied under this name. |
+| toolName | Text | Tool Checked Out.toolName. |
 | checkedOutAt | Instant | Tool Checked Out.checkedOutAt. Shown as the checkout date: its calendar date in the shed's local time zone. |
 | dueDate | Date | Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for this loan. |
 | overdue | Bool | `Derived:` yes when today's date in the shed's local time zone is after dueDate (INV-MYL-4). Worked out when the view is read. |
@@ -109,7 +109,7 @@ is bookkeeping, not part of the row, and is never returned.
   - That is: Tool Checked Out, Loan Extended, Overdue Notice Sent, Overdue Notice Failed, Tool
     Returned, Tool Lost, Hold Placed, Hold Cancelled, Hold Expired, Tool Retired, and Neighbor
     Account Closed of a holder.
-  - The tool's name comes from Tool Added.
+  - The tool's name comes with Tool Checked Out.
 - **INV-MYL-9:** While any hold is waiting on a loan's tool, My Loans shows that the loan can't
   be extended because someone is waiting.
   - A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when it is
@@ -265,7 +265,6 @@ stable name, and the sentence shown on the screen. The checks run in this order:
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Tool Added (Add Tool): toolId, name.
   - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, dueDate, checkedOutAt.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Overdue Notice Sent (Send Overdue Notice): loanId.
@@ -277,8 +276,7 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Neighbor Account Closed (Close Account): neighborId.
-  - Tool Added's keys match slices/add-tool.md, and the loan and hold events' keys match
-    slices/tool-inventory.md and slices/tool-catalog.md. checkedOutAt matches Check Out Tool
+  - The loan and hold events' keys match slices/tool-inventory.md and slices/tool-catalog.md. checkedOutAt matches Check Out Tool
     (slices/check-out-tool.md). The other events are specified in slices not yet written in
     depth; these keys are this view's assumptions, and each is checked when that slice is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Extend Loan and

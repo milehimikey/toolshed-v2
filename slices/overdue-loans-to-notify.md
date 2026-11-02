@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: System → Loans
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/6e4e0f39ac24e1842a1103d83dbc9153221d4683
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Overdue Loans To Notify
 
@@ -33,7 +29,7 @@ nothing up elsewhere.
   list is that slice's concern.
 
 ## Read Model / View
-- **View:** `Overdue Loans To Notify` built from events: "Tool Added", "Neighbor Registered",
+- **View:** `Overdue Loans To Notify` built from events: "Neighbor Registered",
   "Tool Checked Out", "Loan Extended", "Overdue Notice Sent", "Neighbor Email Changed", "Tool
   Returned", "Tool Lost"
 - **Consumed by:** the Overdue Notice Gateway (Send Overdue Notice). Internal: no ui.
@@ -52,7 +48,7 @@ shed's local time zone.
 | toolId | ToolId | Tool Checked Out.toolId. |
 | neighborId | NeighborId | Tool Checked Out.neighborId: the borrower. |
 | dueDate | Date | Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for this loan. |
-| toolName | Text | `Derived:` Tool Added.name for toolId, copied under this name. |
+| toolName | Text | Tool Checked Out.toolName. |
 | borrowerName | Text | `Derived:` Neighbor Registered.name for neighborId, copied under this name. |
 | borrowerEmail | Text | `Derived:` Neighbor Registered.email for neighborId, replaced by each Neighbor Email Changed.email for that neighbor, copied under this name. Always the current one. |
 | overdue | Bool | `Derived:` yes when today's date in the shed's local time zone is after dueDate (INV-OLN-1). Worked out when the list is read. |
@@ -94,9 +90,9 @@ quiet hours, is Send Overdue Notice's rule (INV-OVN-6, Send Overdue Notice).
 - **INV-OLN-6:** Each loan on the list carries everything the notice needs: the borrower's name
   and email, the tool's name, and the due date.
   - The borrower's name comes from Neighbor Registered, and the email is the borrower's current
-    one: Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name comes
-    from Tool Added, and the due date from Tool Checked Out, moved by any Loan Extended. The
-    gateway looks nothing up elsewhere.
+    one: Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name and the
+    due date come from Tool Checked Out, the due date moved by any Loan Extended. The gateway
+    looks nothing up elsewhere.
 - **INV-OLN-8:** A loan leaves the list only when an overdue notice is sent for it, when the
   tool is returned, or when the tool is recorded lost.
   - A notice that later fails to deliver doesn't put the loan back on the list. The failure is
@@ -110,8 +106,8 @@ quiet hours, is Send Overdue Notice's rule (INV-OVN-6, Send Overdue Notice).
   - **When:** the list is read at 23:59 on 12 October, shed time
   - **Then:** L1 is not returned.
 - **Loan becomes overdue (INV-OLN-1, INV-OLN-6)**
-  - **Given:** Neighbor Registered was recorded for N1, "Ana Ruiz", ana@example.org; Tool Added
-    for T1, "Cordless drill"; and L1 is due 12 October, still out
+  - **Given:** Neighbor Registered was recorded for N1, "Ana Ruiz", ana@example.org, and L1,
+    Ana's loan of T1 "Cordless drill", is due 12 October, still out
   - **When:** the list is read at 00:00 on 13 October, shed time
   - **Then:** L1 is returned, with toolName "Cordless drill", borrowerName "Ana Ruiz",
     borrowerEmail ana@example.org, and dueDate 12 October.
@@ -180,7 +176,6 @@ quiet hours, is Send Overdue Notice's rule (INV-OVN-6, Send Overdue Notice).
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Tool Added (Add Tool): toolId, name.
   - Neighbor Registered (Register Neighbor): neighborId, name, email.
   - Neighbor Email Changed (Change Email): neighborId, email.
   - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, dueDate.

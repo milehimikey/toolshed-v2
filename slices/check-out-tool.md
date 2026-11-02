@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Loans
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/8
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Check Out Tool
 
@@ -48,13 +45,13 @@ checkedOutAt is that same moment.
 **Event:** `Tool Checked Out` → context `Loans`
 **Read by:** Tool Inventory, Tool Catalog and My Loans; My Holds, Holds To Fulfill, Pickups To
 Expire and Pickup Notices To Send (a holder's checkout ends their hold); Overdue Loans To Notify
-and Neighbors To Flag (the loan's due date); Undelivered Notices and Flagged Neighbors (loan
-details shown there).
+and Neighbors To Flag (the loan's due date); Undelivered Notices (loan details shown there).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | loanId | LoanId | yes | From the command. Identifies the loan everywhere from here on. |
 | toolId | ToolId | yes | From the command. |
+| toolName | Text | yes | Set by the system: the tool's name as recorded by Tool Added, copied so the loan's readers never look it up. |
 | neighborId | NeighborId | yes | From the command: the borrower. |
 | loanPeriodDays | Int | yes | The period the loan started with: loanPeriodDays from the command, or the tool's default checkout period when it was absent. |
 | dueDate | Date | yes | Set by the system: the checkout date (today) plus loanPeriodDays. A later Loan Extended sets a new dueDate; this one never changes. |
@@ -395,9 +392,8 @@ There are no external calls, retries or compensations in this slice.
     checked against these keys when it is.
 - **Downstream read models / slices affected:** Tool Inventory, Tool Catalog, My Loans, My Holds,
   Overdue Loans To Notify, Undelivered Notices, Holds To Fulfill, Pickup Notices To Send, Pickups
-  To Expire, Neighbors To Flag and Flagged Neighbors. Extend Loan, Return Tool and Record Tool
+  To Expire and Neighbors To Flag. Extend Loan, Return Tool and Record Tool
   Lost act on the loan by its loan ID.
 
 ## Open Questions
-None.
-- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v1: v1 keeps the old view names in prose; the views named no longer exist in the model; deferred to v2 (2026-11-01, Mike Key)
+- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v2: reworded; Check Out Tool no longer feeds the merged Neighbors view, Return Tool does (2026-11-01)

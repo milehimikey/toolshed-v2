@@ -68,7 +68,7 @@ storyline "Borrow and return a tool" {
   slice "Check Out Tool" {
     ui Tool Catalog @Neighbor
     command Check Out Tool { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int } note "slices/check-out-tool.md"
-    event Tool Checked Out { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
+    event Tool Checked Out { loanId: LoanId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
   }
   slice "Tool Inventory — tool checked out" {
     view Tool Inventory again from "Tool Checked Out"
@@ -79,7 +79,7 @@ storyline "Borrow and return a tool" {
     ui Tool Catalog @Neighbor
   }
   slice "My Loans" {
-    view My Loans from "Tool Added", "Tool Checked Out" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text derived from "Tool Added", checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
+    view My Loans from "Tool Checked Out" { loanId: LoanId, neighborId: NeighborId, toolId: ToolId, toolName: Text, checkedOutAt: Instant, dueDate: Date, overdue: Bool derived, overdueNotice: Text derived, holdWaiting: Bool derived, toolRetired: Bool derived, canExtend: Bool derived } note "slices/my-loans.md"
     ui My Loans @Neighbor
   }
 
@@ -104,7 +104,7 @@ storyline "Borrow and return a tool" {
   slice "Return Tool" {
     ui My Loans @Neighbor
     command Return Tool { neighborId: NeighborId, loanId: LoanId } note "slices/return-tool.md"
-    event Tool Returned { loanId: LoanId, toolId: ToolId assigned, returnedAt: Instant assigned, returnedOn: Date assigned, late: Bool assigned } @Loans
+    event Tool Returned { loanId: LoanId, toolId: ToolId assigned, toolName: Text assigned, dueDate: Date assigned, returnedAt: Instant assigned, returnedOn: Date assigned, late: Bool assigned } @Loans
   }
   slice "Tool Inventory — tool returned" {
     view Tool Inventory again from "Tool Returned"
@@ -122,7 +122,7 @@ storyline "Borrow and return a tool" {
 
 storyline "Chase an overdue loan" after "Borrow and return a tool" {
   slice "Overdue Loans To Notify" {
-    view Overdue Loans To Notify from "Tool Added", "Neighbor Registered", "Neighbor Email Changed", "Tool Checked Out", "Loan Extended", "Tool Returned" { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, dueDate: Date, toolName: Text derived from "Tool Added", borrowerName: Text derived from "Neighbor Registered", borrowerEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", overdue: Bool derived } note "slices/overdue-loans-to-notify.md"
+    view Overdue Loans To Notify from "Neighbor Registered", "Neighbor Email Changed", "Tool Checked Out", "Loan Extended", "Tool Returned" { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, dueDate: Date, toolName: Text, borrowerName: Text derived from "Neighbor Registered", borrowerEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", overdue: Bool derived } note "slices/overdue-loans-to-notify.md"
   }
 
   # Internally triggered translation: the gateway watches the to-do view and hands notices to the provider.
@@ -146,7 +146,7 @@ storyline "Chase an overdue loan" after "Borrow and return a tool" {
     ui My Loans @Neighbor
   }
   slice "Undelivered Notices" {
-    view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Neighbor Registered", "Neighbor Email Changed", "Tool Added", "Loan Extended", "Tool Returned" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text derived from "Neighbor Registered", neighborEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolId: ToolId, toolName: Text derived from "Tool Added", dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
+    view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Neighbor Registered", "Neighbor Email Changed", "Loan Extended", "Tool Returned" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text derived from "Neighbor Registered", neighborEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolId: ToolId, toolName: Text derived from "Tool Checked Out", dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
     ui Undelivered Notices @Shed Manager
   }
 }
@@ -155,10 +155,10 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   slice "Place Hold" {
     ui Tool Catalog @Neighbor
     command Place Hold { holdId: HoldId, toolId: ToolId, neighborId: NeighborId } note "slices/place-hold.md"
-    event Hold Placed { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, placedAt: Instant assigned } @Holds
+    event Hold Placed { holdId: HoldId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, placedAt: Instant assigned } @Holds
   }
   slice "My Holds" {
-    view My Holds from "Hold Placed", "Tool Checked Out", "Tool Added" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text derived from "Tool Added", placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
+    view My Holds from "Hold Placed", "Tool Checked Out" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text, placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
     ui My Holds @Neighbor
   }
   slice "Tool Catalog — hold placed" {
@@ -199,7 +199,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   slice "Fulfill Hold" {
     processor Hold Fulfiller from "Holds To Fulfill" note "slices/fulfill-hold.md"
     command Fulfill Hold { holdId: HoldId }
-    event Hold Fulfilled { holdId: HoldId, toolId: ToolId assigned, neighborId: NeighborId assigned, collectByDate: Date assigned, fulfilledAt: Instant assigned } loops-to "Holds To Fulfill" @Holds
+    event Hold Fulfilled { holdId: HoldId, toolId: ToolId assigned, toolName: Text assigned, neighborId: NeighborId assigned, collectByDate: Date assigned, fulfilledAt: Instant assigned } loops-to "Holds To Fulfill" @Holds
   }
   slice "Undelivered Notices — hold fulfilled" {
     view Undelivered Notices again from "Hold Fulfilled"
@@ -215,7 +215,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   }
 
   slice "Pickup Notices To Send" {
-    view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Tool Added", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Neighbor Registered", holderEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolName: Text derived from "Tool Added" } note "slices/pickup-notices-to-send.md"
+    view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Neighbor Registered", holderEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolName: Text } note "slices/pickup-notices-to-send.md"
   }
 
   slice "Send Pickup Notice" {
@@ -280,7 +280,7 @@ storyline "Keep late returners in check" after "Borrow and return a tool" {
     event Neighbor Flagged { neighborId: NeighborId, loanIds: LoanId[], flaggedAt: Instant assigned } loops-to "Neighbors To Flag" @Neighbors
   }
   slice "Neighbors — neighbor flagged" {
-    view Neighbors again from "Neighbor Flagged", "Tool Added", "Tool Checked Out", "Loan Extended", "Tool Returned"
+    view Neighbors again from "Neighbor Flagged", "Tool Returned"
     ui Neighbors @Shed Manager
   }
 
