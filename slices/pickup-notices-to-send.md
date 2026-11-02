@@ -27,7 +27,7 @@ holder is emailed once, as soon as a tool is set aside for them.
   and the email is then handed to the provider keyed by the hold's ID (Send Pickup Notice slice).
 
 ## Read Model / View
-- **View:** `Pickup Notices To Send` built from events: "Hold Fulfilled", "Neighbor Registered",
+- **View:** `Pickup Notices To Send` built from events: "Hold Fulfilled",
   "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed", "Pickup Notice
   Sent", "Hold Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Pickup Notice Gateway (Send Pickup Notice). Internal: no ui.
@@ -43,13 +43,12 @@ in the shed's local time zone.
 | toolId | ToolId | Hold Fulfilled.toolId. |
 | neighborId | NeighborId | Hold Fulfilled.neighborId: the holder. |
 | collectByDate | Date | Hold Fulfilled.collectByDate, read as recorded. |
-| holderName | Text | `Derived:` Neighbor Registered.name for neighborId, copied under this name. |
-| holderEmail | Text | `Derived:` Neighbor Registered.email for neighborId, replaced by each Neighbor Email Changed.email for that neighbor, copied under this name. Always the current one. |
+| holderName | Text | Hold Fulfilled.neighborName. |
+| holderEmail | Text | `Derived:` Hold Fulfilled.neighborEmail, replaced by each later Neighbor Email Changed.email for that neighbor. Always the current one. |
 | toolName | Text | Hold Fulfilled.toolName. |
 
-**Bookkeeping.** To fill holderName, holderEmail and toolName the moment a hold is fulfilled, the
-view keeps the name and current email of every registered neighbor, and the name of every tool,
-not only those on a row. This is never returned except on the rows the query returns.
+A row carries everything it needs from its own Hold Fulfilled; the view keeps no bookkeeping
+beyond its rows. Neighbor Email Changed updates the address on that neighbor's rows only.
 
 **When a row leaves the view.** A hold's row is removed when, for that hold:
 - Pickup Notice Sent is recorded (INV-PNS-3);
@@ -73,10 +72,9 @@ Pickup Notice's rules.
   pickup email is sent, or its set-aside ends first.
 - **INV-PNS-2:** Each item carries what the email needs: the holder's name and email, the tool's
   name, and the collect-by date.
-  - The name comes from Neighbor Registered, and the email is the holder's current one:
-    Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name and the
-    collect-by date are the ones Hold Fulfilled carries, read as recorded and never worked out
-    here.
+  - The holder's name and email, the tool's name and the collect-by date are the ones Hold
+    Fulfilled carries, read as recorded and never worked out here; a later Neighbor Email Changed
+    replaces the email.
 - **INV-PNS-3:** Once Pickup Notice Sent is recorded for a hold, it leaves the list and never
   comes back.
 - **INV-PNS-4:** A hold leaves the list, unsent, when its set-aside ends first: the holder
@@ -88,9 +86,10 @@ Pickup Notice's rules.
 
 ## Scenarios (Given / When / Then)
 - **Set-aside joins the list (INV-PNS-1, INV-PNS-2)**
-  - **Given:** Neighbor Registered was recorded for Ben (N2), "Ben Ito", ben@example.org; Tool
-    Added for T1, "Cordless drill"; and Ben's hold H1 is at the front of T1's queue
-  - **When:** Hold Fulfilled is recorded for H1, tool T1, holder N2, collect by 17 October
+  - **Given:** Ben Ito's (N2, ben@example.org) hold H1 is at the front of the queue for T1, the
+    "Cordless drill"
+  - **When:** Hold Fulfilled is recorded for H1, tool T1 "Cordless drill", holder N2 "Ben Ito",
+    ben@example.org, collect by 17 October
   - **Then:** H1 is on the list with holderName "Ben Ito", holderEmail ben@example.org, toolName
     "Cordless drill" and collectByDate 17 October.
 - **Pickup email sent (INV-PNS-3)**
@@ -128,7 +127,7 @@ Pickup Notice's rules.
     address.
 - **No set-aside, nothing to send (INV-PNS-1)**
   - **Given:** the list is empty
-  - **When:** Neighbor Registered is recorded for Cleo, and Hold Placed for her hold on a ladder
+  - **When:** Hold Placed is recorded for Cleo's hold on a ladder
   - **Then:** the list is still empty.
 - **Same event applied twice (INV-PNS-7)**
   - **Given:** H1 is on the list once
@@ -155,8 +154,7 @@ Pickup Notice's rules.
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Hold Fulfilled (Fulfill Hold): holdId, toolId, neighborId, collectByDate.
-  - Neighbor Registered (Register Neighbor): neighborId, name, email.
+  - Hold Fulfilled (Fulfill Hold): holdId, toolId, toolName, neighborId, neighborName, neighborEmail, collectByDate.
   - Neighbor Email Changed (Change Email): neighborId, email.
   - Pickup Notice Sent (Send Pickup Notice): holdId.
   - Hold Cancelled (Cancel Hold): holdId.

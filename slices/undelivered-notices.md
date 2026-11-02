@@ -33,7 +33,7 @@ there is something to follow up.
 
 ## Read Model / View
 - **View:** `Undelivered Notices` built from events: "Overdue Notice Failed", "Pickup Notice
-  Failed", "Neighbor Registered", "Neighbor Email Changed", "Tool Checked Out",
+  Failed", "Neighbor Email Changed", "Tool Checked Out",
   "Loan Extended", "Tool Returned", "Tool Lost", "Hold Fulfilled", "Hold Cancelled", "Hold
   Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Undelivered Notices screen (Shed Manager)
@@ -50,8 +50,8 @@ marked optional can be empty.
 | loanId | LoanId | Optional; overdue-notice entries only. Overdue Notice Failed.loanId. |
 | holdId | HoldId | Optional; pickup-notice entries only. `Derived:` Pickup Notice Failed.holdId. |
 | neighborId | NeighborId | The borrower (Tool Checked Out.neighborId for the loan) or the holder (Hold Fulfilled.neighborId for the hold). |
-| neighborName | Text | `Derived:` Neighbor Registered.name for neighborId. |
-| neighborEmail | Text | `Derived:` Neighbor Registered.email for neighborId, replaced by each Neighbor Email Changed.email. Always the current one. |
+| neighborName | Text | `Derived:` Tool Checked Out.neighborName for an overdue notice, Hold Fulfilled.neighborName for a pickup notice. |
+| neighborEmail | Text | `Derived:` Tool Checked Out.neighborEmail or Hold Fulfilled.neighborEmail, replaced by each later Neighbor Email Changed.email. Always the current one. |
 | toolId | ToolId | Tool Checked Out.toolId for the loan, or Hold Fulfilled.toolId for the hold. |
 | toolName | Text | `Derived:` Tool Checked Out.toolName for an overdue notice, Hold Fulfilled.toolName for a pickup notice. |
 | dueDate | Date | Optional; overdue-notice entries only. Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for the loan. |
@@ -89,9 +89,9 @@ Nothing brings an entry back.
     change it from My Account.
 - **INV-UDN-3:** An overdue-notice entry shows the borrower's name and current email, the tool's
   name, and the loan's current due date.
-  - The name comes from Neighbor Registered, the email from Neighbor Registered as replaced by
-    any Neighbor Email Changed, and the tool's name and the due date from Tool Checked Out, the
-    due date as moved by any Loan Extended.
+  - The name, the email, the tool's name and the due date come from Tool Checked Out, the email
+    as replaced by any later Neighbor Email Changed and the due date as moved by any Loan
+    Extended.
 - **INV-UDN-3a:** A pickup-notice entry shows the holder's name and current email, the tool's
   name, and the collect-by date.
   - The collect-by date is the one recorded on Hold Fulfilled. Name, email and tool name come
@@ -225,9 +225,8 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
 - **Upstream events this slice relies on**, and the fields it reads from each:
   - Overdue Notice Failed (Record Overdue Notice Failure): loanId, reason, failedAt.
   - Pickup Notice Failed (Record Pickup Notice Failure): holdId, reason, failedAt.
-  - Neighbor Registered (Register Neighbor): neighborId, name, email.
   - Neighbor Email Changed (Change Email): neighborId, email.
-  - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, dueDate.
+  - Tool Checked Out (Check Out Tool): loanId, toolId, toolName, neighborId, neighborName, neighborEmail, dueDate.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Tool Returned (Return Tool), Tool Lost (Record Tool Lost): loanId, toolId.
   - Hold Fulfilled (Fulfill Hold): holdId, toolId, neighborId, collectByDate.

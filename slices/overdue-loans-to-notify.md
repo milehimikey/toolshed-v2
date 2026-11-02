@@ -29,8 +29,7 @@ nothing up elsewhere.
   list is that slice's concern.
 
 ## Read Model / View
-- **View:** `Overdue Loans To Notify` built from events: "Neighbor Registered",
-  "Tool Checked Out", "Loan Extended", "Overdue Notice Sent", "Neighbor Email Changed", "Tool
+- **View:** `Overdue Loans To Notify` built from events: "Tool Checked Out", "Loan Extended", "Overdue Notice Sent", "Neighbor Email Changed", "Tool
   Returned", "Tool Lost"
 - **Consumed by:** the Overdue Notice Gateway (Send Overdue Notice). Internal: no ui.
 - **Freshness / consistency expectation:** eventual for everything that comes from events: a
@@ -49,13 +48,12 @@ shed's local time zone.
 | neighborId | NeighborId | Tool Checked Out.neighborId: the borrower. |
 | dueDate | Date | Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for this loan. |
 | toolName | Text | Tool Checked Out.toolName. |
-| borrowerName | Text | `Derived:` Neighbor Registered.name for neighborId, copied under this name. |
-| borrowerEmail | Text | `Derived:` Neighbor Registered.email for neighborId, replaced by each Neighbor Email Changed.email for that neighbor, copied under this name. Always the current one. |
+| borrowerName | Text | Tool Checked Out.neighborName. |
+| borrowerEmail | Text | `Derived:` Tool Checked Out.neighborEmail, replaced by each later Neighbor Email Changed.email for that neighbor. Always the current one. |
 | overdue | Bool | `Derived:` yes when today's date in the shed's local time zone is after dueDate (INV-OLN-1). Worked out when the list is read. |
 
-**Bookkeeping.** To fill toolName, borrowerName and borrowerEmail the moment a loan starts, the
-view keeps the name and current email of every registered neighbor, and the name of every tool,
-not only those on a row. This is never returned except on the rows the query returns.
+A row carries everything it needs from its own Tool Checked Out; the view keeps no bookkeeping
+beyond its rows. Neighbor Email Changed updates the address on that neighbor's rows only.
 
 **When a row leaves the view.** A loan's row is removed when Overdue Notice Sent, Tool Returned or
 Tool Lost is recorded for it (INV-OLN-8). Nothing puts it back.
@@ -89,9 +87,9 @@ quiet hours, is Send Overdue Notice's rule (INV-OVN-6, Send Overdue Notice).
     the loan carries on until the tool is returned or recorded lost.
 - **INV-OLN-6:** Each loan on the list carries everything the notice needs: the borrower's name
   and email, the tool's name, and the due date.
-  - The borrower's name comes from Neighbor Registered, and the email is the borrower's current
-    one: Neighbor Registered sets it, Neighbor Email Changed replaces it. The tool's name and the
-    due date come from Tool Checked Out, the due date moved by any Loan Extended. The gateway
+  - The borrower's name and email come with Tool Checked Out, and the email is kept current: a
+    later Neighbor Email Changed replaces it. The tool's name and the due date come from Tool
+    Checked Out, the due date moved by any Loan Extended. The gateway
     looks nothing up elsewhere.
 - **INV-OLN-8:** A loan leaves the list only when an overdue notice is sent for it, when the
   tool is returned, or when the tool is recorded lost.
@@ -106,8 +104,8 @@ quiet hours, is Send Overdue Notice's rule (INV-OVN-6, Send Overdue Notice).
   - **When:** the list is read at 23:59 on 12 October, shed time
   - **Then:** L1 is not returned.
 - **Loan becomes overdue (INV-OLN-1, INV-OLN-6)**
-  - **Given:** Neighbor Registered was recorded for N1, "Ana Ruiz", ana@example.org, and L1,
-    Ana's loan of T1 "Cordless drill", is due 12 October, still out
+  - **Given:** L1, Ana Ruiz's (N1, ana@example.org) loan of T1 "Cordless drill", is due 12
+    October, still out
   - **When:** the list is read at 00:00 on 13 October, shed time
   - **Then:** L1 is returned, with toolName "Cordless drill", borrowerName "Ana Ruiz",
     borrowerEmail ana@example.org, and dueDate 12 October.
@@ -176,9 +174,8 @@ quiet hours, is Send Overdue Notice's rule (INV-OVN-6, Send Overdue Notice).
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
-  - Neighbor Registered (Register Neighbor): neighborId, name, email.
   - Neighbor Email Changed (Change Email): neighborId, email.
-  - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, dueDate.
+  - Tool Checked Out (Check Out Tool): loanId, toolId, toolName, neighborId, neighborName, neighborEmail, dueDate.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Overdue Notice Sent (Send Overdue Notice): loanId.
   - Tool Returned (Return Tool): loanId.

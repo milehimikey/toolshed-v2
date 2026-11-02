@@ -36,10 +36,6 @@ storyline "Join the shed" {
     command Register Neighbor { neighborId: NeighborId, name: Text, email: Text } note "slices/register-neighbor.md"
     event Neighbor Registered { neighborId: NeighborId, name: Text, email: Text, registeredAt: Instant assigned } @Neighbors
   }
-  slice "Tool Inventory — neighbor registered" {
-    view Tool Inventory again from "Neighbor Registered"
-    ui Tool Inventory @Shed Manager
-  }
   slice "Neighbors" {
     view Neighbors from "Neighbor Registered" { neighborId: NeighborId, name: Text, email: Text, registeredAt: Instant, status: Text derived, suspendedAt: Instant derived, flagCount: Int derived, latestFlaggedAt: Instant derived, lateReturns: LateReturn[] derived, canSuspend: Bool derived, canReinstate: Bool derived } note "slices/neighbors.md"
     ui Neighbors @Shed Manager
@@ -68,7 +64,7 @@ storyline "Borrow and return a tool" {
   slice "Check Out Tool" {
     ui Tool Catalog @Neighbor
     command Check Out Tool { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int } note "slices/check-out-tool.md"
-    event Tool Checked Out { loanId: LoanId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
+    event Tool Checked Out { loanId: LoanId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, neighborName: Text assigned, neighborEmail: Text assigned, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
   }
   slice "Tool Inventory — tool checked out" {
     view Tool Inventory again from "Tool Checked Out"
@@ -122,7 +118,7 @@ storyline "Borrow and return a tool" {
 
 storyline "Chase an overdue loan" after "Borrow and return a tool" {
   slice "Overdue Loans To Notify" {
-    view Overdue Loans To Notify from "Neighbor Registered", "Neighbor Email Changed", "Tool Checked Out", "Loan Extended", "Tool Returned" { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, dueDate: Date, toolName: Text, borrowerName: Text derived from "Neighbor Registered", borrowerEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", overdue: Bool derived } note "slices/overdue-loans-to-notify.md"
+    view Overdue Loans To Notify from "Tool Checked Out", "Neighbor Email Changed", "Loan Extended", "Tool Returned" { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, dueDate: Date, toolName: Text, borrowerName: Text derived from "Tool Checked Out", borrowerEmail: Text derived from "Tool Checked Out", "Neighbor Email Changed", overdue: Bool derived } note "slices/overdue-loans-to-notify.md"
   }
 
   # Internally triggered translation: the gateway watches the to-do view and hands notices to the provider.
@@ -146,7 +142,7 @@ storyline "Chase an overdue loan" after "Borrow and return a tool" {
     ui My Loans @Neighbor
   }
   slice "Undelivered Notices" {
-    view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Neighbor Registered", "Neighbor Email Changed", "Loan Extended", "Tool Returned" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text derived from "Neighbor Registered", neighborEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolId: ToolId, toolName: Text derived from "Tool Checked Out", dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
+    view Undelivered Notices from "Overdue Notice Failed", "Tool Checked Out", "Neighbor Email Changed", "Loan Extended", "Tool Returned" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text derived from "Tool Checked Out", neighborEmail: Text derived from "Tool Checked Out", "Neighbor Email Changed", toolId: ToolId, toolName: Text derived from "Tool Checked Out", dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
     ui Undelivered Notices @Shed Manager
   }
 }
@@ -155,7 +151,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   slice "Place Hold" {
     ui Tool Catalog @Neighbor
     command Place Hold { holdId: HoldId, toolId: ToolId, neighborId: NeighborId } note "slices/place-hold.md"
-    event Hold Placed { holdId: HoldId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, placedAt: Instant assigned } @Holds
+    event Hold Placed { holdId: HoldId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, neighborName: Text assigned, neighborEmail: Text assigned, placedAt: Instant assigned } @Holds
   }
   slice "My Holds" {
     view My Holds from "Hold Placed", "Tool Checked Out" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text, placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
@@ -199,7 +195,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   slice "Fulfill Hold" {
     processor Hold Fulfiller from "Holds To Fulfill" note "slices/fulfill-hold.md"
     command Fulfill Hold { holdId: HoldId }
-    event Hold Fulfilled { holdId: HoldId, toolId: ToolId assigned, toolName: Text assigned, neighborId: NeighborId assigned, collectByDate: Date assigned, fulfilledAt: Instant assigned } loops-to "Holds To Fulfill" @Holds
+    event Hold Fulfilled { holdId: HoldId, toolId: ToolId assigned, toolName: Text assigned, neighborId: NeighborId assigned, neighborName: Text assigned, neighborEmail: Text assigned, collectByDate: Date assigned, fulfilledAt: Instant assigned } loops-to "Holds To Fulfill" @Holds
   }
   slice "Undelivered Notices — hold fulfilled" {
     view Undelivered Notices again from "Hold Fulfilled"
@@ -215,7 +211,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   }
 
   slice "Pickup Notices To Send" {
-    view Pickup Notices To Send from "Hold Fulfilled", "Neighbor Registered", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Neighbor Registered", holderEmail: Text derived from "Neighbor Registered", "Neighbor Email Changed", toolName: Text } note "slices/pickup-notices-to-send.md"
+    view Pickup Notices To Send from "Hold Fulfilled", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Hold Fulfilled", holderEmail: Text derived from "Hold Fulfilled", "Neighbor Email Changed", toolName: Text } note "slices/pickup-notices-to-send.md"
   }
 
   slice "Send Pickup Notice" {

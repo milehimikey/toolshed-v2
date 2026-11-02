@@ -53,6 +53,8 @@ and Neighbors To Flag (the loan's due date); Undelivered Notices (loan details s
 | toolId | ToolId | yes | From the command. |
 | toolName | Text | yes | Set by the system: the tool's name as recorded by Tool Added, copied so the loan's readers never look it up. |
 | neighborId | NeighborId | yes | From the command: the borrower. |
+| neighborName | Text | yes | Set by the system: the borrower's name as recorded by Neighbor Registered. |
+| neighborEmail | Text | yes | Set by the system: the borrower's email current at checkout (Neighbor Registered, replaced by any Neighbor Email Changed). Readers that email later keep the address current themselves. |
 | loanPeriodDays | Int | yes | The period the loan started with: loanPeriodDays from the command, or the tool's default checkout period when it was absent. |
 | dueDate | Date | yes | Set by the system: the checkout date (today) plus loanPeriodDays. A later Loan Extended sets a new dueDate; this one never changes. |
 | checkedOutAt | Instant | yes | Set by the system: the UTC moment of the clock reading above. Its date in the shed's local time zone is the checkout date. |

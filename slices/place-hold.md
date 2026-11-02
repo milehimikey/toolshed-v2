@@ -51,6 +51,8 @@ Holds To Fulfill (the queue the hold fulfiller works from).
 | toolId | ToolId | yes | From the command. |
 | toolName | Text | yes | Set by the system: the tool's name as recorded by Tool Added, copied so the hold's readers never look it up. |
 | neighborId | NeighborId | yes | From the command: the holder. |
+| neighborName | Text | yes | Set by the system: the holder's name as recorded by Neighbor Registered. |
+| neighborEmail | Text | yes | Set by the system: the holder's email current when the hold is placed (Neighbor Registered, replaced by any Neighbor Email Changed). |
 | placedAt | Instant | yes | The UTC moment the event is recorded, set by the system. For display only: the queue is the order Hold Placed is recorded, since two holds can share a timestamp. |
 
 Every field is fixed for good. A hold's later life (fulfilled, cancelled, expired, ended) is

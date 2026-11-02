@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Shed Manager → Tools
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/8c79bc377dd5fb3c1f345ae36773509b3ac82d37
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Tool Inventory
 
@@ -36,8 +32,7 @@ and retire tools from it, and record a tool lost when it is out and never coming
     (INV-TINV-6).
 
 ## Read Model / View
-- **View:** `Tool Inventory` built from events: "Tool Added", "Neighbor Registered", "Tool Checked
-  Out", "Loan Extended", "Tool Returned", "Tool Retired", "Tool Lost"
+- **View:** `Tool Inventory` built from events: "Tool Added", "Tool Checked Out", "Loan Extended", "Tool Returned", "Tool Retired", "Tool Lost"
 - **Consumed by:** the Tool Inventory screen (Shed Manager)
 - **Freshness / consistency expectation:** eventual — an entry reflects an event shortly after it
   is recorded (seconds, not minutes). No action on this screen depends on it being instant,
@@ -57,7 +52,7 @@ marked optional can be absent.
 | onLoan | Bool | `Derived:` yes from Tool Checked Out for this tool until Tool Returned or Tool Lost for that loan; no otherwise. |
 | loanId | LoanId | `Derived:` Tool Checked Out.loanId while the tool is on loan; none once Tool Returned or Tool Lost for that loan lands. Optional: present only while on loan. |
 | borrowerId | NeighborId | `Derived:` Tool Checked Out.neighborId while the tool is on loan; none otherwise. Optional: present only while on loan. |
-| borrowerName | Text | `Derived:` Neighbor Registered.name for borrowerId while the tool is on loan; none otherwise. Optional: present only while on loan. |
+| borrowerName | Text | Tool Checked Out.neighborName while the tool is on loan; none otherwise. Optional: present only while on loan. |
 | dueDate | Date | `Derived:` Tool Checked Out.dueDate, replaced by each Loan Extended.dueDate for that loan, while the tool is on loan; none otherwise. Optional: present only while on loan. |
 | retired | Bool | `Derived:` yes once Tool Retired is recorded for this tool. A retired row exists only while the tool is still out on loan. |
 | canRetire | Bool | `Derived:` yes while retired is no. Returned so the screen can offer Retire (INV-TINV-7). |
@@ -82,8 +77,8 @@ marked optional can be absent.
   - This differs from the Tool Catalog, where a tool retired while on loan drops off at once:
     neighbors can do nothing with it, while the shed manager may still need to record it lost.
 - **INV-TINV-3:** The inventory changes only when a tool is added, checked out, extended, returned,
-  retired or recorded lost, or when a neighbor registers.
-  - Neighbor Registered supplies the borrower names shown on tools that are out.
+  retired or recorded lost.
+  - The borrower's name shown on a tool that is out comes with Tool Checked Out.
   - Holds and overdue notices leave it unchanged. Hold state is shown to neighbors
     on the Tool Catalog, not here.
   - A tool's details never change after it is added (see the note under Add Tool's event table). A mistake is
@@ -133,16 +128,12 @@ marked optional can be absent.
   - **Given:** the Tool Inventory lists the cordless drill once
   - **When:** the same Tool Added for that drill is applied again
   - **Then:** the Tool Inventory still lists the drill once.
-- **Neighbor registers (INV-TINV-3)**
-  - **Given:** the Tool Inventory lists the drill, in the shed
-  - **When:** Neighbor Registered is recorded for Ana Ruiz
-  - **Then:** no entry on the Tool Inventory changes.
 - **Tool checked out (INV-TINV-5, INV-TINV-6)**
-  - **Given:** Neighbor Registered was recorded for Ana Ruiz, and the Tool Inventory lists the
-    cordless drill, in the shed
-  - **When:** Tool Checked Out is recorded for Ana borrowing the drill, due 12 October
-  - **Then:** the Tool Inventory shows the drill as out on loan to Ana Ruiz, the name she
-    registered with, due 12 October, and offers "mark lost" on it.
+  - **Given:** the Tool Inventory lists the cordless drill, in the shed
+  - **When:** Tool Checked Out is recorded for Ana Ruiz borrowing the drill, due 12 October,
+    carrying her name
+  - **Then:** the Tool Inventory shows the drill as out on loan to Ana Ruiz, due 12 October, and
+    offers "mark lost" on it.
 - **Loan extended (INV-TINV-5)**
   - **Given:** the Tool Inventory shows the drill out on loan to Ana, due 12 October
   - **When:** Loan Extended is recorded for Ana's drill loan, with the due date 19 October
@@ -235,8 +226,7 @@ stable name, and the sentence shown on the screen. The checks run in this order:
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
   - Tool Added (Add Tool): toolId, name, description, defaultCheckoutPeriodDays, addedAt.
-  - Neighbor Registered (Register Neighbor): neighborId, name.
-  - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, dueDate.
+  - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId, neighborName, dueDate.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Tool Returned (Return Tool): loanId, toolId.
   - Tool Retired (Retire Tool): toolId.

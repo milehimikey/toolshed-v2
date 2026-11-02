@@ -66,6 +66,8 @@ collect-by date to watch), and Undelivered Notices (a later pickup-email failure
 | toolId | ToolId | yes | Set by the system: the tool on the hold's Hold Placed. |
 | toolName | Text | yes | Set by the system: the tool's name on the hold's Hold Placed. |
 | neighborId | NeighborId | yes | Set by the system: the holder on the hold's Hold Placed. |
+| neighborName | Text | yes | Set by the system: the holder's name on the hold's Hold Placed. |
+| neighborEmail | Text | yes | Set by the system: the holder's email current at fulfilment: Hold Placed.neighborEmail, replaced by any Neighbor Email Changed for the holder since. |
 | collectByDate | Date | yes | Set by the system: today plus 3 days. The set-aside lapses at the start of the day after it, shed local time. |
 | fulfilledAt | Instant | yes | Set by the system: the UTC moment the event is recorded. |
 
