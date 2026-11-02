@@ -2,16 +2,13 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Shed Manager → Neighbors
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/18
+shippedVersion: 1
 conformedVersion: 1
 conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
 conformedOn: 2026-11-01
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Suspend Neighbor
 
@@ -23,13 +20,14 @@ borrowing until the shed manager reinstates them. Usually the neighbor has been 
 returns. The system flags; the shed manager decides.
 
 ## Trigger & Actor
-The shed manager issues Suspend Neighbor from either of two screens:
-- **Flagged Neighbors**, for a neighbor the system has flagged for late returns.
-- **Neighbors**, for any active neighbor, flagged or not. This covers a neighbor who closed their
-  account while suspended and signed up again with a different email.
+The shed manager issues Suspend Neighbor from the Neighbors screen, for any active neighbor,
+flagged or not. The usual case is a neighbor the system has flagged for late returns, whose flags
+and late returns the screen shows; it also covers a neighbor who closed their account while
+suspended and signed up again with a different email.
 
-The Neighbors-screen trigger isn't drawn on the diagram; this doc is its specification. The
-system never suspends anyone: reaching the late-return threshold only flags a neighbor.
+The system never suspends anyone: reaching the late-return threshold only flags a neighbor.
+(Version 1 drew this trigger from a separate Flagged Neighbors screen; v2 folds that screen into
+Neighbors.)
 
 ## Command / Input
 **Command:** `Suspend Neighbor`
@@ -45,14 +43,13 @@ are usually the reason, and a suspension from the Neighbors screen needs none. T
 no "from" status: a late copy of an older request counts as a new request.
 
 ## Trigger
-**Triggered by:** screen `Flagged Neighbors` @Shed Manager, and screen `Neighbors` @Shed Manager
-(the second trigger is specified here, not drawn).
+**Triggered by:** screen `Neighbors` @Shed Manager
 
 ## Event(s) Emitted
 **Event:** `Neighbor Suspended` → context `Neighbors`
-**Read by:** Suspended Neighbors (the neighbor appears), Flagged Neighbors (the neighbor's entry
-drops off), Neighbors and My Account (status suspended), and Neighbors To Flag (a suspended
-neighbor is never flagged). Check Out Tool, Extend Loan, Place Hold, Change Email and Flag Neighbor
+**Read by:** Neighbors (status suspended, the suspended date, the open flags cleared, Reinstate
+offered), My Account (status suspended), and Neighbors To Flag (a suspended neighbor is never
+flagged). Check Out Tool, Extend Loan, Place Hold, Change Email and Flag Neighbor
 read it to refuse a suspended neighbor.
 
 | Field | Type | Immutable Fact? | Source / Notes |
@@ -64,9 +61,8 @@ The event never changes. A later Neighbor Reinstated lifts the suspension; a lat
 records a new Neighbor Suspended.
 
 ## Read Model / View
-This slice produces no view of its own. Neighbor Suspended feeds Suspended Neighbors, Flagged
-Neighbors, Neighbors, My Account and Neighbors To Flag, each specified in its own doc and
-eventually consistent.
+This slice produces no view of its own. Neighbor Suspended feeds Neighbors, My Account and
+Neighbors To Flag, each specified in its own doc and eventually consistent.
 
 ## Invariants / Business Rules
 Suspension's effects are rules of the slices that refuse a suspended neighbor, each with its own
@@ -78,8 +74,8 @@ holds keep their places and can be cancelled. A set-aside they can't collect exp
 its collect-by date, as any other (Expire Hold). While suspended they are never flagged (Flag
 Neighbor, INV-FLG-5). A suspension lasts until the shed manager reinstates the neighbor (Reinstate
 Neighbor); it never lifts by itself and is never permanent. The neighbor isn't emailed: they see
-the suspension on My Account and as the reason whenever something is refused. Flagged Neighbors,
-Suspended Neighbors, Neighbors and My Account own how a suspension is shown.
+the suspension on My Account and as the reason whenever something is refused. Neighbors and My
+Account own how a suspension is shown.
 
 - **INV-SUS-1:** Only the shed manager suspends a neighbor.
   - Sign-in, handled outside the model, supplies the shed-manager role; a caller without it is refused `not-shed-manager`.
@@ -93,9 +89,9 @@ Suspended Neighbors, Neighbors and My Account own how a suspension is shown.
 
 ## Scenarios (Given / When / Then)
 - **Happy path: suspending a flagged neighbor (INV-SUS-1, INV-SUS-2)**
-  - **Given:** Ana (N1) is active and on Flagged Neighbors after three late returns within 90
-    days. She has the ladder on loan and a hold waiting on the cordless drill.
-  - **When:** the shed manager suspends N1 from Flagged Neighbors
+  - **Given:** Ana (N1) is active and shown flagged on Neighbors after three late returns within
+    90 days. She has the ladder on loan and a hold waiting on the cordless drill.
+  - **When:** the shed manager suspends N1 from Neighbors
   - **Then:** Neighbor Suspended is recorded for N1, with the time it was recorded. Nothing else is
     recorded: her loan and her hold are untouched.
 - **Suspending a neighbor who isn't flagged (INV-SUS-1, INV-SUS-2)**
@@ -189,8 +185,7 @@ There are no external calls, retries or compensations in this slice. Nothing is 
   - Neighbor Registered matches slices/register-neighbor.md. Reinstate Neighbor and Close Account
     are specified in slices not yet written in depth; each is checked against these keys when it
     is.
-- **Downstream read models / slices affected:** Suspended Neighbors, Flagged Neighbors, Neighbors,
-  My Account and Neighbors To Flag. Check Out Tool, Extend Loan, Place Hold, Change Email and Flag
+- **Downstream read models / slices affected:** Neighbors, My Account and Neighbors To Flag. Check Out Tool, Extend Loan, Place Hold, Change Email and Flag
   Neighbor refuse a suspended neighbor; Reinstate Neighbor lifts the suspension.
 
 ## Open Questions

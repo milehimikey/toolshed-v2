@@ -14,6 +14,7 @@ ratifiedOn: 2026-10-05
 reviewedBy: Mike Key
 reviewedOn: 2026-10-05
 version: 1
+superseded-by: neighbors@v2
 ---
 # Slice: Flagged Neighbors
 
