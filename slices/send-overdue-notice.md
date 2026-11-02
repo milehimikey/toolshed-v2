@@ -5,7 +5,7 @@ swimlane: System → Loans
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/4560d39537428be5c70e45b83caed07789ea18cb
 conformedVersion: 1
-conformedAt: d78f8326a04b4eda4da5c755223272103eed1491
+conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-11-01
