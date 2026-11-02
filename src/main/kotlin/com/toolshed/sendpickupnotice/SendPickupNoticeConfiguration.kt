@@ -2,6 +2,7 @@ package com.toolshed.sendpickupnotice
 
 import com.toolshed.axon.EmailGateway
 import com.toolshed.axon.ReactionDispatcher
+import com.toolshed.axon.dedicatedProcessor
 import com.toolshed.pickupnoticestosend.PickupNoticesToSendRepository
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
@@ -62,10 +63,7 @@ object SendPickupNoticeConfiguration {
 class PickupNoticeOutboxProcessorConfiguration {
     @Bean
     fun pickupNoticeOutboxProcessor(): EventProcessorDefinition =
-        EventProcessorDefinition
-            .pooledStreaming(SendPickupNoticeConfiguration.OUTBOX_PROCESSOR)
-            .assigningHandlers { handler -> handler.beanType()?.let { PickupNoticeOutbox::class.java.isAssignableFrom(it) } ?: false }
-            .notCustomized()
+        dedicatedProcessor(SendPickupNoticeConfiguration.OUTBOX_PROCESSOR, PickupNoticeOutbox::class.java)
 }
 
 /** The running app's Pickup Notice Gateway: reads the list in-process from the read slice's repository (Amendment 11). */

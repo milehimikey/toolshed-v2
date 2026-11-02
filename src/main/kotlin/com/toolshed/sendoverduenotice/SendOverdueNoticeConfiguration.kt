@@ -1,6 +1,7 @@
 package com.toolshed.sendoverduenotice
 
 import com.toolshed.axon.EmailGateway
+import com.toolshed.axon.dedicatedProcessor
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.extension.spring.config.EventProcessorDefinition
@@ -59,8 +60,5 @@ object SendOverdueNoticeConfiguration {
 class OverdueNoticeOutboxProcessorConfiguration {
     @Bean
     fun overdueNoticeOutboxProcessor(): EventProcessorDefinition =
-        EventProcessorDefinition
-            .pooledStreaming(SendOverdueNoticeConfiguration.OUTBOX_PROCESSOR)
-            .assigningHandlers { handler -> handler.beanType()?.let { OverdueNoticeOutbox::class.java.isAssignableFrom(it) } ?: false }
-            .notCustomized()
+        dedicatedProcessor(SendOverdueNoticeConfiguration.OUTBOX_PROCESSOR, OverdueNoticeOutbox::class.java)
 }
