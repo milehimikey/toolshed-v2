@@ -33,8 +33,8 @@ there is something to follow up.
 
 ## Read Model / View
 - **View:** `Undelivered Notices` built from events: "Overdue Notice Failed", "Pickup Notice
-  Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Tool Lost", "Tool Checked
-  Out", "Hold Cancelled", "Hold
+  Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Tool Lost", "Hold
+  Collected", "Hold Cancelled", "Hold
   Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Undelivered Notices screen (Shed Manager)
 - **Freshness / consistency expectation:** eventual. An entry appears, changes or drops off
@@ -149,12 +149,12 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
   - **Then:** Ana's entry stays. It drops off once L1 is returned or recorded lost.
 - **Holder collects the tool (INV-UDN-5)**
   - **Given:** Undelivered Notices lists Ben's pickup-notice entry for H1
-  - **When:** Tool Checked Out is recorded for the hedge trimmer and Ben
+  - **When:** Hold Collected is recorded for H1
   - **Then:** Ben's entry drops off.
 - **Someone else checks out the tool (INV-UDN-5)**
   - **Given:** Undelivered Notices lists Ben's pickup-notice entry for H1, and his collect-by date
     has passed, but Hold Expired hasn't been recorded
-  - **When:** Tool Checked Out is recorded for the hedge trimmer and Cara
+  - **When:** Cara checks the hedge trimmer out, so Hold Collected is recorded for her hold, not H1
   - **Then:** Ben's entry stays until Hold Expired is recorded for H1, and then drops off.
 - **Holder cancels the hold (INV-UDN-5)**
   - **Given:** Undelivered Notices lists Ben's pickup-notice entry for H1
@@ -228,7 +228,7 @@ recorded for his hold H1 on the hedge trimmer with a collect-by date of 16 Octob
   - Neighbor Email Changed (Change Email): neighborId, email.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Tool Returned (Return Tool), Tool Lost (Record Tool Lost): loanId.
-  - Tool Checked Out (Check Out Tool): toolId, neighborId (the holder collecting ends the set-aside).
+  - Hold Collected (Check Out Tool): holdId (the holder collecting ends the set-aside).
   - Hold Cancelled (Cancel Hold), Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Neighbor Account Closed (Close Account): neighborId.

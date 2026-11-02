@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: System → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/0ca7c86d5efde09122a8e2179472932795bd5764
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Holds To Fulfill
 
@@ -31,8 +27,8 @@ so a returned tool is set aside for the neighbor at the front of its queue.
   front hold, which records Hold Fulfilled (Fulfill Hold slice).
 
 ## Read Model / View
-- **View:** `Holds To Fulfill` built from events: "Hold Placed", "Tool Returned", "Hold
-  Cancelled", "Tool Checked Out", "Hold Fulfilled", "Hold Expired", "Tool Retired", "Tool Lost",
+- **View:** `Holds To Fulfill` built from events: "Hold Placed", "Hold Collected", "Tool Returned",
+  "Hold Cancelled", "Tool Checked Out", "Hold Fulfilled", "Hold Expired", "Tool Retired", "Tool Lost",
   "Neighbor Account Closed"
 - **Consumed by:** the Hold Fulfiller (Fulfill Hold). Internal: no ui.
 - **Freshness / consistency expectation:** eventual. A tool joins or leaves the list shortly after
@@ -55,8 +51,7 @@ with holder, in the order Hold Placed was recorded. None of this is returned exc
 **Waiting and ending.** A hold is waiting from Hold Placed until it is fulfilled or ends. A hold
 ends when it is cancelled or expires, when the holder checks the tool out, when the tool is
 retired or recorded lost, or when the holder closes their account. In events: Hold Cancelled or
-Hold Expired for the hold; Tool Checked Out for the hold's tool by its holder; Tool Retired or Tool
-Lost for its tool; Neighbor Account Closed for its holder.
+Hold Expired or Hold Collected for the hold; Tool Retired or Tool Lost for its tool; Neighbor Account Closed for its holder.
 
 **Queries**
 - **List tools to fulfill.** Takes nothing. Returns every row: toolId, and the front hold's holdId
@@ -162,8 +157,9 @@ never skips anyone.
   - **Then:** T1 leaves the list.
 - **Front holder collects before the hold is fulfilled (INV-HTF-5)**
   - **Given:** T1 is on the list, with front hold H1 (Ben) and H2 behind it
-  - **When:** Tool Checked Out is recorded for T1 and Ben
-  - **Then:** T1 leaves the list. H2 waits for T1's next return.
+  - **When:** Tool Checked Out is recorded for T1 and Ben, with Hold Collected for H1
+  - **Then:** T1 leaves the list (the loan is open, and H1 is gone from the queue). H2 waits for
+    T1's next return.
 - **Tool retired (INV-HTF-7)**
   - **Given:** T1 is on the list, with front hold H1
   - **When:** Tool Retired is recorded for T1
@@ -203,7 +199,8 @@ never skips anyone.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Fulfilled (Fulfill Hold): holdId, toolId.
   - Hold Expired (Expire Hold): holdId.
-  - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId.
+  - Tool Checked Out (Check Out Tool): loanId, toolId (a loan is open).
+  - Hold Collected (Check Out Tool): holdId (the hold leaves the queue).
   - Tool Returned (Return Tool): loanId, toolId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId, toolId.

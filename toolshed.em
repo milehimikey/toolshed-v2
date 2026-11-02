@@ -66,6 +66,7 @@ storyline "Borrow and return a tool" {
     ui Tool Catalog @Neighbor
     command Check Out Tool { loanId: LoanId, toolId: ToolId, neighborId: NeighborId, loanPeriodDays: Int } note "slices/check-out-tool.md"
     event Tool Checked Out { loanId: LoanId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, neighborName: Text assigned, neighborEmail: Text assigned, loanPeriodDays: Int, dueDate: Date assigned, checkedOutAt: Instant assigned } @Loans
+    event Hold Collected { holdId: HoldId assigned, toolId: ToolId, neighborId: NeighborId, loanId: LoanId, collectedAt: Instant assigned } @Holds
   }
   slice "Tool Inventory — tool checked out" {
     view Tool Inventory again from "Tool Checked Out"
@@ -143,7 +144,7 @@ storyline "Chase an overdue loan" after "Borrow and return a tool" {
     ui My Loans @Neighbor
   }
   slice "Undelivered Notices" {
-    view Undelivered Notices from "Overdue Notice Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Tool Checked Out" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text, neighborEmail: Text derived from "Overdue Notice Failed", "Neighbor Email Changed", toolId: ToolId derived, toolName: Text, dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
+    view Undelivered Notices from "Overdue Notice Failed", "Neighbor Email Changed", "Loan Extended", "Tool Returned", "Hold Collected" { kind: Text derived, loanId: LoanId, holdId: HoldId derived, neighborId: NeighborId, neighborName: Text, neighborEmail: Text derived from "Overdue Notice Failed", "Neighbor Email Changed", toolId: ToolId derived, toolName: Text, dueDate: Date, collectByDate: Date derived, reason: Text, failedAt: Instant } note "slices/undelivered-notices.md"
     ui Undelivered Notices @Shed Manager
   }
 }
@@ -155,7 +156,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
     event Hold Placed { holdId: HoldId, toolId: ToolId, toolName: Text assigned, neighborId: NeighborId, neighborName: Text assigned, neighborEmail: Text assigned, placedAt: Instant assigned } @Holds
   }
   slice "My Holds" {
-    view My Holds from "Hold Placed", "Tool Checked Out" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text, placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
+    view My Holds from "Hold Placed", "Hold Collected" { holdId: HoldId, neighborId: NeighborId, toolId: ToolId, toolName: Text, placedAt: Instant, status: Text derived, position: Int derived, collectByDate: Date derived, pickupNotice: Text derived, canCancel: Bool derived } note "slices/my-holds.md"
     ui My Holds @Neighbor
   }
   slice "Tool Catalog — hold placed" {
@@ -190,7 +191,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   }
 
   slice "Holds To Fulfill" {
-    view Holds To Fulfill from "Hold Placed", "Tool Returned", "Hold Cancelled", "Tool Checked Out" { toolId: ToolId, holdId: HoldId derived, neighborId: NeighborId derived } note "slices/holds-to-fulfill.md"
+    view Holds To Fulfill from "Hold Placed", "Hold Collected", "Tool Returned", "Hold Cancelled", "Tool Checked Out" { toolId: ToolId, holdId: HoldId derived, neighborId: NeighborId derived } note "slices/holds-to-fulfill.md"
   }
 
   slice "Fulfill Hold" {
@@ -208,7 +209,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   }
 
   slice "Pickup Notices To Send" {
-    view Pickup Notices To Send from "Hold Fulfilled", "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Hold Fulfilled", holderEmail: Text derived from "Hold Fulfilled", "Neighbor Email Changed", toolName: Text } note "slices/pickup-notices-to-send.md"
+    view Pickup Notices To Send from "Hold Fulfilled", "Hold Cancelled", "Hold Collected", "Neighbor Email Changed" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, holderName: Text derived from "Hold Fulfilled", holderEmail: Text derived from "Hold Fulfilled", "Neighbor Email Changed", toolName: Text } note "slices/pickup-notices-to-send.md"
   }
 
   slice "Send Pickup Notice" {
@@ -236,7 +237,7 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool" {
   }
 
   slice "Pickups To Expire" {
-    view Pickups To Expire from "Hold Fulfilled", "Tool Checked Out", "Hold Cancelled" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, dueToExpire: Bool derived } note "slices/pickups-to-expire.md"
+    view Pickups To Expire from "Hold Fulfilled", "Hold Collected", "Hold Cancelled" { holdId: HoldId, toolId: ToolId, neighborId: NeighborId, collectByDate: Date, dueToExpire: Bool derived } note "slices/pickups-to-expire.md"
   }
 
   slice "Expire Hold" {

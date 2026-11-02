@@ -2,18 +2,14 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: System → Holds
-status: implemented
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/58ab5d4257fbc545159e6b4e8398ed1938d5d54d
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
-ratifiedBy: Mike Key
-ratifiedOn: 2026-10-05
-reviewedBy: Mike Key
-reviewedOn: 2026-10-05
-version: 1
+version: 2
 ---
 # Slice: Pickups To Expire
 
@@ -31,7 +27,7 @@ set-aside the holder doesn't collect in time ends and the tool moves on to the n
   Expire Hold for each.
 
 ## Read Model / View
-- **View:** `Pickups To Expire` built from events: "Hold Fulfilled", "Tool Checked Out", "Hold
+- **View:** `Pickups To Expire` built from events: "Hold Fulfilled", "Hold Collected", "Hold
   Cancelled", "Hold Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Pickup Expirer (Expire Hold). Internal: no ui.
 - **Freshness / consistency expectation:** eventual for everything that comes from events: a
@@ -52,7 +48,7 @@ HoldId, ToolId and NeighborId are UUIDs. A Date is a calendar date in the shed's
 | dueToExpire | Bool | `Derived:` yes when today's date in the shed's local time zone is after collectByDate (INV-PTE-2). Worked out when the list is read. |
 
 **When a row leaves the view.** A set-aside's row is removed when:
-- Tool Checked Out is recorded for its tool by its holder (matching toolId and neighborId);
+- Hold Collected is recorded for its hold;
 - Hold Cancelled or Hold Expired is recorded for its hold;
 - Tool Retired is recorded for its tool; or
 - Neighbor Account Closed is recorded for its holder.
@@ -111,11 +107,12 @@ drill on 10 October, with a collect-by date of 13 October.
   - **Then:** H1 is returned as due to expire. Nothing is recorded until the expirer acts.
 - **Holder collects in time (INV-PTE-3)**
   - **Given:** H1 is on the list
-  - **When:** Tool Checked Out is recorded for the drill and Ben on 12 October
+  - **When:** Hold Collected is recorded for H1 on 12 October
   - **Then:** H1 leaves the list.
 - **Someone else takes a lapsed set-aside (INV-PTE-9)**
   - **Given:** H1 is on the list and due to expire, and Cara's hold was waiting behind it
-  - **When:** Tool Checked Out is recorded for the drill and Cara on 14 October
+  - **When:** Cara checks the drill out on 14 October, so Hold Collected is recorded for her hold,
+    not H1
   - **Then:** H1 stays on the list, still due to expire. It leaves only when Hold Expired is
     recorded for it.
 - **Holder cancels (INV-PTE-4)**
@@ -143,7 +140,7 @@ drill on 10 October, with a collect-by date of 13 October.
 ## Alternate & Error Flows
 - **Repeated events:** every event is applied idempotently (INV-PTE-10). An event applied a
   second time leaves the list as it was after the first.
-- **Events for a set-aside no longer listed:** once a row has left, a later Tool Checked Out,
+- **Events for a set-aside no longer listed:** once a row has left, a later Hold Collected,
   Hold Cancelled, Hold Expired, Tool Retired or Neighbor Account Closed for it changes nothing.
 - **The expirer reads a set-aside twice before Hold Expired lands:** the list may return the same
   hold on two reads in a row. Expiring a hold once is Expire Hold's rule, enforced when it
@@ -160,7 +157,7 @@ drill on 10 October, with a collect-by date of 13 October.
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
   - Hold Fulfilled (Fulfill Hold): holdId, toolId, neighborId, collectByDate.
-  - Tool Checked Out (Check Out Tool): toolId, neighborId.
+  - Hold Collected (Check Out Tool): holdId.
   - Hold Cancelled (Cancel Hold), Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Neighbor Account Closed (Close Account): neighborId.

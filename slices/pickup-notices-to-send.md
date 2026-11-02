@@ -28,7 +28,7 @@ holder is emailed once, as soon as a tool is set aside for them.
 
 ## Read Model / View
 - **View:** `Pickup Notices To Send` built from events: "Hold Fulfilled",
-  "Hold Cancelled", "Tool Checked Out", "Neighbor Email Changed", "Pickup Notice
+  "Hold Cancelled", "Hold Collected", "Neighbor Email Changed", "Pickup Notice
   Sent", "Hold Expired", "Tool Retired", "Neighbor Account Closed"
 - **Consumed by:** the Pickup Notice Gateway (Send Pickup Notice). Internal: no ui.
 - **Freshness / consistency expectation:** eventual. A hold joins the list shortly after Hold
@@ -53,7 +53,7 @@ beyond its rows. Neighbor Email Changed updates the address on that neighbor's r
 **When a row leaves the view.** A hold's row is removed when, for that hold:
 - Pickup Notice Sent is recorded (INV-PNS-3);
 - Hold Cancelled or Hold Expired is recorded;
-- Tool Checked Out is recorded for its tool by its holder;
+- Hold Collected is recorded for the hold;
 - Tool Retired is recorded for its tool;
 - Neighbor Account Closed is recorded for its holder (INV-PNS-4).
 
@@ -106,12 +106,8 @@ Pickup Notice's rules.
   - **Then:** H1 leaves the list, unsent.
 - **Holder collects before the email (INV-PNS-4)**
   - **Given:** H1, Ben's hold on T1, is on the list
-  - **When:** Tool Checked Out is recorded for T1 and Ben
+  - **When:** Hold Collected is recorded for H1
   - **Then:** H1 leaves the list, unsent.
-- **Someone else's checkout (INV-PNS-4)**
-  - **Given:** H1, Ben's hold on T1, is on the list
-  - **When:** Tool Checked Out is recorded for the ladder (T2) and Ben
-  - **Then:** H1 stays on the list.
 - **Tool retired before the email (INV-PNS-4)**
   - **Given:** H1, on T1, is on the list
   - **When:** Tool Retired is recorded for T1
@@ -159,7 +155,7 @@ Pickup Notice's rules.
   - Pickup Notice Sent (Send Pickup Notice): holdId.
   - Hold Cancelled (Cancel Hold): holdId.
   - Hold Expired (Expire Hold): holdId.
-  - Tool Checked Out (Check Out Tool): toolId, neighborId.
+  - Hold Collected (Check Out Tool): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Neighbor Account Closed (Close Account): neighborId.
   - These match slices/add-tool.md, slices/register-neighbor.md, slices/change-email.md,

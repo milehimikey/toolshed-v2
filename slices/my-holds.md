@@ -31,7 +31,7 @@ them, and the screen they cancel holds from.
     from here.
 
 ## Read Model / View
-- **View:** `My Holds` built from events: "Hold Placed", "Tool Checked Out", "Hold
+- **View:** `My Holds` built from events: "Hold Placed", "Hold Collected", "Hold
   Cancelled", "Hold Fulfilled", "Pickup Notice Sent", "Pickup Notice Failed", "Hold Expired",
   "Tool Retired", "Tool Lost", "Neighbor Account Closed"
 - **Consumed by:** the My Holds screen (Neighbor)
@@ -70,7 +70,7 @@ that holds wins:
 when it is cancelled or expires, when the holder checks the tool out, when the tool is retired or
 recorded lost, or when the holder closes their account. In events:
 - Hold Cancelled or Hold Expired for the hold;
-- Tool Checked Out for the hold's tool by the hold's neighbor;
+- Hold Collected for the hold (the holder checked the tool out);
 - Tool Retired or Tool Lost for the hold's tool;
 - Neighbor Account Closed for the holder.
 
@@ -132,10 +132,11 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
     date.
 - **INV-MYHD-14:** Each hold shows the tool's name.
   - The name comes with Hold Placed, which carries it.
-- **INV-MYHD-11:** Only Hold Placed, Hold Cancelled, Hold Fulfilled, Pickup Notice Sent, Pickup
-  Notice Failed, Hold Expired, Tool Checked Out by a holder of that tool, Tool Retired, Tool
-  Lost and Neighbor Account Closed change My Holds.
-  - A checkout by anyone else leaves every neighbor's My Holds unchanged.
+- **INV-MYHD-11:** Only Hold Placed, Hold Collected, Hold Cancelled, Hold Fulfilled, Pickup
+  Notice Sent, Pickup Notice Failed, Hold Expired, Tool Retired, Tool Lost and Neighbor Account
+  Closed change My Holds.
+  - A checkout records Hold Collected only when the borrower had a hold on the tool; a checkout
+    by anyone else is not heard here at all.
 - **INV-MYHD-15:** Applying the same event twice leaves My Holds as if it had been applied once.
 - **INV-MYHD-16:** My Holds offers Cancel on every hold it lists.
   - That includes holds ready for pickup, holds whose pickup window has ended, and holds of a
@@ -203,12 +204,12 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
   - **Then:** Ben's My Holds shows H1 `ready-for-pickup`, collect by 17 October.
 - **Holder collects the tool (INV-MYHD-5)**
   - **Given:** Ben's H1 is `ready-for-pickup`, and Cara's H2 is at position 1
-  - **When:** Tool Checked Out is recorded for T1 and Ben
+  - **When:** Hold Collected is recorded for H1
   - **Then:** H1 drops off Ben's My Holds. Cara's is unchanged.
 - **Front holder collects before the set-aside is recorded (INV-MYHD-5, INV-MYHD-2)**
   - **Given:** Ben's H1 is at position 1 and Cara's H2 at position 2 on T1, and T1 has just been
     returned
-  - **When:** Tool Checked Out is recorded for T1 and Ben, before Hold Fulfilled
+  - **When:** Hold Collected is recorded for H1, before any Hold Fulfilled
   - **Then:** H1 drops off Ben's My Holds. Cara's H2 is at position 1.
 - **Ready-for-pickup hold cancelled (INV-MYHD-6)**
   - **Given:** Ben's H1 is `ready-for-pickup`, and Cara's H2 is at position 1
@@ -231,10 +232,6 @@ record, and it doesn't hear suspension or loans at all (INV-MYHD-11).
   - **Given:** Ben's H1 expired, and T1 is now set aside for Cara's H2
   - **When:** Hold Placed is recorded for Ben's new hold H4 on T1
   - **Then:** Ben's My Holds lists H4, `waiting`, position 1, behind Cara's set-aside.
-- **Checkout by a neighbor with no hold (INV-MYHD-11)**
-  - **Given:** Ana has no holds, and the hammer (T5) is available
-  - **When:** Tool Checked Out is recorded for T5 and Ana
-  - **Then:** no neighbor's My Holds changes.
 - **Only their own holds (INV-MYHD-1)**
   - **Given:** Ben has H1 and Cara has H2, both on T1
   - **When:** Ben's holds are listed
@@ -291,11 +288,11 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   - Pickup Notice Sent (Send Pickup Notice): holdId.
   - Pickup Notice Failed (Record Pickup Notice Failure): holdId.
   - Hold Expired (Expire Hold): holdId.
-  - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId.
+  - Hold Collected (Check Out Tool): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId, toolId. This view matches it by toolId.
   - Neighbor Account Closed (Close Account): neighborId.
-  - Hold Placed and Tool Checked Out match slices/place-hold.md and slices/check-out-tool.md. The others are specified in slices not yet written in depth; these
+  - Hold Placed and Hold Collected match slices/place-hold.md and slices/check-out-tool.md. The others are specified in slices not yet written in depth; these
     keys are this view's assumptions, and each is checked when that slice is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Cancel Hold.
 
