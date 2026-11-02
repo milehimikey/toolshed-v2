@@ -2,10 +2,10 @@
   "bumpedBy": "Mike Key",
   "bumpedOn": "2026-11-01",
   "certified": {
-    "at": "d78f8326a04b4eda4da5c755223272103eed1491",
-    "findings": "conformance/2026-11-01-followup-findings.json",
+    "at": "49d67795aabbe79704390bd08ef9925876074139",
+    "findings": "conformance/2026-11-01-processors-findings.json",
     "on": "2026-11-01",
-    "report": "conformance/2026-11-01-followup-report.md"
+    "report": "conformance/2026-11-01-processors-report.md"
   },
   "emVersion": "1.19.7",
   "model": "toolshed.em",

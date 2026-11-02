@@ -5,7 +5,7 @@ swimlane: Shed Manager → Tools
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/8c79bc377dd5fb3c1f345ae36773509b3ac82d37
 conformedVersion: 1
-conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31

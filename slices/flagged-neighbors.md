@@ -5,7 +5,7 @@ swimlane: Shed Manager → Neighbors
 status: implemented
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/e06c9c00d6904dd6201f8b7f4ea5bfe009fecc14
 conformedVersion: 1
-conformedAt: 54b94c75b4528330dea08fa62ca7fe63b7f9cc09
+conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-31
