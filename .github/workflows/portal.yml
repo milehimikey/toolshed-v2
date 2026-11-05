@@ -1,0 +1,52 @@
+# Publishes the em-portal site for this model to GitHub Pages on every push
+# to main — the stakeholder-facing, read-only browser over `em export`/
+# `em status` (https://github.com/milehimikey/em-portal). This is the
+# em-portal README's "GitHub Pages recipe", adapted to this repo:
+#  - no root package.json here, so the two packages are installed ad hoc
+#    (pinned; em-portal 0.3.0 needs em >= 1.21.0 — independent of em-ci.yml's
+#    own em pin, which gates PRs, not this site);
+#  - the model is the root toolshed.em (its storyline files come with it);
+#  - --tests wires INV-* coverage from the Kotlin tests onto the landing
+#    page; --repo . computes the freshness table against this checkout.
+# Base path: a Pages project site serves under /toolshed-v2/ — no build flag
+# needed, every link the portal emits is relative by construction.
+name: portal
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history — `em status` computes commits-behind-HEAD from it
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save @milehimikey/em@1.21.0 @milehimikey/em-portal@0.3.0
+      - run: npx em-portal build toolshed.em -o site --title "Toolshed" --tests src/test/kotlin --repo .
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
