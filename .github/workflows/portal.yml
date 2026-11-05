@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --no-save @milehimikey/em@1.21.0 @milehimikey/em-portal@0.3.0
+      - run: npm install --no-save @milehimikey/em@1.21.0 @milehimikey/em-portal@0.3.1
       - run: npx em-portal build toolshed.em -o site --title "Toolshed" --tests src/test/kotlin --repo .
       - uses: actions/upload-pages-artifact@v3
         with:
