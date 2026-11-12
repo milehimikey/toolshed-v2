@@ -44,6 +44,7 @@ never connected to one another.
 | Hold a tool for pickup | 29 | 1 | [storylines/hold-a-tool-for-pickup.svg](storylines/hold-a-tool-for-pickup.svg) |
 | Keep late returners in check | 9 | 0 | [storylines/keep-late-returners-in-check.svg](storylines/keep-late-returners-in-check.svg) |
 | Take a tool or a neighbor out of the shed | 15 | 0 | [storylines/take-a-tool-or-a-neighbor-out-of-the-shed.svg](storylines/take-a-tool-or-a-neighbor-out-of-the-shed.svg) |
+| Keep tools in working order | 5 | 0 | [storylines/keep-tools-in-working-order.svg](storylines/keep-tools-in-working-order.svg) |
 
 Canvas: [storylines/map.html](storylines/map.html) (`em render --map`)
 <!-- GENERATED:storylines:end -->
@@ -175,6 +176,17 @@ _15 slices · [diagram](storylines/take-a-tool-or-a-neighbor-out-of-the-shed.svg
 | 13 | My Holds — account closed | State View | continuation of `my-holds` | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/my-holds.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/my-holds.md) |
 | 14 | My Account — account closed | State View | continuation of `my-account` | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/my-account.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/my-account.md) |
 | 15 | Neighbors — account closed | State View | continuation of `neighbors` | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/neighbors.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/neighbors.md) |
+
+### Keep tools in working order
+_5 slices · [diagram](storylines/keep-tools-in-working-order.svg)_
+
+| # | Slice | Pattern | Status | Design doc |
+|---|-------|---------|--------|------------|
+| 1 | Schedule Tool Maintenance | State Change | draft | [keep-tools-in-working-order/slices/schedule-tool-maintenance.md](keep-tools-in-working-order/slices/schedule-tool-maintenance.md) |
+| 2 | Tool Maintenance | State View | draft | [keep-tools-in-working-order/slices/tool-maintenance.md](keep-tools-in-working-order/slices/tool-maintenance.md) |
+| 3 | Tool Catalog — maintenance scheduled | State View | continuation of `tool-catalog` | [keep-tools-in-working-order/slices/tool-catalog.md](keep-tools-in-working-order/slices/tool-catalog.md) |
+| 4 | Complete Tool Maintenance | State Change | draft | [keep-tools-in-working-order/slices/complete-tool-maintenance.md](keep-tools-in-working-order/slices/complete-tool-maintenance.md) |
+| 5 | Tool Catalog — maintenance completed | State View | continuation of `tool-catalog` | [keep-tools-in-working-order/slices/tool-catalog.md](keep-tools-in-working-order/slices/tool-catalog.md) |
 <!-- GENERATED:slices:end -->
 
 ## Status
