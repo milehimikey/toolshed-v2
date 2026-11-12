@@ -28,3 +28,5 @@ storyline "Hold a tool for pickup" after "Borrow and return a tool"
 storyline "Keep late returners in check" after "Borrow and return a tool"
 
 storyline "Take a tool or a neighbor out of the shed"
+
+storyline "Keep tools in working order" after "Take a tool or a neighbor out of the shed"
