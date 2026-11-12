@@ -341,7 +341,8 @@ and are never returned.
   sign-in is handled outside the shed's events. It shows only tool details and state, the same
   to everyone.
 - **PII & compliance:** none. The catalog shows no neighbor's name, email or identity. The
-  holders and borrowers it keeps for matching events are never returned.
+  holders and borrowers it keeps for matching events are never returned, and neither is the shed
+  manager's name that Tool Maintenance Scheduled carries as scheduledBy.
 - **Performance / SLA:** none beyond the freshness above.
 
 ## Dependencies & Read Models Affected
@@ -356,8 +357,12 @@ and are never returned.
   - Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId.
-  - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId.
+  - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId. Its other fields (toolName,
+    tasks, notes, scheduledBy, scheduledAt) are for the Tool Maintenance screen; the catalog
+    reads none of them and returns none of them.
   - Tool Maintenance Completed (Complete Tool Maintenance): toolId.
+  - Tool Maintenance Tasks Added (Add Tool Maintenance Tasks) is not heard: tasks added to a tool
+    already in maintenance leave the catalog as it is (INV-TCAT-9).
   - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
     hold they end.
   - Tool Added and the loan events' keys match slices/add-tool.md and slices/tool-inventory.md.
