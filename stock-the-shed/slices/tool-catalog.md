@@ -153,8 +153,9 @@ and are never returned.
 - **INV-TCAT-15:** A tool in maintenance drops off the catalog at once.
   - Tool Maintenance Scheduled removes the tool from the list, so neighbors can't see it, check
     it out or place a hold on it. The shed manager sees it on the Tool Maintenance screen.
-  - Schedule Tool Maintenance only accepts a tool that is in the shed with no loan, set-aside or
-    holds waiting, so the entry that drops off is an available one.
+  - Schedule Tool Maintenance records Tool Maintenance Scheduled only for a tool that is in the
+    shed with no loan, set-aside or holds waiting, so the entry that drops off is an available
+    one.
   - Tool Maintenance Scheduled for a tool that is not listed (retired, lost, or already in
     maintenance) changes nothing.
 - **INV-TCAT-16:** A tool whose maintenance is completed comes back to the catalog as available.
@@ -361,8 +362,8 @@ and are never returned.
     tasks, notes, scheduledBy, scheduledAt) are for the Tool Maintenance screen; the catalog
     reads none of them and returns none of them.
   - Tool Maintenance Completed (Complete Tool Maintenance): toolId.
-  - Tool Maintenance Tasks Added (Add Tool Maintenance Tasks) is not heard: tasks added to a tool
-    already in maintenance leave the catalog as it is (INV-TCAT-9).
+  - Tool Maintenance Tasks Changed (Schedule Tool Maintenance) is not heard: a change to the
+    tasks or notes of a tool already in maintenance leaves the catalog as it is (INV-TCAT-9).
   - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
     hold they end.
   - Tool Added and the loan events' keys match slices/add-tool.md and slices/tool-inventory.md.
