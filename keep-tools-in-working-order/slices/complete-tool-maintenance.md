@@ -20,8 +20,9 @@ finished, and completes its maintenance. The tool leaves Tool Maintenance and re
 Catalog, available to borrow and hold again.
 
 Completing records that the maintenance as a whole is done. It does not tick off tasks one by
-one: Tool Maintenance Scheduled carries the list of tasks, and Tool Maintenance Completed carries
-none.
+one: Tool Maintenance Scheduled carries the list of tasks, Tool Maintenance Tasks Added carries any
+tasks found later, and Tool Maintenance Completed carries none. Completing closes every task
+together, those added as well as those first scheduled.
 
 What follows a completion is decided by the views that read Tool Maintenance Completed:
 - The tool's row leaves Tool Maintenance.
@@ -125,6 +126,16 @@ _No invariants declared in the model._
 - **Then:**
   - the request succeeds and nothing new is recorded.
 
+### Scenario: Completed after more tasks were added (INV-CTMN-5)
+- **Given:**
+  - the hedge trimmer was sent for maintenance to sharpen it, and Tool Maintenance Tasks Added is
+    recorded for it with the task "replace the guard"
+- **When:**
+  - Complete Tool Maintenance: the shed manager completes the hedge trimmer's maintenance
+- **Then:**
+  - Tool Maintenance Completed is recorded for the hedge trimmer, and nothing else. It closes the
+    scheduled and the added tasks together.
+
 ### Scenario: Sent for maintenance again after completing (INV-CTMN-5)
 - **Given:**
   - the hedge trimmer's first maintenance was scheduled and completed
@@ -218,6 +229,8 @@ There are no external calls in this slice, and no email is sent.
   each:
   - Tool Added (Add Tool): toolId.
   - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId. It starts a maintenance.
+  - Tool Maintenance Tasks Added (Add Tool Maintenance Tasks): toolId. It leaves the tool in
+    maintenance, so it neither starts nor ends one and changes nothing in this slice's decision.
   - Tool Maintenance Completed (this slice): toolId. It ends one.
   - Tool Retired (Retire Tool): toolId. It ends a maintenance and retires the tool.
   - Tool Lost (Record Tool Lost): toolId. A lost tool is retired by it.
