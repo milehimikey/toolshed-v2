@@ -127,6 +127,15 @@ doc. All are eventually consistent.
     reacts to the checkout through Holds To Collect. The views that show holds end it from that
     event; this slice records nothing about the hold.
 - **INV-CHK-11:** The tool must have been added, and the borrower must be a registered account.
+- **INV-CHK-13:** A tool that is in maintenance can't be checked out.
+  - A tool is in maintenance from Tool Maintenance Scheduled until Tool Maintenance Completed or
+    Tool Retired for that tool. The Tool Catalog doesn't offer Check Out on it, but the command
+    can still be called, so this slice refuses it.
+  - A tool in maintenance is neither on loan, nor set aside, nor reserved, because maintenance is
+    scheduled only on an available tool. Retiring a tool in maintenance ends the maintenance, and
+    the tool is then refused as retired (INV-CHK-4).
+  - Tool Maintenance Tasks Changed (Schedule Tool Maintenance, on a tool already in maintenance)
+    leaves the tool in maintenance, so it changes nothing here.
 - **INV-CHK-12:** Checking out with a loan ID that is already used opens no new loan.
   - A repeat with the same tool, borrower and loan period succeeds and records nothing new,
     whatever has happened to the loan since. A repeat with different details is refused.
@@ -177,6 +186,20 @@ October.
     recorded.
 - **Retired tool (INV-CHK-4)**
   - **Given:** the drill has been retired
+  - **When:** Ana tries to check out the drill
+  - **Then:** refused with `tool-retired`: "This tool has been retired." No event is recorded.
+- **Tool in maintenance (INV-CHK-13)**
+  - **Given:** the drill has been sent to maintenance (Tool Maintenance Scheduled, no Tool
+    Maintenance Completed since)
+  - **When:** Ana tries to check out the drill
+  - **Then:** refused with `tool-in-maintenance`: "This tool is in maintenance." No event is
+    recorded.
+- **Tool back from maintenance (INV-CHK-13)**
+  - **Given:** the drill was sent to maintenance and Tool Maintenance Completed has been recorded
+  - **When:** Ana checks out the drill
+  - **Then:** Tool Checked Out is recorded for the drill and Ana.
+- **Tool retired while in maintenance (INV-CHK-13, INV-CHK-4)**
+  - **Given:** the drill was sent to maintenance and then retired
   - **When:** Ana tries to check out the drill
   - **Then:** refused with `tool-retired`: "This tool has been retired." No event is recorded.
 - **Unknown tool (INV-CHK-11)**
@@ -323,6 +346,7 @@ The checks run in this order, and the first that fails is the reason returned:
    recorded; otherwise `loan-id-in-use`.
 3. `tool-not-found`, then `neighbor-not-found` (INV-CHK-11).
 4. `tool-retired` (INV-CHK-4).
+   - `tool-in-maintenance` (INV-CHK-13) is checked straight after it, before `tool-checked-out`.
 5. `tool-checked-out` (INV-CHK-2).
 6. `account-closed`, then `neighbor-suspended` (INV-CHK-7).
 7. `has-overdue-loan` (INV-CHK-5).
@@ -344,6 +368,7 @@ The checks run in this order, and the first that fails is the reason returned:
 | `tool-not-found` | There is no such tool. | INV-CHK-11 |
 | `neighbor-not-found` | There is no such neighbor. | INV-CHK-11 |
 | `tool-retired` | This tool has been retired. | INV-CHK-4 |
+| `tool-in-maintenance` | This tool is in maintenance. | INV-CHK-13 |
 | `tool-checked-out` | This tool is already checked out. | INV-CHK-2 |
 | `account-closed` | This account is closed. | INV-CHK-7 |
 | `neighbor-suspended` | You can't borrow tools while your account is suspended. | INV-CHK-7 |
@@ -382,6 +407,8 @@ There are no external calls, retries or compensations in this slice.
   - Tool Added (Add Tool): toolId, defaultCheckoutPeriodDays.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId.
+  - Tool Maintenance Scheduled (Schedule Tool Maintenance), Tool Maintenance Completed (Complete
+    Tool Maintenance): toolId.
   - Tool Checked Out (this slice): loanId, toolId, neighborId, loanPeriodDays, dueDate.
   - Loan Extended (Extend Loan): loanId, dueDate.
   - Tool Returned (Return Tool): loanId.
