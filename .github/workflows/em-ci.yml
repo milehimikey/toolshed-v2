@@ -47,6 +47,26 @@ jobs:
             echo "no .em files changed"
             exit 0
           fi
+          # A storyline's own file (it starts `storyline "..."`, not `model "..."`) cannot be
+          # validated by itself: em reads it through the root model that declares it. Validate
+          # that root instead. Hand edit inside the generated block: `em ci init --check` will
+          # report it as drift until em's own template does this.
+          targets=""
+          for f in $changed; do
+            if [ -f "$f" ] && grep -q '^model ' "$f"; then
+              targets="$targets $f"
+            elif [ -f "$f" ]; then
+              name=$(sed -n '1,/^storyline /s/^storyline "\([^"]*\)".*/\1/p' "$f" | head -1)
+              for root in $(git ls-files '*.em'); do
+                if grep -q '^model ' "$root" && grep -q "^storyline \"$name\"" "$root"; then targets="$targets $root"; fi
+              done
+            fi
+          done
+          changed=$(printf '%s\n' $targets | sort -u)
+          if [ -z "$changed" ]; then
+            echo "no model left to validate (only deletions, or a storyline file no root declares)"
+            exit 0
+          fi
           status=0
           for f in $changed; do
             echo "::group::em validate $f"
@@ -183,7 +203,8 @@ jobs:
           node-version: 20
       - name: Check glossary consistency across models
         run: |
-          mapfile -t models < <(git ls-files '*.em')
+          # Root models only: a storyline's own file is read through its root (see the validate job).
+          mapfile -t models < <(git ls-files '*.em' | xargs grep -l '^model ')
           npx @milehimikey/em@1.21.0 glossary "${models[@]}" --fail-on-conflicts --waive-file glossary-waivers.txt
 
   status-badge:
