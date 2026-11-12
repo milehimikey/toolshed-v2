@@ -42,12 +42,12 @@ tasks have been added.
 |-------|------|-----------------|
 | toolId | ToolId | Tool Maintenance Scheduled.toolId. |
 | toolName | Text | Tool Maintenance Scheduled.toolName: the tool's name as it was when maintenance was scheduled. Need not be unique. |
-| scheduledBy | Text | Tool Maintenance Scheduled.scheduledBy: the name of the person who sent the tool for maintenance. |
+| scheduledBy | Text | Tool Maintenance Scheduled.scheduledBy: the name of the person who sent the tool for maintenance. The event's handler assigns it from the signed-in shed manager's identity; the view shows it as recorded. |
 | scheduledAt | Instant | Tool Maintenance Scheduled.scheduledAt. |
-| tasks | Text[] | Derived: Tool Maintenance Scheduled.tasks, followed by the tasks of each Tool Maintenance Tasks Added applied since, each batch in the order recorded. At least one entry; the view sets no upper limit. |
-| notes | Text[] | Derived: Tool Maintenance Scheduled.notes, then the notes of each Tool Maintenance Tasks Added applied since, in the order recorded. An event with no notes adds nothing. Empty when no notes were given. |
+| tasks | Text[] | Derived: Tool Maintenance Scheduled.tasks, followed by the tasks of each Tool Maintenance Tasks Added applied since (and of each later Tool Maintenance Scheduled for the same tool, INV-TMNT-13), each batch in the order recorded. At least one entry; the view sets no upper limit. |
+| notes | Text[] | Derived: Tool Maintenance Scheduled.notes, then the notes of each Tool Maintenance Tasks Added (or later Tool Maintenance Scheduled, INV-TMNT-13) applied since, in the order recorded. An event with no notes adds nothing. Empty when no notes were given. |
 | taskCount | Int | Derived: the number of entries in `tasks`. It is the `fromTaskCount` the Add Tasks action sends. |
-| lastAddedAt | Instant | Derived: Tool Maintenance Tasks Added.addedAt of the latest batch applied. Absent until a batch has been added. |
+| lastAddedAt | Instant | Derived: Tool Maintenance Tasks Added.addedAt (or a later Tool Maintenance Scheduled's scheduledAt, INV-TMNT-13) of the latest batch applied. Absent until a batch has been added. |
 
 There is no status or flag on a row: a tool is in this view or it is not. When maintenance
 ends, its row is removed, not kept with an ended marker. The view keeps no history; a tool sent
@@ -83,8 +83,8 @@ for maintenance a second time gets a fresh row.
     maintenance is never on loan and has no holds waiting, so no loan or hold event, and no Tool
     Lost, can arise for it while it has an entry.
 - **INV-TMNT-6:** Applying the same event twice leaves the view as if it had been applied once.
-  - A repeated Tool Maintenance Scheduled for a tool that already has an entry leaves that
-    entry as it was.
+  - A repeated Tool Maintenance Scheduled (one already applied: its scheduledAt is not later
+    than the entry's latest recorded time, INV-TMNT-13) leaves that entry as it was.
   - A repeated Tool Maintenance Tasks Added changes nothing (INV-TMNT-12).
   - A repeated Tool Maintenance Completed or Tool Retired for a tool with no entry changes
     nothing.
@@ -107,6 +107,16 @@ for maintenance a second time gets a fresh row.
   - The batch's notes, if it has any, are appended to the entry's notes.
   - `taskCount` is the new number of tasks, and `lastAddedAt` is the batch's addedAt.
   - scheduledBy, scheduledAt and the other entries are unchanged.
+- **INV-TMNT-13:** A Tool Maintenance Scheduled for a tool that already has an entry adds its
+  tasks and notes to the entry; none are lost.
+  - It applies only if its `scheduledAt` is later than the entry's latest recorded time (the
+    entry's `lastAddedAt`, or `scheduledAt` when no batch has been added). Otherwise it is a
+    replay and changes nothing (INV-TMNT-6).
+  - Its tasks and notes are appended as in INV-TMNT-11; `taskCount` is the new number of tasks
+    and `lastAddedAt` is the event's `scheduledAt`.
+  - The entry keeps its original scheduledBy and scheduledAt. The entry stays one row.
+  - Whether Schedule Tool Maintenance can record such an event is that slice's rule; the view
+    does not lose the tasks if it does.
 - **INV-TMNT-12:** A Tool Maintenance Tasks Added is applied only if its `fromTaskCount` equals
   the entry's `taskCount` at that moment; otherwise it changes nothing.
   - This keeps a replay or a repeat of the same event from adding its tasks twice.
@@ -154,7 +164,8 @@ for maintenance a second time gets a fresh row.
     scheduledAt.
 - **Sent with a name and notes (INV-TMNT-1)**
   - **Given:** the view lists no tools
-  - **When:** Tool Maintenance Scheduled is recorded for the hedge trimmer, scheduled by "Sam", with
+  - **When:** Tool Maintenance Scheduled is recorded for the hedge trimmer, with scheduledBy "Sam" (assigned from the signed-in shed
+    manager), with
     the task "sharpen blades" and the notes "blade chipped near the tip"
   - **Then:** the entry shows scheduledBy "Sam", the task, the note, taskCount 1 and no
     lastAddedAt.
@@ -191,6 +202,18 @@ for maintenance a second time gets a fresh row.
   - **Given:** the view lists the hedge trimmer
   - **When:** Tool Added is recorded for a new cordless drill, and a Hold Placed for the ladder
   - **Then:** the view still lists only the hedge trimmer.
+- **Scheduled again while in maintenance (INV-TMNT-13)**
+  - **Given:** the view lists the hedge trimmer, scheduled by "Sam" at 09:00 with the task
+    "sharpen blades" (taskCount 1)
+  - **When:** Tool Maintenance Scheduled is recorded for the hedge trimmer again, at 10:00, with
+    the task "replace cord" and the notes "cord frayed"
+  - **Then:** the view lists the hedge trimmer once, with the tasks "sharpen blades", "replace
+    cord" in that order; taskCount 2; the note "cord frayed"; scheduledBy "Sam"; scheduledAt
+    09:00; lastAddedAt 10:00.
+- **Scheduled-again event applied twice (INV-TMNT-13, INV-TMNT-6)**
+  - **Given:** the entry above, after the 10:00 Tool Maintenance Scheduled has been applied
+  - **When:** the same 10:00 event is applied again
+  - **Then:** the entry still has two tasks and taskCount 2.
 - **Same event applied twice (INV-TMNT-6)**
   - **Given:** the view lists the hedge trimmer once
   - **When:** the same Tool Maintenance Scheduled for the hedge trimmer is applied again
@@ -259,16 +282,17 @@ stable name, and the sentence shown on the screen. The checks run in this order:
   caller without it is refused `not-shed-manager` (INV-TMNT-10), and one with no sign-in
   `not-signed-in` (INV-TMNT-9).
 - **PII & compliance:** the view shows tool names, maintenance tasks, free-text notes and the
-  name typed in as scheduledBy. It never shows a neighbor's name or email, and notes should not
+  shed manager's name that the handler assigned as scheduledBy (a person's name from sign-in,
+  kept with the maintenance history). It never shows a neighbor's name or email, and notes should not
   hold personal details (the view cannot check that).
 - **Performance / SLA:** none beyond the freshness above.
 
 ## Dependencies & Read Models Affected
 - **Upstream events this slice relies on**, and the fields it reads from each:
   - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId, toolName, tasks, notes,
-    scheduledBy, scheduledAt.
+    scheduledBy (assigned by the handler from sign-in; the command does not carry it), scheduledAt.
   - Tool Maintenance Tasks Added (Add Tool Maintenance Tasks): toolId, fromTaskCount, tasks,
-    notes, addedAt. Its addedBy is not shown (nothing on the row lists who added each batch).
+    notes, addedAt. Its addedBy (also assigned from sign-in) is not shown (nothing on the row lists who added each batch).
   - Tool Maintenance Completed (Complete Tool Maintenance): toolId.
   - Tool Retired (Retire Tool): toolId.
   - The maintenance events are specified in slices shaped alongside this one
