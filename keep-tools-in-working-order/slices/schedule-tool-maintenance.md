@@ -9,8 +9,8 @@ version: 1
 
 ## Intent
 Send a tool that is in the shed for maintenance: sharpening, cleaning, tuning, or whatever work
-it needs. The shed manager gives their name and names the work, with any notes, from the Tool
-Inventory screen. From that moment the
+it needs. The shed manager names the work, with any notes, from the Tool
+Inventory screen; the system records who they are from sign-in. From that moment the
 tool is off the Tool Catalog, so neighbors cannot borrow or hold it, and it shows on the Tool
 Maintenance screen with the work it needs. Completing the work (Complete Tool Maintenance) puts
 it back. A tool that is already in maintenance is not scheduled again; new tasks found while it is
@@ -23,7 +23,8 @@ the loan or the holds have run their course.
 
 ## Trigger & Actor
 The shed manager, from the Tool Inventory screen. Sign-in, handled outside the shed's events,
-supplies the shed-manager role. Tool Inventory itself does not show whether a tool is in
+supplies the shed-manager role and the shed manager's identity (their name), which the
+handler records as scheduledBy; the shed manager does not type it. Tool Inventory itself does not show whether a tool is in
 maintenance and does not hide the action (it is only the trigger screen), so the command checks
 every rule itself and a repeat is harmless.
 
@@ -37,7 +38,9 @@ A ToolId is a UUID.
 | toolId | ToolId | yes | The tool to send for maintenance. Must be a tool that has been added (INV-STM-3). A missing or malformed ID is bad input, rejected before any rule is checked. |
 | tasks | Text[] | yes | The work the tool needs, in the order given. Each task has leading and trailing whitespace (any Unicode whitespace) removed; a task that is empty after that is dropped; a task that repeats an earlier one (compared ignoring case) is dropped. What is left must have 1 to 10 tasks (INV-STM-2), each at most 1000 characters (INV-STM-2). Free text: there is no fixed list of kinds. |
 | notes | Text | no | Free-text notes about the work, such as what was noticed or what to watch for. Trimmed of any Unicode whitespace; empty after that means absent. At most 5000 characters when present (INV-STM-11). |
-| scheduledBy | Text | yes | The name of the person sending the tool for maintenance, entered on the command: sign-in supplies the shed-manager role but no name. Trimmed; must be present and at most 100 characters (INV-STM-10). |
+
+The command carries no scheduledBy. The handler assigns it (INV-STM-10); a scheduledBy sent with
+the request is ignored.
 
 ## Trigger
 **Triggered by:** screen `Tool Inventory` @Shed Manager
@@ -53,7 +56,7 @@ catalog).
 | toolName | Text | yes | Set by the system: the name on the tool's Tool Added, so Tool Maintenance can show it without looking the tool up. |
 | tasks | Text[] | yes | From the command, after trimming, dropping blanks and dropping repeats. Order kept. |
 | notes | Text | yes | From the command, trimmed. Absent when none were given. |
-| scheduledBy | Text | yes | From the command, trimmed. |
+| scheduledBy | Text | yes | Set by the system: the signed-in shed manager's name, as sign-in supplies it (INV-STM-10). Not from the command. |
 | scheduledAt | Instant | yes | Set by the system: the UTC moment the event is recorded. |
 
 Nothing else is recorded: not a reason, not a date for the work, not a cost. The event does not carry a "from" state; the tool was free, and that is all it says.
@@ -66,7 +69,7 @@ are eventually consistent.
 ## Invariants / Business Rules
 - **INV-STM-1:** Only the shed manager can schedule maintenance.
   - Neighbors do not. Sign-in, handled outside the shed's events, supplies the shed-manager
-    role; a caller without it is refused with `not-shed-manager`.
+    role and identity; a caller without the role is refused with `not-shed-manager`.
   - A caller with no sign-in is refused with `not-signed-in`, before anything else is checked.
 - **INV-STM-2:** A maintenance request names the work: at least one task, at most 10, each at
   most 1000 characters.
@@ -98,12 +101,12 @@ are eventually consistent.
     A second Tool Maintenance Scheduled is never recorded for a tool in maintenance.
 - **INV-STM-9:** A tool whose maintenance has been completed can be scheduled again.
   - Each Scheduled–Completed pair is a separate round. There is no limit on how many.
-- **INV-STM-10:** A maintenance request says who is sending the tool.
-  - `scheduledBy` is trimmed and must be present, at most 100 characters. Nothing is cut
-    short. Missing is refused with `scheduled-by-missing`; over 100 characters with
-    `scheduled-by-too-long`.
-  - It is the name the shed manager types, not an identity from sign-in; it is not checked
-    against any list of people.
+- **INV-STM-10:** The event records who sent the tool, from sign-in.
+  - `scheduledBy` is not input and has no input rules. The handler assigns it from the signed-in
+    shed manager's identity (the name sign-in supplies); a value sent with the request is
+    ignored.
+  - A request that is signed in as the shed manager but carries no identity name is refused
+    with `not-signed-in`, since there is no one to record.
 - **INV-STM-11:** Notes are optional and long.
   - Notes are trimmed; empty after that means none. At most 5000 characters; over that is
     refused with `notes-too-long`. Nothing is cut short.
@@ -113,8 +116,8 @@ are eventually consistent.
 - **Given:**
   - the cordless drill is in the shed, with no loan open and no holds on it
 - **When:**
-  - the shed manager, Dana, runs Schedule Tool Maintenance for the drill with tasks "Sharpen
-    bits" and "Clean chuck" and the notes "Chuck sticks when cold"
+  - the shed manager, signed in as Dana, runs Schedule Tool Maintenance for the drill with tasks
+    "Sharpen bits" and "Clean chuck" and the notes "Chuck sticks when cold"
 - **Then:**
   - Tool Maintenance Scheduled is recorded for the drill with its name "Cordless drill", the
     two tasks in that order, the notes, scheduledBy "Dana", and the time it was recorded
@@ -164,24 +167,23 @@ are eventually consistent.
 - **Then:**
   - Tool Maintenance Scheduled is recorded with all the notes.
 
-### Scenario: No name given (INV-STM-10)
+### Scenario: Who scheduled it comes from sign-in (INV-STM-10)
 - **Given:**
-  - the ladder is in the shed and free
+  - the ladder is in the shed and free, and the shed manager is signed in as Dana
 - **When:**
-  - the shed manager runs Schedule Tool Maintenance for the ladder with the task "Oil hinges" and
-    scheduledBy "   "
+  - the shed manager runs Schedule Tool Maintenance for the ladder with the task "Oil hinges"
+    and a request that also names a scheduledBy of "Someone Else"
 - **Then:**
-  - refused with `scheduled-by-missing`: "Say who is sending the tool." No event is recorded.
+  - Tool Maintenance Scheduled is recorded with scheduledBy "Dana"; the value sent is ignored
 
-### Scenario: Name too long (INV-STM-10)
+### Scenario: Signed in without a name (INV-STM-10)
 - **Given:**
   - the ladder is in the shed and free
 - **When:**
-  - the shed manager runs Schedule Tool Maintenance for the ladder with the task "Oil hinges" and
-    a scheduledBy of 101 characters
+  - a caller with the shed-manager role but no identity name runs Schedule Tool Maintenance for
+    the ladder with the task "Oil hinges"
 - **Then:**
-  - refused with `scheduled-by-too-long`: "A name can be at most 100 characters." No event is
-    recorded.
+  - refused with `not-signed-in`: "Please sign in." No event is recorded.
 
 ### Scenario: Eleven tasks (INV-STM-2)
 - **Given:**
@@ -328,21 +330,18 @@ required wording of the message.
 
 The checks run in this order, and the first that fails is the reason returned:
 1. `not-signed-in`, then `not-shed-manager` (INV-STM-1).
-2. `scheduled-by-missing`, then `scheduled-by-too-long` (INV-STM-10).
-3. The tasks: `tasks-missing`, then `too-many-tasks`, then `task-too-long` (INV-STM-2).
-4. `notes-too-long` (INV-STM-11).
-5. `tool-not-found` (INV-STM-3).
-6. `tool-retired` (INV-STM-4).
-7. `tool-in-maintenance` (INV-STM-8).
-8. `tool-checked-out` (INV-STM-5), then `tool-set-aside` (INV-STM-6), then `tool-has-holds`
+2. The tasks: `tasks-missing`, then `too-many-tasks`, then `task-too-long` (INV-STM-2).
+3. `notes-too-long` (INV-STM-11).
+4. `tool-not-found` (INV-STM-3).
+5. `tool-retired` (INV-STM-4).
+6. `tool-in-maintenance` (INV-STM-8).
+7. `tool-checked-out` (INV-STM-5), then `tool-set-aside` (INV-STM-6), then `tool-has-holds`
    (INV-STM-7).
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
-| `not-signed-in` | Please sign in. | INV-STM-1 |
+| `not-signed-in` | Please sign in. | INV-STM-1, INV-STM-10 |
 | `not-shed-manager` | Only the shed manager can schedule tool maintenance. | INV-STM-1 |
-| `scheduled-by-missing` | Say who is sending the tool. | INV-STM-10 |
-| `scheduled-by-too-long` | A name can be at most 100 characters. | INV-STM-10 |
 | `tasks-missing` | Say what work the tool needs. | INV-STM-2 |
 | `too-many-tasks` | A tool can have at most 10 tasks. | INV-STM-2 |
 | `task-too-long` | A task can be at most 1000 characters. | INV-STM-2 |
@@ -374,9 +373,12 @@ There are no external calls in this slice, and no email is sent.
 
 ## Non-Functional Requirements
 - **Security / authz:** only the shed manager may schedule maintenance (INV-STM-1). Sign-in,
-  handled outside the shed's events, supplies the shed-manager role.
+  handled outside the shed's events, supplies the shed-manager role and the identity the handler
+  records as scheduledBy (INV-STM-10). The constitution (Amendments 6 and 9) names only the role
+  and the neighbor id today; for this to hold it must also say that sign-in supplies the shed
+  manager's name with the role.
 - **PII & compliance:** Tool Maintenance Scheduled holds the tool, its name, free-text tasks and
-  notes, the name of the person who scheduled it, and a time. That name is personal data, kept
+  notes, the name of the shed manager who scheduled it (taken from sign-in), and a time. That name is personal data, kept
   with the event history and not erased, like the neighbor names in the loan history
   (constitution Amendment 6). Tasks and notes describe work on a tool, not people.
 - **Performance / SLA:** none.
