@@ -308,3 +308,28 @@ Approved by Mike Key on 2026-10-06 ("yes to amendment 10", relayed by deliver.le
 
     Approved by Mike Key on 2026-10-31 (ruling on the fulfill-hold / flag-neighbor escalations,
     relayed by the percheron operator; recorded in the percheron benchmark note).
+
+12. **Shed-manager identity.** This extends Amendments 6 and 9. It applies to a command that
+    records who acted.
+    - **Sign-in supplies it.** A request with the shed-manager role also carries the signed-in
+      shed manager's identity: the person's name, as the sign-in layer knows it.
+    - **The header.** `X-Toolshed-Manager-Name`, set by the sign-in layer on a request that
+      carries `X-Toolshed-Role: shed-manager`. Like the other headers, the app reads it and
+      does no authentication of its own.
+    - **Handlers assign it.** A command that records who acted takes the name from sign-in.
+      The handler sets it on the event (`scheduledBy`, `changedBy`), like an event time. No
+      command carries it, and a value sent by the caller is ignored. There is no
+      `requester-mismatch` check, because there is no caller-supplied value to compare.
+    - **Missing or empty.** On a command that records who acted, a request with the role but
+      with the name missing, or empty after trimming (Amendment 7's text rule), is refused
+      `not-signed-in`.
+    - **Scope.** Schedule Tool Maintenance is the first command that records it. The existing
+      shed-manager commands and views (Add Tool, Retire Tool, Record Tool Lost and the rest) do
+      not record it and are unchanged: they need the role only, as before.
+    - **Personal data.** The name is free text and personal data. The PII baseline applies: it
+      is never logged at INFO or above, and it is kept with the maintenance history, with no
+      erasure.
+
+    Ratified by Mike Key on 2026-11-12 (ruling "scheduledBy should come from the signed-in
+    identity" and "add the identity to the constitution", during the review of the
+    maintenance-tracking model; recorded in `.event-modeling.md`).
