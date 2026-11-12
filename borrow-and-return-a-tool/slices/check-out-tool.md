@@ -134,6 +134,8 @@ doc. All are eventually consistent.
   - A tool in maintenance is neither on loan, nor set aside, nor reserved, because maintenance is
     scheduled only on an available tool. Retiring a tool in maintenance ends the maintenance, and
     the tool is then refused as retired (INV-CHK-4).
+  - Tool Maintenance Tasks Added (Add Tool Maintenance Tasks) leaves the tool in maintenance, so it
+    changes nothing here.
 - **INV-CHK-12:** Checking out with a loan ID that is already used opens no new loan.
   - A repeat with the same tool, borrower and loan period succeeds and records nothing new,
     whatever has happened to the loan since. A repeat with different details is refused.
