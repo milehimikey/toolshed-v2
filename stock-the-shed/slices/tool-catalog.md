@@ -28,7 +28,8 @@ holds from it.
 ## Trigger & Actor
 - **Actor:** a neighbor, opening the Tool Catalog screen.
 - **What it shows:** one entry per tool that is in the shed or out on loan and not retired, built
-  from the events listed under Read Model / View. Every neighbor sees exactly the same catalog
+  from the events listed under Read Model / View. A tool in maintenance is not
+  listed (INV-TCAT-15). Every neighbor sees exactly the same catalog
   (INV-TCAT-5). Nothing on this screen records anything by itself; its actions issue commands
   owned by other slices:
   - **Check Out** (Check Out Tool slice) — offered by the tool's state alone (INV-TCAT-11).
@@ -37,7 +38,7 @@ holds from it.
 ## Read Model / View
 - **View:** `Tool Catalog` built from events: "Tool Added", "Tool Checked Out", "Loan Extended",
   "Hold Placed", "Hold Cancelled", "Tool Returned", "Hold Fulfilled", "Hold Expired", "Tool
-  Retired", "Tool Lost"
+  Retired", "Tool Lost", "Tool Maintenance Scheduled", "Tool Maintenance Completed"
 - **Consumed by:** the Tool Catalog screen (Neighbor)
 - **Freshness / consistency expectation:** eventual. An entry reflects an event shortly after it
   is recorded (seconds, not minutes). No action on this screen depends on it being instant,
@@ -73,6 +74,11 @@ Cancelled, Hold Expired or Hold Collected is recorded for it; retiring the tool,
 and closing the holder's account each record Hold Cancelled for the holds they end. Because the test reads current facts, the order events arrive
 in doesn't matter. For example, a lapsed set-aside whose tool has already gone out to someone
 else is checked-out, even before its Hold Expired lands.
+
+**Maintenance.** Tool Maintenance Scheduled takes the tool out of the list; Tool Maintenance
+Completed puts it back (INV-TCAT-15, INV-TCAT-16). While a tool is in maintenance the view keeps
+its entry, so that completing the maintenance can restore it, but the entry is not listed and no
+query returns it. A tool that has been retired or recorded lost is never restored.
 
 To match later events to a tool, the view also keeps, for each tool, the loan ID of the current
 loan and the hold ID and holder of each live hold. These are bookkeeping, not part of the row,
@@ -130,8 +136,8 @@ and are never returned.
     back or is recorded lost (INV-TINV-2). Neighbors can do nothing with a retired tool; the shed
     manager may still need to record it lost.
 - **INV-TCAT-9:** Only Tool Added, Tool Checked Out, Loan Extended, Hold Placed, Hold Cancelled,
-  Tool Returned, Hold Fulfilled, Hold Collected, Hold Expired, Tool Retired and Tool Lost change
-  the catalog.
+  Tool Returned, Hold Fulfilled, Hold Collected, Hold Expired, Tool Retired, Tool Lost, Tool Maintenance Scheduled
+  and Tool Maintenance Completed change the catalog.
   - Overdue notices, pickup emails and email changes are shown elsewhere, not here.
 - **INV-TCAT-10:** A tool recorded lost drops off the catalog.
   - Recording a tool lost ends its loan, retires it and ends its holds, all at once.
@@ -144,6 +150,20 @@ and are never returned.
   - The same order as every list in the shed.
 - **INV-TCAT-12:** Applying the same event twice leaves the catalog as if it had been applied
   once.
+- **INV-TCAT-15:** A tool in maintenance drops off the catalog at once.
+  - Tool Maintenance Scheduled removes the tool from the list, so neighbors can't see it, check
+    it out or place a hold on it. The shed manager sees it on the Tool Maintenance screen.
+  - Schedule Tool Maintenance only accepts a tool that is in the shed with no loan, set-aside or
+    holds waiting, so the entry that drops off is an available one.
+  - Tool Maintenance Scheduled for a tool that is not listed (retired, lost, or already in
+    maintenance) changes nothing.
+- **INV-TCAT-16:** A tool whose maintenance is completed comes back to the catalog as available.
+  - Tool Maintenance Completed lists the tool again, with its original name, description,
+    default checkout period and added date, no due date and no holds waiting, Check Out offered
+    and Place Hold not offered.
+  - Tool Maintenance Completed for a tool that is not in maintenance, or that has been retired
+    or recorded lost, changes nothing. A retired tool stays off the catalog (INV-TCAT-8,
+    INV-TCAT-10).
 - **INV-TCAT-14:** Any signed-in neighbor can read the Tool Catalog; a caller with no sign-in
   can't.
   - A caller with no sign-in is refused with `not-signed-in`. Nothing is returned.
@@ -258,6 +278,25 @@ and are never returned.
   - **Given:** the catalog shows the drill as checked out, due 12 October, with 1 hold waiting
   - **When:** Tool Lost is recorded for the drill's loan
   - **Then:** the drill drops off the catalog. Other tools are unchanged.
+- **Tool sent for maintenance (INV-TCAT-15)**
+  - **Given:** the catalog lists the drill as available, and the ladder as available
+  - **When:** Tool Maintenance Scheduled is recorded for the drill
+  - **Then:** the drill drops off the catalog. The ladder is unchanged.
+- **Maintenance completed (INV-TCAT-16, INV-TCAT-11)**
+  - **Given:** the drill is in maintenance and is not listed
+  - **When:** Tool Maintenance Completed is recorded for the drill
+  - **Then:** the catalog lists the drill again as available, with its original name,
+    description, default checkout period and added date, no due date and no holds waiting, Check
+    Out offered and Place Hold not offered.
+- **Maintenance completed for a retired tool (INV-TCAT-16, INV-TCAT-8)**
+  - **Given:** the drill was in maintenance and was then retired
+  - **When:** Tool Maintenance Completed is recorded for the drill
+  - **Then:** the drill is not listed.
+- **Maintenance events repeated or out of place (INV-TCAT-15, INV-TCAT-16, INV-TCAT-12)**
+  - **Given:** the catalog lists the ladder as available, and the drill is in maintenance
+  - **When:** Tool Maintenance Completed is recorded for the ladder, and Tool Maintenance
+    Scheduled is applied again for the drill
+  - **Then:** the ladder is still listed once, as available, and the drill is still not listed.
 - **Events the catalog doesn't hear (INV-TCAT-9)**
   - **Given:** the catalog shows the drill as checked out, due 12 October
   - **When:** Overdue Notice Sent is recorded for the drill's loan
@@ -287,6 +326,9 @@ and are never returned.
 - **Event for a tool that is no longer listed:** once a tool has been retired or recorded lost,
   its later events (a Tool Returned for a loan that carried on after retirement, or a replay)
   change nothing.
+- **Maintenance events out of place:** Tool Maintenance Completed for a tool that is not in
+  maintenance, or for a retired or lost tool, and Tool Maintenance Scheduled for a tool that is
+  not listed, change nothing. A retired or lost tool is never restored (INV-TCAT-16).
 - **Hold events for a tool that is no longer listed:** a hold can't be placed on a retired tool,
   and retirement ends its holds, so a hold event for an unlisted tool can only be a replay. It
   changes nothing.
@@ -314,6 +356,8 @@ and are never returned.
   - Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId.
+  - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId.
+  - Tool Maintenance Completed (Complete Tool Maintenance): toolId.
   - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
     hold they end.
   - Tool Added and the loan events' keys match slices/add-tool.md and slices/tool-inventory.md.
