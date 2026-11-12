@@ -129,6 +129,13 @@ neighbor can see.
     (`hold-id-in-use`).
 - **INV-HOLD-14:** The tool must have been added, and the neighbor must be a registered account.
 - **INV-HOLD-15:** A request with no sign-in is refused before anything else is checked.
+- **INV-HOLD-16:** A hold can't be placed on a tool that is in maintenance.
+  - A tool is in maintenance from Tool Maintenance Scheduled until Tool Maintenance Completed or
+    Tool Retired is recorded for it. A tool in maintenance has no loan or holds, so by the
+    state test above it would count as available; it is refused `tool-in-maintenance` instead,
+    before the available check (INV-HOLD-2).
+  - A tool retired while in maintenance is retired, not in maintenance: `tool-retired` wins
+    (INV-HOLD-3).
 
 ## Scenarios (Given / When / Then)
 - **Happy path: first hold on a checked-out tool (INV-HOLD-2, INV-HOLD-5)**
@@ -237,6 +244,22 @@ neighbor can see.
   - **When:** a Place Hold request arrives for H1 with T3, Ben
   - **Then:** refused with `hold-id-in-use`: "That hold ID is already used by another hold." No
     event is recorded.
+- **Tool in maintenance (INV-HOLD-16)**
+  - **Given:** the ladder (T2) is in the shed with no holds, and Tool Maintenance Scheduled was
+    recorded for it
+  - **When:** Ben tries to place a hold on T2
+  - **Then:** refused with `tool-in-maintenance`: "This tool is in maintenance." No event is
+    recorded.
+- **Tool back from maintenance (INV-HOLD-16)**
+  - **Given:** Tool Maintenance Scheduled and then Tool Maintenance Completed were recorded for T2,
+    with no loan or holds since
+  - **When:** Ben tries to place a hold on T2
+  - **Then:** refused with `tool-available`: "This tool is available. Check it out instead." The
+    tool is no longer in maintenance.
+- **Retired while in maintenance (INV-HOLD-16)**
+  - **Given:** Tool Maintenance Scheduled was recorded for T2, and T2 was then retired
+  - **When:** Ben tries to place a hold on T2
+  - **Then:** refused with `tool-retired`: "This tool has been retired." No event is recorded.
 - **Not signed in (INV-HOLD-15)**
   - **Given:** nobody is signed in
   - **When:** a request for placing a hold arrives
@@ -253,7 +276,7 @@ The checks run in this order, and the first that fails is the reason returned:
 3. The hold ID is already used (INV-HOLD-13): a repeat with the same details succeeds with
    nothing recorded; otherwise `hold-id-in-use`.
 4. `tool-not-found`, then `neighbor-not-found` (INV-HOLD-14).
-5. `tool-retired` (INV-HOLD-3).
+5. `tool-retired` (INV-HOLD-3), then `tool-in-maintenance` (INV-HOLD-16).
 6. `account-closed`, then `neighbor-suspended` (INV-HOLD-4, INV-HOLD-9).
 7. `tool-on-loan-to-you` (INV-HOLD-8).
 8. `already-holding` (INV-HOLD-7).
@@ -267,6 +290,7 @@ The checks run in this order, and the first that fails is the reason returned:
 | `tool-not-found` | There is no such tool. | INV-HOLD-14 |
 | `neighbor-not-found` | There is no such neighbor. | INV-HOLD-14 |
 | `tool-retired` | This tool has been retired. | INV-HOLD-3 |
+| `tool-in-maintenance` | This tool is in maintenance. | INV-HOLD-16 |
 | `account-closed` | This account is closed. | INV-HOLD-4 |
 | `neighbor-suspended` | You can't place holds while your account is suspended. | INV-HOLD-9 |
 | `tool-on-loan-to-you` | You have this tool on loan. | INV-HOLD-8 |
@@ -307,6 +331,8 @@ email.
   - Tool Added (Add Tool): toolId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId.
+  - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId.
+  - Tool Maintenance Completed (Complete Tool Maintenance): toolId.
   - Tool Checked Out (Check Out Tool): loanId, toolId, neighborId.
   - Tool Returned (Return Tool): loanId.
   - Hold Placed (this slice): holdId, toolId, neighborId.
