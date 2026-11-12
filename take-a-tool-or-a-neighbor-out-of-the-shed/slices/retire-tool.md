@@ -34,6 +34,9 @@ What follows a retirement is decided by the views and slices that read Tool Reti
   My Holds (INV-MYHD-7).
 - A loan on the tool carries on, can't be extended (INV-EXT-8), and ends when the tool is
   returned or recorded lost.
+- A tool in maintenance can be retired, and retiring it ends the maintenance: Tool Maintenance
+  drops its row on Tool Retired. A tool in maintenance has no holds and no loan, so no
+  Hold Cancelled is recorded with it.
 - Check Out Tool and Place Hold refuse a retired tool.
 
 A tool lost or broken by a borrower, and never returned, is not retired here. The shed manager
@@ -52,15 +55,15 @@ A ToolId is a UUID.
 
 | Field | Type | Required | Rules / Validation |
 |-------|------|----------|--------------------|
-| toolId | ToolId | yes | The tool to retire. Must be a tool that has been added (INV-RTR-10). It may be in the shed, on loan, reserved or set aside (INV-RTR-6). |
+| toolId | ToolId | yes | The tool to retire. Must be a tool that has been added (INV-RTR-10). It may be in the shed, in maintenance, on loan, reserved or set aside (INV-RTR-6). |
 
 ## Trigger
 **Triggered by:** screen `Tool Inventory` @Shed Manager
 
 ## Event(s) Emitted
 **Event:** `Tool Retired` → context `Tools`
-**Read by:** Tool Inventory and Tool Catalog (the tool is retired) and My Loans (a loan on it is
-marked).
+**Read by:** Tool Inventory and Tool Catalog (the tool is retired), Tool Maintenance (the tool's
+row is dropped) and My Loans (a loan on it is marked).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
@@ -83,7 +86,7 @@ The same event Cancel Hold records, recorded here once per hold on the tool, wai
 
 ## Read Model / View
 This slice produces no view of its own. Tool Retired changes the tool's entry in Tool Inventory
-and Tool Catalog and marks a loan on it in My Loans; the Hold Cancelled recorded with it end its
+and Tool Catalog, drops its row from Tool Maintenance and marks a loan on it in My Loans; the Hold Cancelled recorded with it end its
 holds in My Holds, Tool Catalog, My Loans and the hold to-do lists. Each view is specified in its own doc. All are eventually consistent.
 
 ## Invariants / Business Rules
@@ -94,9 +97,9 @@ holds in My Holds, Tool Catalog, My Loans and the hold to-do lists. Each view is
 - **INV-RTR-2:** Retiring a tool that is already retired records nothing new.
   - The request succeeds, so a double submit or a retry never fails and never records a second
     Tool Retired. This includes a tool retired by being recorded lost.
-- **INV-RTR-6:** A tool can be retired whatever its state: in the shed, on loan, reserved or set
-  aside.
-  - Retiring is never refused because of a loan or a hold.
+- **INV-RTR-6:** A tool can be retired whatever its state: in the shed, in maintenance, on loan,
+  reserved or set aside.
+  - Retiring is never refused because of a loan, a hold or maintenance.
 - **INV-RTR-10:** The tool must exist.
 
 ## Scenarios (Given / When / Then)
@@ -119,6 +122,11 @@ holds in My Holds, Tool Catalog, My Loans and the hold to-do lists. Each view is
     hasn't been recorded yet
   - **When:** the shed manager retires the drill
   - **Then:** Tool Retired is recorded for the drill, and Hold Cancelled for Ben's hold.
+- **Tool in maintenance (INV-RTR-6)**
+  - **Given:** the ladder is in maintenance for sharpening, and Tool Maintenance lists it
+  - **When:** the shed manager retires the ladder
+  - **Then:** Tool Retired is recorded for the ladder, and nothing else. The ladder's row drops off
+    Tool Maintenance.
 - **Retiring twice (INV-RTR-2)**
   - **Given:** Tool Retired has been recorded for the ladder
   - **When:** the shed manager retires the ladder again
@@ -184,8 +192,8 @@ There are no external calls in this slice, and no email is sent.
   - Tool Retired (this slice): toolId.
   - Tool Lost (Record Tool Lost): loanId, toolId (a lost tool is retired by that).
   - These keys match the deep-passed docs and the loan-ending convention.
-- **Downstream read models / slices affected:** Tool Inventory, Tool Catalog and My Loans (Tool
-  Retired); My Holds, Tool Catalog, My Loans, Undelivered Notices, Holds To Fulfill, Pickups To
+- **Downstream read models / slices affected:** Tool Inventory, Tool Catalog, Tool Maintenance
+  and My Loans (Tool Retired); My Holds, Tool Catalog, My Loans, Undelivered Notices, Holds To Fulfill, Pickups To
   Expire and Pickup Notices To Send (the Hold Cancelled recorded here). Check Out
   Tool, Place Hold, Extend Loan and Fulfill Hold read whether a tool is retired.
 
