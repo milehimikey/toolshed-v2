@@ -2,7 +2,9 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Shed Manager → Tools
-status: draft
+status: reviewed
+reviewedBy: Mike Key
+reviewedOn: 2026-11-12
 version: 1
 ---
 # Slice: Schedule Tool Maintenance

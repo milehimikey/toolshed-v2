@@ -62,7 +62,7 @@ _3 slices · [diagram](storylines/stock-the-shed.svg)_
 |---|-------|---------|--------|------------|
 | 1 | Add Tool | State Change | implemented | [stock-the-shed/slices/add-tool.md](stock-the-shed/slices/add-tool.md) |
 | 2 | Tool Inventory | State View | draft | [stock-the-shed/slices/tool-inventory.md](stock-the-shed/slices/tool-inventory.md) |
-| 3 | Tool Catalog | State View | draft | [stock-the-shed/slices/tool-catalog.md](stock-the-shed/slices/tool-catalog.md) |
+| 3 | Tool Catalog | State View | reviewed | [stock-the-shed/slices/tool-catalog.md](stock-the-shed/slices/tool-catalog.md) |
 
 ### Join the shed
 _6 slices · [diagram](storylines/join-the-shed.svg)_
@@ -81,7 +81,7 @@ _12 slices · [diagram](storylines/borrow-and-return-a-tool.svg)_
 
 | # | Slice | Pattern | Status | Design doc |
 |---|-------|---------|--------|------------|
-| 1 | Check Out Tool | State Change | draft | [borrow-and-return-a-tool/slices/check-out-tool.md](borrow-and-return-a-tool/slices/check-out-tool.md) |
+| 1 | Check Out Tool | State Change | reviewed | [borrow-and-return-a-tool/slices/check-out-tool.md](borrow-and-return-a-tool/slices/check-out-tool.md) |
 | 2 | Tool Inventory — tool checked out | State View | continuation of `tool-inventory` | [borrow-and-return-a-tool/slices/tool-inventory.md](borrow-and-return-a-tool/slices/tool-inventory.md) |
 | 3 | Tool Catalog — checked out | State View | continuation of `tool-catalog` | [borrow-and-return-a-tool/slices/tool-catalog.md](borrow-and-return-a-tool/slices/tool-catalog.md) |
 | 4 | My Loans | State View | draft | [borrow-and-return-a-tool/slices/my-loans.md](borrow-and-return-a-tool/slices/my-loans.md) |
@@ -111,7 +111,7 @@ _29 slices · [diagram](storylines/hold-a-tool-for-pickup.svg)_
 
 | # | Slice | Pattern | Status | Design doc |
 |---|-------|---------|--------|------------|
-| 1 | Place Hold | State Change | draft | [hold-a-tool-for-pickup/slices/place-hold.md](hold-a-tool-for-pickup/slices/place-hold.md) |
+| 1 | Place Hold | State Change | reviewed | [hold-a-tool-for-pickup/slices/place-hold.md](hold-a-tool-for-pickup/slices/place-hold.md) |
 | 2 | My Holds | State View | draft | [hold-a-tool-for-pickup/slices/my-holds.md](hold-a-tool-for-pickup/slices/my-holds.md) |
 | 3 | Tool Catalog — hold placed | State View | continuation of `tool-catalog` | [hold-a-tool-for-pickup/slices/tool-catalog.md](hold-a-tool-for-pickup/slices/tool-catalog.md) |
 | 4 | My Loans — hold placed | State View | continuation of `my-loans` | [hold-a-tool-for-pickup/slices/my-loans.md](hold-a-tool-for-pickup/slices/my-loans.md) |
@@ -161,7 +161,7 @@ _15 slices · [diagram](storylines/take-a-tool-or-a-neighbor-out-of-the-shed.svg
 
 | # | Slice | Pattern | Status | Design doc |
 |---|-------|---------|--------|------------|
-| 1 | Retire Tool | State Change | draft | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md) |
+| 1 | Retire Tool | State Change | reviewed | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md) |
 | 2 | My Holds — tool retired | State View | continuation of `my-holds` | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/my-holds.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/my-holds.md) |
 | 3 | Tool Inventory — tool retired | State View | continuation of `tool-inventory` | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/tool-inventory.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/tool-inventory.md) |
 | 4 | Tool Catalog — tool retired | State View | continuation of `tool-catalog` | [take-a-tool-or-a-neighbor-out-of-the-shed/slices/tool-catalog.md](take-a-tool-or-a-neighbor-out-of-the-shed/slices/tool-catalog.md) |
@@ -182,10 +182,10 @@ _5 slices · [diagram](storylines/keep-tools-in-working-order.svg)_
 
 | # | Slice | Pattern | Status | Design doc |
 |---|-------|---------|--------|------------|
-| 1 | Schedule Tool Maintenance | State Change | draft | [keep-tools-in-working-order/slices/schedule-tool-maintenance.md](keep-tools-in-working-order/slices/schedule-tool-maintenance.md) |
-| 2 | Tool Maintenance | State View | draft | [keep-tools-in-working-order/slices/tool-maintenance.md](keep-tools-in-working-order/slices/tool-maintenance.md) |
+| 1 | Schedule Tool Maintenance | State Change | reviewed | [keep-tools-in-working-order/slices/schedule-tool-maintenance.md](keep-tools-in-working-order/slices/schedule-tool-maintenance.md) |
+| 2 | Tool Maintenance | State View | reviewed | [keep-tools-in-working-order/slices/tool-maintenance.md](keep-tools-in-working-order/slices/tool-maintenance.md) |
 | 3 | Tool Catalog — maintenance scheduled | State View | continuation of `tool-catalog` | [keep-tools-in-working-order/slices/tool-catalog.md](keep-tools-in-working-order/slices/tool-catalog.md) |
-| 4 | Complete Tool Maintenance | State Change | draft | [keep-tools-in-working-order/slices/complete-tool-maintenance.md](keep-tools-in-working-order/slices/complete-tool-maintenance.md) |
+| 4 | Complete Tool Maintenance | State Change | reviewed | [keep-tools-in-working-order/slices/complete-tool-maintenance.md](keep-tools-in-working-order/slices/complete-tool-maintenance.md) |
 | 5 | Tool Catalog — maintenance completed | State View | continuation of `tool-catalog` | [keep-tools-in-working-order/slices/tool-catalog.md](keep-tools-in-working-order/slices/tool-catalog.md) |
 <!-- GENERATED:slices:end -->
 
