@@ -2,7 +2,12 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Shed Manager → Tools
-status: draft
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-11-12
+ratifiedHash: sha256:107ca89eb9cfc60da0eaba2a134fa8d14245cf7538c3ebfd12467d52c2cd9a12
+reviewedBy: Mike Key
+reviewedOn: 2026-11-12
 version: 1
 ---
 # Slice: Complete Tool Maintenance
