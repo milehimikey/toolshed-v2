@@ -1,0 +1,246 @@
+# Review file for maintenance-shape-2026-11: 28 decision(s) awaiting a ruling.
+# Fill in `ruling` on the ones you want to rule on, then:
+#   percheron rule-batch <engagement.yaml> <this file> --dry-run    (shows what would rerun)
+#   percheron rule-batch <engagement.yaml> <this file>
+#
+#   ruling: confirm | except | overrule
+#   choice: <option id>     overrule with one of the options listed
+#   own: "<your option>"   overrule with an option of your own
+#   reason: "<why>"        required for except and overrule
+#   classWide: true         make this ruling a precedent for its class
+# An entry with an empty ruling is skipped and stays in the queue.
+by: mikey
+rulings:
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/event-carries-no-actor"
+    # class actor · costly to undo · confidence high · consumed by 6 node(s)
+    # Q: Does the event record who scheduled it?
+    # * no-actor: No; the model's event has toolId, toolName, tasks, scheduledAt only, and there is one shed manager role
+    #   actor: Add scheduledBy
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:7; constitution.md Amendment 6 (shed manager is a role, not a person)
+    ruling: overrule
+    choice: actor
+    reason: "Owner: the event should record who scheduled maintenance."
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/row-removed-not-flagged"
+    # class read-model-shape · costly to undo · confidence high · consumed by 2 node(s)
+    # Q: When maintenance ends, is the row removed or kept with an ended marker?
+    # * remove: Remove the row; no history
+    #   keep-flag: Keep the row with a status
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:11; .percheron/handoff/maintenance-model-report.md:63
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/lost-tool-counts-as-retired"
+    # class invariant · cheap to undo · confidence medium · consumed by 6 node(s)
+    # Q: Does the decider treat a tool recorded lost as retired?
+    # * yes: Tool Retired or Tool Lost both mean retired
+    #   retired-only: Only Tool Retired
+    # basis: take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md (INV-RTR-2 and Dependencies)
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/refusal-names-and-order"
+    # class error-flow · cheap to undo · confidence medium · consumed by 6 node(s)
+    # Q: What are the refusal reasons and the order of checks?
+    # * reuse-plus-new: Reuse tool-retired/tool-checked-out/tool-set-aside/tool-not-found; new tasks-missing, too-many-tasks, task-too-long, tool-has-holds; auth, tasks, existence, retired, no-op, then state checks
+    #   generic: A single tool-unavailable reason
+    # basis: constitution.md Amendment 7 (a name means the same in every slice); take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md check order
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/repeat-while-in-maintenance"
+    # class invariant · cheap to undo · confidence medium · consumed by 6 node(s)
+    # Q: What happens when a tool already in maintenance is scheduled again, possibly with different tasks?
+    # * noop-success: Succeed and record nothing; first tasks stand
+    #   refuse: Refuse with tool-in-maintenance
+    #   noop-same-only: Succeed only if tasks match, else refuse
+    # basis: constitution.md Amendment 7 (a command that changes something succeeds when its effect has already happened); take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md INV-RTR-2
+    ruling: overrule
+    own: "Tasks named when a tool already in maintenance is scheduled again are tracked, not dropped."
+    reason: "Owner: if a tool already in maintenance is scheduled again with new tasks, how would I track the new tasks? They must not be lost."
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/task-limits"
+    # class field-shape · cheap to undo · confidence medium · consumed by 6 node(s)
+    # Q: What are the shape and limits of the tasks list?
+    # * 1-10-100-dedupe: Trim, drop blanks and case-insensitive repeats; 1-10 tasks, each at most 100 chars
+    #   unbounded: No limits beyond non-empty
+    #   reject-blanks: Refuse blank or repeated tasks instead of dropping them
+    # basis: constitution.md Amendment 7 (text trimmed, empty is absent); stock-the-shed/slices/add-tool.md:40 (name at most 100); keep-tools-in-working-order/keep-tools-in-working-order.em:6
+    ruling: overrule
+    own: "The task list allows more characters per task than 100, and maintenance also allows free-text notes."
+    reason: "Owner: the task list should allow more characters, and allow notes."
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/available-definition"
+    # class invariant · cheap to undo · confidence high · consumed by 6 node(s)
+    # Q: Exactly which states block scheduling?
+    # * four-states: Retired (incl. lost), on loan, set aside, holds waiting; each its own invariant
+    #   one-rule: One 'tool-unavailable' refusal
+    # basis: .percheron/handoff/maintenance-model-decisions.json (schedule-only-when-available); stock-the-shed/slices/tool-catalog.md status rules
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/other-slices-must-refuse-maintenance"
+    # class model-change · cheap to undo · confidence high · consumed by 6 node(s)
+    # Q: Where is the rule that Check Out Tool and Place Hold refuse a tool in maintenance?
+    # * note-dependency: Name it under Dependencies here; leave the other docs to their own revision; no model change
+    #   model-change: Change the model so those slices read the maintenance events
+    # basis: .percheron/handoff/maintenance-model-report.md (Existing slices whose rules change but whose model does not)
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/retired-in-maintenance-refused"
+    # class invariant · cheap to undo · confidence high · consumed by 6 node(s)
+    # Q: Is a retired tool that was in maintenance 'already in maintenance' (no-op) or retired (refused)?
+    # * retired: Retired wins: refuse with tool-retired
+    #   noop: Treat as in maintenance and succeed
+    # basis: .percheron/handoff/maintenance-model-decisions.json (retire-ends-maintenance)
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/invariant-ids-prefix"
+    # class naming · cheap to undo · confidence medium · consumed by 2 node(s)
+    # Q: What abbreviation prefixes this slice's invariant ids?
+    # * tmnt: INV-TMNT-<n>
+    #   tm: INV-TM-<n>
+    # basis: stock-the-shed/slices/tool-catalog.md:97
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/list-order"
+    # class read-model-shape · cheap to undo · confidence medium · consumed by 2 node(s)
+    # Q: In what order does the Tool Maintenance screen list tools?
+    # * name-then-scheduled: By tool name ignoring case, then scheduledAt, then toolId
+    #   oldest-first: By scheduledAt ascending
+    # basis: stock-the-shed/slices/tool-inventory.md:108; stock-the-shed/slices/tool-catalog.md:13
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/empty-list-not-refusal"
+    # class read-model-shape · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: What does the query return when no tool is in maintenance?
+    # * empty-list: An empty list
+    #   refusal: A not-found style refusal
+    # basis: stock-the-shed/slices/tool-inventory.md:68
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/read-refusals"
+    # class actor · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: Who may read the Tool Maintenance view and what are the refusal reasons and sentence?
+    # * shed-manager-only: not-signed-in then not-shed-manager ('Only the shed manager can see the tools in maintenance.')
+    #   any-signed-in: Any signed-in caller may read
+    # basis: constitution.md:166; stock-the-shed/slices/tool-inventory.md:205
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/reschedule-gets-fresh-row"
+    # class invariant · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: When a tool is sent for maintenance again after completing, does the new row carry only the new tasks and time?
+    # * fresh-row: Yes; nothing from the earlier maintenance is kept
+    #   merge: Merge with earlier tasks
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:10-11
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/tool-lost-not-heard"
+    # class model-change · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: Should the view also hear Tool Lost, which retires a tool?
+    # * no-change: No: the model's view hears Tool Retired only; a tool in maintenance is never on loan, so it cannot be recorded lost
+    #   hear-lost: Add 'updates from Tool Lost' to the view
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:11; .percheron/handoff/maintenance-model-decisions.json:46
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/complete-tool-maintenance/complete-refusal-sentences-and-order"
+    # class error-flow · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What are this command's refusal reasons, sentences and order of checks?
+    # * reuse-names: not-signed-in, not-shed-manager, tool-not-found, tool-retired in that order, then the no-op; sentence for not-shed-manager 'Only the shed manager can complete tool maintenance.' and for tool-retired 'That tool has been retired.'
+    #   new-names: Introduce slice-specific reasons
+    # basis: constitution.md:Amendment 6 (auth checks first); constitution.md:Amendment 7 (a name means the same condition in every slice); decisions-in-force: schedule-tool-maintenance/refusal-names-and-order; take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/complete-tool-maintenance/complete-retired-tool-refused"
+    # class invariant · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: Is completing maintenance for a retired tool (retired or lost, possibly while in maintenance) a no-op or a refusal?
+    # * refuse-tool-retired: Refuse with tool-retired, checked before the no-op
+    #   noop-success: Treat as not in maintenance and succeed with nothing recorded
+    # basis: decisions-in-force: schedule-tool-maintenance/retired-in-maintenance-refused; decisions-in-force: schedule-tool-maintenance/lost-tool-counts-as-retired; .percheron/handoff/maintenance-model-decisions.json (retire-ends-maintenance)
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/complete-tool-maintenance/invariant-ids-prefix-ctmn"
+    # class naming · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What abbreviation prefixes this slice's invariant ids?
+    # * ctmn: INV-CTMN-<n>
+    #   ctm: INV-CTM-<n>
+    # basis: decisions-in-force: tool-maintenance/invariant-ids-prefix (INV-TMNT); <percheron>/roles/shaper.md:25
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/complete-tool-maintenance/complete-when-not-in-maintenance"
+    # class invariant · cheap to undo · confidence high · consumed by 1 node(s)
+    # Q: What happens when maintenance is completed for a tool that is not in maintenance (already completed, or never scheduled)?
+    # * noop-success: Succeed and record nothing
+    #   refuse: Refuse with a new reason tool-not-in-maintenance
+    # basis: constitution.md:Amendment 7 (a command that changes something is safe to repeat); keep-tools-in-working-order/keep-tools-in-working-order.em:21; decisions-in-force: schedule-tool-maintenance/repeat-while-in-maintenance
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/check-out-tool/maintenance-check-order"
+    # class invariant · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: Where in the refusal order is the maintenance check, and how does it interact with retirement?
+    # * after-retired: Straight after tool-retired, before tool-checked-out; a tool retired while in maintenance is reported as retired
+    #   after-checked-out: After tool-checked-out
+    # basis: maintenance-model-decisions.json:schedule-only-when-available; maintenance-model-decisions.json:retire-ends-maintenance; borrow-and-return-a-tool/slices/check-out-tool.md:Alternate & Error Flows
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/check-out-tool/maintenance-refusal-reason"
+    # class error-flow · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: What stable reason name and sentence does Check Out Tool return for a tool in maintenance?
+    # * tool-in-maintenance: `tool-in-maintenance`: "This tool is in maintenance."
+    #   tool-unavailable: A generic `tool-unavailable` reason
+    # basis: borrow-and-return-a-tool/slices/check-out-tool.md:Alternate & Error Flows; maintenance-model-decisions.json:maintenance-names
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/place-hold/maintenance-refusal-name-and-order"
+    # class error-flow · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: What is the refusal reason for a tool in maintenance, and where does it sit in the check order?
+    # * tool-in-maintenance-after-retired: New reason tool-in-maintenance, checked right after tool-retired and before the account checks
+    #   reuse-tool-available: Let it fall to tool-available
+    #   just-before-available: Check last, just before tool-available
+    # basis: hold-a-tool-for-pickup/slices/place-hold.md:Alternate & Error Flows; maintenance-shape-2026-11/schedule-tool-maintenance/refusal-names-and-order
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/place-hold/maintenance-sentence"
+    # class naming · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: What sentence is shown for tool-in-maintenance?
+    # * in-maintenance: This tool is in maintenance.
+    #   try-later: This tool is in maintenance. Try again once it is back.
+    # basis: hold-a-tool-for-pickup/slices/place-hold.md:Alternate & Error Flows
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/check-out-tool/maintenance-invariant-id"
+    # class invariant · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: Which invariant id carries the maintenance rule?
+    # * inv-chk-13: New INV-CHK-13 (next free number after INV-CHK-12)
+    #   inv-chk-10: Reuse the gap INV-CHK-10
+    # basis: <percheron>/roles/shaper.md:revising
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/place-hold/retired-wins-over-maintenance"
+    # class invariant · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: A tool retired while in maintenance: which refusal does Place Hold give?
+    # * retired: tool-retired
+    #   maintenance: tool-in-maintenance
+    # basis: maintenance-shape-2026-11/schedule-tool-maintenance/retired-in-maintenance-refused; maintenance-model-2026-11/maintenance-tracking/retire-ends-maintenance
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-catalog/completed-restores-as-available"
+    # class read-model-shape · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: What status does the catalog show for a tool when its maintenance is completed?
+    # * available: Always available, with no due date and no holds waiting
+    #   recompute: Recompute status from current facts under the status rules
+    # basis: maintenance-model-report.md:22; stock-the-shed/slices/tool-catalog.md:56; decision schedule-tool-maintenance/available-definition
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-catalog/hidden-entry-kept-while-in-maintenance"
+    # class read-model-shape · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: Does the view keep a tool's entry while it is in maintenance, or rebuild it from Tool Added on completion?
+    # * keep: Keep the entry unlisted so completion can restore it
+    #   rebuild: Delete the entry and replay Tool Added
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:24
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-catalog/maintenance-events-on-unlisted-tools-are-noops"
+    # class invariant · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: What do Tool Maintenance Completed (for a retired, lost or not-in-maintenance tool) and Tool Maintenance Scheduled (for an unlisted tool) do to the catalog?
+    # * noop: Change nothing; a retired or lost tool is never restored
+    #   restore: Completed restores the tool whatever its history
+    # basis: stock-the-shed/slices/tool-catalog.md:117; decision complete-tool-maintenance/complete-retired-tool-refused; decision complete-tool-maintenance/complete-when-not-in-maintenance
+    ruling: confirm
+

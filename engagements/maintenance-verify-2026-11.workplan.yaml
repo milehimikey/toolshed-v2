@@ -1,0 +1,32 @@
+# Stage 3 of the maintenance-tracking feature: check each shaped slice doc against the
+# rulings made on it in stage 2. Read-only. The node keys are the stage 2 keys, so each node
+# is handed its own slice's decisions and rulings.
+workplanVersion: "0.1"
+defaults:
+  base: main
+  branchPrefix: verify/
+  briefs:
+    - toolshed.em
+    - keep-tools-in-working-order/keep-tools-in-working-order.em
+nodes:
+  - key: schedule-tool-maintenance
+    title: "Verify Schedule Tool Maintenance"
+    briefs: [keep-tools-in-working-order/slices/schedule-tool-maintenance.md]
+  - key: tool-maintenance
+    title: "Verify Tool Maintenance"
+    briefs: [keep-tools-in-working-order/slices/tool-maintenance.md]
+  - key: complete-tool-maintenance
+    title: "Verify Complete Tool Maintenance"
+    briefs: [keep-tools-in-working-order/slices/complete-tool-maintenance.md]
+  - key: tool-catalog
+    title: "Verify Tool Catalog"
+    briefs: [stock-the-shed/slices/tool-catalog.md]
+  - key: check-out-tool
+    title: "Verify Check Out Tool"
+    briefs: [borrow-and-return-a-tool/slices/check-out-tool.md]
+  - key: place-hold
+    title: "Verify Place Hold"
+    briefs: [hold-a-tool-for-pickup/slices/place-hold.md]
+  - key: retire-tool
+    title: "Verify Retire Tool"
+    briefs: [take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md]

@@ -1,0 +1,14 @@
+{
+  "nodes": {
+    "maintenance-slices": {
+      "state": "merged",
+      "refs": {
+        "branch": "ratify/maintenance-slices",
+        "base": "main",
+        "signedBy": "Mike Key"
+      },
+      "cause": "controller: pipeline accept",
+      "at": "2026-11-13T02:41:32.792Z"
+    }
+  }
+}

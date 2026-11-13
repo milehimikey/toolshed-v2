@@ -1,0 +1,59 @@
+# Stage 2 of the maintenance-tracking feature: shape the three new slices and revise the
+# four existing slice docs the model change touches. Built on the model branch, so main is
+# untouched until the owner merges.
+workplanVersion: "0.1"
+defaults:
+  base: model/maintenance-tracking
+  branchPrefix: maint/
+  briefs:
+    - toolshed.em
+    - keep-tools-in-working-order/keep-tools-in-working-order.em
+    - constitution.md
+    - .event-modeling.md
+    - .percheron/handoff/maintenance-model-report.md
+    - .percheron/handoff/maintenance-model-decisions.json
+    - .claude/skills/event-modeling-shared/templates/slice.md
+    - .claude/skills/event-modeling-shared/reference/slice-doc-schema.md
+nodes:
+  - key: schedule-tool-maintenance
+    title: "Shape Schedule Tool Maintenance"
+    briefs: [keep-tools-in-working-order/slices/schedule-tool-maintenance.md]
+    facts: { pattern: state-change }
+  - key: tool-maintenance
+    title: "Shape Tool Maintenance"
+    dependsOn: [schedule-tool-maintenance]
+    briefs: [keep-tools-in-working-order/slices/tool-maintenance.md]
+    facts: { pattern: state-view }
+  - key: complete-tool-maintenance
+    title: "Shape Complete Tool Maintenance"
+    dependsOn: [schedule-tool-maintenance, tool-maintenance]
+    briefs: [keep-tools-in-working-order/slices/complete-tool-maintenance.md]
+    facts: { pattern: state-change }
+  - key: tool-catalog
+    title: "Revise Tool Catalog for maintenance"
+    dependsOn: [schedule-tool-maintenance, complete-tool-maintenance]
+    briefs: [stock-the-shed/slices/tool-catalog.md]
+    facts:
+      pattern: state-view
+      change: "Tool Catalog gained two continuations in the model: it now hears Tool Maintenance Scheduled (the tool leaves the catalog) and Tool Maintenance Completed (the tool is back and available). Revise the doc for those two events only."
+  - key: check-out-tool
+    title: "Revise Check Out Tool for maintenance"
+    dependsOn: [schedule-tool-maintenance]
+    briefs: [borrow-and-return-a-tool/slices/check-out-tool.md]
+    facts:
+      pattern: state-change
+      change: "A tool can now be in maintenance (Tool Maintenance Scheduled, until Tool Maintenance Completed or Tool Retired). Check Out Tool must refuse a tool that is in maintenance. The model elements of this slice did not change. Revise the doc for that rule only."
+  - key: place-hold
+    title: "Revise Place Hold for maintenance"
+    dependsOn: [schedule-tool-maintenance]
+    briefs: [hold-a-tool-for-pickup/slices/place-hold.md]
+    facts:
+      pattern: state-change
+      change: "A tool can now be in maintenance (Tool Maintenance Scheduled, until Tool Maintenance Completed or Tool Retired). Place Hold must refuse a tool that is in maintenance. The model elements of this slice did not change. Revise the doc for that rule only."
+  - key: retire-tool
+    title: "Revise Retire Tool for maintenance"
+    dependsOn: [schedule-tool-maintenance, tool-maintenance]
+    briefs: [take-a-tool-or-a-neighbor-out-of-the-shed/slices/retire-tool.md]
+    facts:
+      pattern: state-change
+      change: "A tool can now be in maintenance. Retiring a tool that is in maintenance is allowed and ends the maintenance: the Tool Maintenance view drops its row on Tool Retired. The model elements of this slice did not change. Revise the doc to say so, and nothing else."

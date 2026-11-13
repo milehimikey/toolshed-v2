@@ -1,0 +1,66 @@
+# percheron engagement: stage 2 of the maintenance-tracking feature. Agents shape the three
+# new slice docs and revise four existing ones, recording decisions. The owner rules with a
+# review file; overrules rerun the slices that depended on them.
+#   percheron run        engagements/maintenance-shape-2026-11.yaml
+#   percheron decisions  engagements/maintenance-shape-2026-11.yaml --template > review.yaml
+#   percheron rule-batch engagements/maintenance-shape-2026-11.yaml review.yaml --dry-run
+# `<percheron>` stands for a local checkout of https://github.com/milehimikey/percheron; put its path back to run this spec.
+specVersion: "0.2"
+
+engagement:
+  name: maintenance-shape-2026-11
+  mode: build
+
+work:
+  provider: workplan
+  config:
+    file: maintenance-shape-2026-11.workplan.yaml
+  transitions:
+    onDispatch: shaping
+    onEscalate: stuck
+    onReopen: planned
+
+policy:
+  budgets:
+    perNode: { usd: 8, dispatchFloorUsd: 0.5 }
+    perTask: { usd: 4, maxTurns: 60, wallClock: 20m }
+
+scheduling:
+  maxConcurrent: 3
+
+decisions:
+  classes:
+    - field-shape          # a field's name, type, required flag or validation rule
+    - invariant            # a business rule the slice enforces, and its exact wording
+    - error-flow           # what happens when a command is refused, repeated or conflicts
+    - actor                # who or what may issue a command or see a view
+    - read-model-shape     # what a view shows, how rows are keyed, ordered and removed
+    - automation-trigger   # when an automation acts and what it does on failure
+    - naming               # a name the model does not fix
+    - model-change         # a change to the model the shaper would make but must not
+
+roles:
+  shaper: { adapter: local-subagent, model: sonnet }
+
+adapters:
+  local-subagent:
+    repoRoot: ..
+    stateDir: ../.percheron/maintenance-shape   # its own state: .percheron/worktrees still holds the October benchmark worktrees for some of these slice keys
+
+pipeline:
+  entry: shape
+  guards: { maxRounds: 2, maxHops: 8 }
+  steps:
+    - id: shape
+      kind: agent
+      role: shaper
+      contract: <percheron>/roles/shaper.md
+      produces: [report, decision]
+      on: { done: validate, handoff: validate, blocked: escalate, failed: shape }
+
+    - id: validate
+      kind: check
+      run:
+        - ["em", "validate", "toolshed.em"]
+        - ["sh", "<percheron>/examples/em-shaping/check-shape.sh", "toolshed.em", "{node.key}", "model/maintenance-tracking"]
+      on: { done: node-done, failed: shape }

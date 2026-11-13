@@ -1,0 +1,53 @@
+# percheron engagement: stage 3 of the maintenance-tracking feature. A read-only agent checks
+# each slice doc against the rulings the owner made on it in stage 2. Nothing is copied from
+# stage 2: the decisions and rulings are read from its ledger (`upstream`).
+#   percheron run    engagements/maintenance-verify-2026-11.yaml
+#   percheron status engagements/maintenance-verify-2026-11.yaml
+# `<percheron>` stands for a local checkout of https://github.com/milehimikey/percheron; put its path back to run this spec.
+specVersion: "0.2"
+
+engagement:
+  name: maintenance-verify-2026-11
+  mode: investigate
+
+work:
+  provider: workplan
+  config:
+    file: maintenance-verify-2026-11.workplan.yaml
+  transitions:
+    onDispatch: verifying
+    onEscalate: stuck
+    onReopen: planned
+
+upstream:
+  - spec: maintenance-shape-2026-11.yaml
+    decisions: same-node
+    wait: ruled
+
+policy:
+  budgets:
+    perNode: { usd: 2, dispatchFloorUsd: 0.3 }
+    perTask: { usd: 1.5, maxTurns: 40, wallClock: 10m }
+
+scheduling:
+  maxConcurrent: 4
+
+roles:
+  verifier: { adapter: local-subagent, model: sonnet }
+
+adapters:
+  local-subagent:
+    repoRoot: ..
+    stateDir: ../.percheron/maintenance-verify
+
+pipeline:
+  entry: verify
+  guards: { maxRounds: 1, maxHops: 4 }
+  steps:
+    - id: verify
+      kind: agent
+      role: verifier
+      readOnly: true
+      contract: <percheron>/roles/verifier.md
+      produces: [findings, report]
+      on: { done: node-done, blocked: escalate, failed: escalate }

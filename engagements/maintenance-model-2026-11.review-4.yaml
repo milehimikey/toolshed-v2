@@ -1,0 +1,62 @@
+# Review file for maintenance-model-2026-11: 6 decision(s) awaiting a ruling.
+# Fill in `ruling` on the ones you want to rule on, then:
+#   percheron rule-batch <engagement.yaml> <this file> --dry-run    (shows what would rerun)
+#   percheron rule-batch <engagement.yaml> <this file>
+#
+#   ruling: confirm | except | overrule
+#   choice: <option id>     overrule with one of the options listed
+#   own: "<your option>"   overrule with an option of your own
+#   reason: "<why>"        required for except and overrule
+#   classWide: true         make this ruling a precedent for its class
+# An entry with an empty ruling is skipped and stays in the queue.
+by: operator
+rulings:
+  - decision: "maintenance-model-2026-11/maintenance-tracking/add-tasks-from-value"
+    # class command · costly to undo · confidence medium · consumed by 1 node(s)
+    # Q: How is Add Tool Maintenance Tasks made safe to repeat, so that a retry doesn't add the same tasks twice?
+    # * from-task-count: It carries fromTaskCount: Int, the number of tasks the manager saw. If the tool's task count has moved on, a repeat adds nothing; the event records fromTaskCount
+    #   dedupe-text: Drop tasks whose text is already on the tool
+    # basis: constitution.md:183-187; borrow-and-return-a-tool/borrow-and-return-a-tool.em:23-24
+    ruling:
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-notes-shape"
+    # class event · costly to undo · confidence medium · consumed by 1 node(s)
+    # Q: How are the free-text maintenance notes the ruling asks for carried?
+    # * notes-per-entry: A single optional notes: Text on Schedule Tool Maintenance and on Add Tool Maintenance Tasks, and their events. Tool Maintenance shows every entry's notes as notes: Text[]
+    #   notes-per-task: Each task becomes a structured type { task, note }
+    #   separate-note-command: A separate Add Maintenance Note command and event
+    # basis: ruling maintenance-model-2026-11/maintenance-tracking/maintenance-events; decision maintenance-model-2026-11/maintenance-tracking/tasks-shape; constitution.md:192
+    ruling:
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/add-tasks-command"
+    # class command · costly to undo · confidence high · consumed by 1 node(s)
+    # Q: How does the shed manager add new tasks to a tool that is already in maintenance?
+    # * separate-add: A new state change: Add Tool Maintenance Tasks, issued from the Tool Maintenance screen, records Tool Maintenance Tasks Added and loops back to Tool Maintenance
+    #   reschedule-appends: Schedule Tool Maintenance on a tool already in maintenance appends the new tasks
+    # basis: ruling maintenance-model-2026-11/maintenance-tracking/maintenance-events; decision maintenance-model-2026-11/maintenance-tracking/schedule-only-when-available; constitution.md:183-187; keep-tools-in-working-order/keep-tools-in-working-order.em:22-26
+    ruling:
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/manager-identity-shape"
+    # class event · costly to undo · confidence medium · consumed by 0 node(s)
+    # Q: What is the signed-in shed manager's identity that the handler assigns to scheduledBy and addedBy, and what type does it have in the model?
+    # * text-name: Text: the shed manager's name as sign-in supplies it, assigned to scheduledBy: Text assigned and addedBy: Text assigned
+    #   manager-id: A new ShedManagerId id type, assigned to scheduledBy: ShedManagerId
+    # basis: ruling maintenance-model-2026-11/maintenance-tracking/scheduled-by-shape; constitution.md:166-171; constitution.md:213-220; keep-tools-in-working-order/keep-tools-in-working-order.em:14; toolshed.em:3-4
+    ruling:
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/add-tasks-names"
+    # class naming · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What are the new command, event and slice called?
+    # * add-tool-maintenance-tasks: Add Tool Maintenance Tasks / Tool Maintenance Tasks Added (by addedBy, at addedAt)
+    #   extend-maintenance: Extend Tool Maintenance / Tool Maintenance Extended
+    # basis: decision maintenance-model-2026-11/maintenance-tracking/maintenance-names; stock-the-shed/stock-the-shed.em:5-6
+    ruling:
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/tool-maintenance-view-fields"
+    # class view · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What does the Tool Maintenance view show now that maintenance has a scheduler, notes and later-added tasks?
+    # * accumulated-row: Still one row per tool: toolId, toolName, scheduledBy, scheduledAt, plus derived tasks (every task, scheduled and added), notes (every entry's notes), taskCount (feeds fromTaskCount) and lastAddedAt. Tool Maintenance Tasks Added feeds it by loops-to, like Completed
+    #   entry-history: A list of entries, each with { tasks, notes, by, at }
+    # basis: decision maintenance-model-2026-11/maintenance-tracking/maintenance-view; keep-tools-in-working-order/keep-tools-in-working-order.em:13-16
+    ruling:
+

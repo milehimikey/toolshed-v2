@@ -1,0 +1,8 @@
+# Fifth review of the model (2026-11-12): the owner's ruling on scheduling a tool that is
+# already in maintenance. The other five waiting model decisions are not ruled on here.
+by: mikey
+rulings:
+  - decision: "maintenance-model-2026-11/maintenance-tracking/add-tasks-command"
+    ruling: overrule
+    own: "Scheduling maintenance for a tool that is already in maintenance is allowed, and it edits the tool's scheduled tasks. It is not refused."
+    reason: "Owner: for scheduling while already in maintenance, make it allow edits to the scheduled tasks instead. The owner asked for edits, not only additions, so the shed manager must be able to change the task list of a tool in maintenance, including removing or rewording a task. Decide and record how the model carries that, and whether a separate Add Tool Maintenance Tasks is still needed once scheduling can edit."

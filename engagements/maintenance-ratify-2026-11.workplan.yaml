@@ -1,0 +1,9 @@
+# Stage 4 of the maintenance-tracking feature: record the review and the ratification of the
+# seven slice docs, as one change on one branch.
+workplanVersion: "0.1"
+defaults:
+  base: main
+  branchPrefix: ratify/
+nodes:
+  - key: maintenance-slices
+    title: "Review and ratify the maintenance slice docs"

@@ -1,0 +1,14 @@
+# Stage 1 of the maintenance-tracking feature: one node, the model change.
+workplanVersion: "0.1"
+defaults:
+  base: main
+  branchPrefix: model/
+  briefs:
+    - toolshed.em
+    - constitution.md
+    - .event-modeling.md
+nodes:
+  - key: maintenance-tracking
+    title: "Model: tool maintenance tracking"
+    facts:
+      direction: "Add a maintenance tracking component for tools in the shed that allows a tool owner to track what tools need attention such as sharpening, cleaning, tuning, etc. and take the tools scheduled for maintenance out of the catalog."

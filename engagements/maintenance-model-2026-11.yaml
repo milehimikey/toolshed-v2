@@ -1,0 +1,74 @@
+# percheron engagement: stage 1 of the maintenance-tracking feature. An agent extends the
+# model from the owner's direction and records its decisions. The owner rules, then merges
+# model/maintenance-tracking to accept it. Stage 2 shapes the new slices.
+#   percheron validate engagements/maintenance-model-2026-11.yaml
+#   percheron run      engagements/maintenance-model-2026-11.yaml
+#   percheron decisions engagements/maintenance-model-2026-11.yaml --template > review.yaml
+# `<percheron>` stands for a local checkout of https://github.com/milehimikey/percheron; put its path back to run this spec.
+specVersion: "0.2"
+
+engagement:
+  name: maintenance-model-2026-11
+  mode: build
+
+work:
+  provider: workplan
+  config:
+    file: maintenance-model-2026-11.workplan.yaml
+  transitions:
+    onDispatch: modelling
+    onGateParked: awaiting-merge
+    onGateCleared: merged
+    onEscalate: stuck
+    onReopen: planned
+
+policy:
+  mergeAuthority: human
+  budgets:
+    perNode: { usd: 25, dispatchFloorUsd: 1 }
+    perTask: { usd: 10, maxTurns: 100, wallClock: 30m }
+
+decisions:
+  classes:
+    - event             # which facts become events, and what they carry
+    - command           # what can be asked of the system, and what it carries
+    - view              # what read models exist and what they show
+    - actor             # who or what may issue a command or see a view
+    - lifecycle         # the states a thing moves through and what moves it
+    - boundary          # which context, storyline or slice something belongs to
+    - naming            # what a new thing is called
+    - existing-change   # a change to an element of an existing slice
+    - scope             # something the direction might imply that was left out
+
+roles:
+  modeler: { adapter: local-subagent, model: opus }
+
+adapters:
+  local-subagent:
+    repoRoot: ..
+    stateDir: ../.percheron
+
+pipeline:
+  entry: model
+  guards: { maxRounds: 2, maxHops: 10 }
+  steps:
+    - id: model
+      kind: agent
+      role: modeler
+      contract: <percheron>/roles/modeler.md
+      produces: [report, decision]
+      on: { done: validate, handoff: validate, blocked: escalate, failed: model }
+
+    - id: validate
+      kind: check
+      run:
+        - ["em", "validate", "toolshed.em"]
+        - ["sh", "<percheron>/examples/em-shaping/check-model.sh", "toolshed.em", "main"]
+      on: { done: accept, failed: model }
+
+    - id: accept
+      kind: human
+      gate:
+        summary: "Model change ready: rule on its decisions, then merge model/maintenance-tracking to accept"
+      acceptance: { observer: git-merged, candidateRef: branch, verdicts: [merged] }
+      on: { done: node-done, failed: escalate }

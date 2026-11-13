@@ -1,0 +1,8 @@
+# Fourth review of the shaped slices (2026-11-12): carries the owner's ruling on scheduling a
+# tool already in maintenance into this stage. The other waiting decisions are not ruled on.
+by: mikey
+rulings:
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/already-in-maintenance-refusal"
+    ruling: overrule
+    own: "Scheduling a tool that is already in maintenance is not refused: it edits the tool's scheduled tasks and notes, and records Tool Maintenance Tasks Changed."
+    reason: "Owner: for scheduling while already in maintenance, make it allow edits to the scheduled tasks instead. The model has changed to match: Schedule Tool Maintenance has two outcomes, there is no Add Tool Maintenance Tasks any more, and the view hears Tool Maintenance Tasks Changed. Reshape against the model as it is now, and withdraw any earlier decision of yours whose question no longer arises."

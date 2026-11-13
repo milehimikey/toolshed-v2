@@ -1,0 +1,8 @@
+# Second review of the shaped slices (2026-11-12): carries the owner's model ruling on
+# identity into this stage, so the slices shaped against the earlier model are redone.
+by: mikey
+rulings:
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/scheduled-by-limits"
+    ruling: overrule
+    own: "scheduledBy is not input and has no input rules: the handler assigns it from the signed-in shed manager's identity."
+    reason: "Owner: scheduledBy should come from the signed-in identity. The model has changed to match (scheduledBy and addedBy are assigned, and no command carries them); reshape against the model as it is now."

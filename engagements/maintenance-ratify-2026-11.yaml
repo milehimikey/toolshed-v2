@@ -1,0 +1,79 @@
+# percheron engagement: stage 4 of the maintenance-tracking feature. No agent runs here.
+# It waits until every stage 2 decision is ruled and every stage 3 check has passed, records
+# the review, parks for the owner's sign-off, records the ratification in the name given at
+# the sign-off, and waits for the merge.
+#   percheron run    engagements/maintenance-ratify-2026-11.yaml
+#   percheron accept engagements/maintenance-ratify-2026-11.yaml --all --by "<your roster name>"
+#   percheron run    engagements/maintenance-ratify-2026-11.yaml
+# `<percheron>` stands for a local checkout of https://github.com/milehimikey/percheron; put its path back to run this spec.
+specVersion: "0.2"
+
+engagement:
+  name: maintenance-ratify-2026-11
+  mode: build
+
+work:
+  provider: workplan
+  config:
+    file: maintenance-ratify-2026-11.workplan.yaml
+  transitions:
+    onDispatch: reviewing
+    onGateParked: awaiting-merge
+    onGateCleared: merged
+    onEscalate: stuck
+    onReopen: planned
+
+upstream:
+  - spec: maintenance-shape-2026-11.yaml
+    decisions: all
+    wait: ruled
+  - spec: maintenance-verify-2026-11.yaml
+    decisions: all
+    wait: settled
+
+policy:
+  mergeAuthority: human
+
+roles:
+  none: { adapter: local-subagent }
+
+adapters:
+  local-subagent:
+    repoRoot: ..
+    stateDir: ../.percheron/maintenance-ratify
+
+pipeline:
+  entry: review
+  guards: { maxRounds: 1, maxHops: 6 }
+  steps:
+    # The owner ruled on every decision behind these docs (stage 2) and each doc was checked
+    # against those rulings (stage 3). That is the review; it is recorded in the owner's
+    # roster name.
+    - id: review
+      kind: check
+      run:
+        - ["em", "validate", "toolshed.em"]
+        - ["sh", "<percheron>/examples/em-shaping/review-slices.sh", "toolshed.em", "Mike Key",
+           "schedule-tool-maintenance", "tool-maintenance", "complete-tool-maintenance", "tool-catalog", "check-out-tool", "place-hold", "retire-tool"]
+      on: { done: sign-off, failed: escalate }
+
+    - id: sign-off
+      kind: human
+      gate:
+        summary: "Ratify the seven maintenance slice docs: each is ready to implement as written"
+      acceptance: { observer: sign-off }
+      on: { done: ratify, failed: escalate }
+
+    - id: ratify
+      kind: check
+      run:
+        - ["sh", "<percheron>/examples/em-shaping/ratify-slices.sh", "toolshed.em", "{node.signedBy}",
+           "schedule-tool-maintenance", "tool-maintenance", "complete-tool-maintenance", "tool-catalog", "check-out-tool", "place-hold", "retire-tool"]
+      on: { done: accept, failed: escalate }
+
+    - id: accept
+      kind: human
+      gate:
+        summary: "Ratification recorded on ratify/maintenance-slices: merge it to accept"
+      acceptance: { observer: git-merged, candidateRef: branch, verdicts: [merged] }
+      on: { done: node-done, failed: escalate }

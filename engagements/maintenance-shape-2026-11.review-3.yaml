@@ -1,0 +1,175 @@
+# Review file for maintenance-shape-2026-11: 20 decision(s) awaiting a ruling.
+# Fill in `ruling` on the ones you want to rule on, then:
+#   percheron rule-batch <engagement.yaml> <this file> --dry-run    (shows what would rerun)
+#   percheron rule-batch <engagement.yaml> <this file>
+#
+#   ruling: confirm | except | overrule
+#   choice: <option id>     overrule with one of the options listed
+#   own: "<your option>"   overrule with an option of your own
+#   reason: "<why>"        required for except and overrule
+#   classWide: true         make this ruling a precedent for its class
+# An entry with an empty ruling is skipped and stays in the queue.
+by: operator
+rulings:
+  - decision: "maintenance-shape-2026-11/tool-maintenance/repeat-scheduled-needs-event"
+    # class model-change · costly to undo · confidence medium · consumed by 3 node(s)
+    # Q: Does the model need a way to record tasks given when an in-maintenance tool is scheduled again?
+    # * none: No change; the Schedule slice may refuse and point to Add Tool Maintenance Tasks, or emit Tool Maintenance Tasks Added
+    #   new-event: Add a dedicated event for the repeat case
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:22-26
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/notes-shape"
+    # class field-shape · cheap to undo · confidence medium · consumed by 8 node(s)
+    # Q: What are the shape and limit of the notes field?
+    # * optional-5000: Optional single Text, trimmed, empty means absent, at most 5000 characters, refused notes-too-long
+    #   unbounded: Optional Text with no limit
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:10; constitution.md:192
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/task-length-limit"
+    # class field-shape · cheap to undo · confidence medium · consumed by 8 node(s)
+    # Q: How many characters may one task have, now that 100 was overruled?
+    # * 1000: 1000 characters
+    #   500: 500 characters
+    #   none: No limit
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:3; .percheron/handoff/maintenance-model-report.md:25
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/already-in-maintenance-refusal"
+    # class error-flow · cheap to undo · confidence high · consumed by 8 node(s)
+    # Q: How is a repeat schedule of a tool already in maintenance refused so new tasks are not lost?
+    # * refuse: Refuse with tool-in-maintenance, pointing to Add Tool Maintenance Tasks
+    #   noop: Succeed and record nothing
+    #   merge: Record Tasks Added from this command
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:23; .percheron/handoff/maintenance-model-report.md:30; constitution.md:174
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/check-order-after-change"
+    # class error-flow · cheap to undo · confidence high · consumed by 8 node(s)
+    # Q: Where do the new scheduledBy and notes checks sit in the refusal order?
+    # * input-first: scheduledBy, tasks, notes, then existence and state checks
+    #   notes-last: Notes after state checks
+    # basis: keep-tools-in-working-order/slices/schedule-tool-maintenance.md:330
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/signed-in-without-identity-name"
+    # class error-flow · cheap to undo · confidence low · consumed by 7 node(s)
+    # Q: What if the caller has the shed-manager role but sign-in supplies no identity name to assign?
+    # * not-signed-in: Refuse with the existing not-signed-in
+    #   record-blank: Record the event with scheduledBy absent
+    # basis: constitution.md:166; constitution.md:213
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/added-by-source"
+    # class actor · cheap to undo · confidence medium · consumed by 7 node(s)
+    # Q: Where does the assigned addedBy value come from, given sign-in supplies only a role for the shed manager?
+    # * signin-identity: The identity the sign-in layer supplies with the request; an ignored caller-sent value
+    #   role-literal: Always the literal 'shed-manager'
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:3-6 (base model/maintenance-tracking); constitution.md:166; constitution.md:213
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/last-added-at-before-first-add"
+    # class read-model-shape · cheap to undo · confidence medium · consumed by 4 node(s)
+    # Q: What does lastAddedAt hold before any tasks have been added to the entry?
+    # * absent: Absent until the first Tool Maintenance Tasks Added
+    #   scheduled-at: Start equal to scheduledAt
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:13; .percheron/handoff/maintenance-model-report.md
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/notes-list-omits-empty"
+    # class read-model-shape · cheap to undo · confidence medium · consumed by 4 node(s)
+    # Q: How are notes listed on the row when some events have none?
+    # * omit: Append only notes that are present, in order recorded
+    #   blank-entries: One entry per event, blank when none
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:4; maintenance-model-decisions.json: maintenance-notes-shape
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/view-tasks-no-cap-no-dedup"
+    # class field-shape · cheap to undo · confidence medium · consumed by 4 node(s)
+    # Q: Does the view cap the task count or drop repeated tasks across batches?
+    # * as-recorded: No cap, no dedup; show tasks as recorded
+    #   cap-10: Keep the old 1-10 entries limit
+    # basis: keep-tools-in-working-order/slices/tool-maintenance.md:80; task-length-limit decision in force
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/view-applies-added-by-from-count"
+    # class invariant · cheap to undo · confidence high · consumed by 4 node(s)
+    # Q: How does the view avoid adding the same batch of tasks twice when Tool Maintenance Tasks Added is replayed?
+    # * match-count: Apply only if fromTaskCount equals the entry's taskCount; otherwise ignore
+    #   always-append: Always append
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:24; maintenance-model-decisions.json: add-tasks-from-value
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/repeat-scheduled-appends-in-view"
+    # class invariant · cheap to undo · confidence medium · consumed by 3 node(s)
+    # Q: What does the view do with a Tool Maintenance Scheduled for a tool that already has an entry, given the owner's ruling that new tasks must not be lost?
+    # * append: Append its tasks and notes to the entry if scheduledAt is later than the entry's latest recorded time; otherwise treat as replay
+    #   ignore: Leave the entry as it was (previous behaviour)
+    # basis: keep-tools-in-working-order/slices/tool-maintenance.md:INV-TMNT-6; ruling on schedule-tool-maintenance/repeat-while-in-maintenance
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/task-limits"
+    # class field-shape · cheap to undo · confidence low · consumed by 1 node(s)
+    # Q: What are the shape and limits of the tasks list on one addition?
+    # * 50-1000-drop-empty: Trim each task, drop empty ones, at least 1, at most 50 per addition, each at most 1000 characters, no dedup
+    #   no-count-limit: No limit on the number of tasks
+    # basis: maintenance-shape-2026-11/schedule-tool-maintenance/task-length-limit (decision in force); maintenance-shape-2026-11/tool-maintenance/view-tasks-no-cap-no-dedup (decision in force); constitution.md:Amendment 7 (empty text is absent)
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/invariant-ids-prefix"
+    # class naming · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What abbreviation prefixes this slice's invariant ids?
+    # * atmt: INV-ATMT-<n>
+    #   atm: INV-ATM-<n>
+    # basis: maintenance-shape-2026-11/tool-maintenance/invariant-ids-prefix (confirmed, INV-TMNT)
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/notes-optional-in-model"
+    # class model-change · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: Should the model declare notes as optional on Add Tool Maintenance Tasks and Tool Maintenance Tasks Added?
+    #   declare-optional: Change the model to notes?: Text
+    # * keep-model: Leave notes: Text and treat it as optional in the slice
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:24-25; keep-tools-in-working-order/slices/add-tool-maintenance-tasks.md:300
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/repeat-and-conflict-rule"
+    # class invariant · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What counts as a safe repeat now addedBy is not part of the request?
+    # * count-tasks-notes: Same fromTaskCount, tasks and notes in the current maintenance, whoever the shed manager
+    #   include-added-by: Also require the same assigned addedBy
+    # basis: keep-tools-in-working-order/slices/add-tool-maintenance-tasks.md:129-140
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/repeat-scope-current-maintenance"
+    # class invariant · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: Which earlier additions can a repeat match?
+    # * current-period: Only additions since the tool's latest Tool Maintenance Scheduled
+    #   any-period: Any addition ever recorded for the tool
+    # basis: tool-maintenance/reschedule-gets-fresh-row (decision in force); tool-maintenance/view-applies-added-by-from-count (decision in force)
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/added-by-and-notes-limits"
+    # class field-shape · cheap to undo · confidence high · consumed by 1 node(s)
+    # Q: What limits apply to addedBy and notes?
+    # * notes-only: addedBy is assigned so has no input limits; notes optional, at most 5000
+    #   same-as-schedule: addedBy required at most 100 typed by caller
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:23-24 (base)
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/refusal-names-and-order"
+    # class error-flow · cheap to undo · confidence high · consumed by 1 node(s)
+    # Q: What are the refusal reasons and the check order after addedBy stopped being input?
+    # * drop-added-by-reasons: Drop added-by-missing and added-by-too-long; keep the rest in schedule order
+    #   keep-reasons: Keep them
+    # basis: keep-tools-in-working-order/slices/add-tool-maintenance-tasks.md:344
+    ruling:
+
+  - decision: "maintenance-shape-2026-11/add-tool-maintenance-tasks/retired-wins-over-not-in-maintenance"
+    # class invariant · cheap to undo · confidence high · consumed by 1 node(s)
+    # Q: A retired tool that was in maintenance: tool-retired or tool-not-in-maintenance?
+    # * retired: tool-retired (Tool Retired or Tool Lost both count)
+    #   not-in-maintenance: tool-not-in-maintenance
+    # basis: maintenance-shape-2026-11/schedule-tool-maintenance/retired-in-maintenance-refused (confirmed); maintenance-shape-2026-11/schedule-tool-maintenance/lost-tool-counts-as-retired (confirmed)
+    ruling:
+

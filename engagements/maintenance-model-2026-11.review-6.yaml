@@ -1,0 +1,72 @@
+# Review file for maintenance-model-2026-11: 7 decision(s) awaiting a ruling.
+# Fill in `ruling` on the ones you want to rule on, then:
+#   percheron rule-batch <engagement.yaml> <this file> --dry-run    (shows what would rerun)
+#   percheron rule-batch <engagement.yaml> <this file>
+#
+#   ruling: confirm | except | overrule
+#   choice: <option id>     overrule with one of the options listed
+#   own: "<your option>"   overrule with an option of your own
+#   reason: "<why>"        required for except and overrule
+#   classWide: true         make this ruling a precedent for its class
+# An entry with an empty ruling is skipped and stays in the queue.
+by: mikey
+rulings:
+  - decision: "maintenance-model-2026-11/maintenance-tracking/manager-identity-shape"
+    # class event · costly to undo · confidence medium · consumed by 1 node(s)
+    # Q: What is the signed-in shed manager's identity that the handler assigns to scheduledBy and addedBy, and what type does it have in the model?
+    # * text-name: Text: the shed manager's name as sign-in supplies it, assigned to scheduledBy: Text assigned and addedBy: Text assigned
+    #   manager-id: A new ShedManagerId id type, assigned to scheduledBy: ShedManagerId
+    # basis: ruling maintenance-model-2026-11/maintenance-tracking/scheduled-by-shape; constitution.md:166-171; constitution.md:213-220; keep-tools-in-working-order/keep-tools-in-working-order.em:14; toolshed.em:3-4
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-edit-shape"
+    # class event · costly to undo · confidence medium · consumed by 0 node(s)
+    # Q: How does the model carry Schedule Tool Maintenance editing the task list of a tool that is already in maintenance, including removing or rewording a task?
+    # * replace-alternative-event: Schedule Tool Maintenance carries the whole task list and notes. On a tool not in maintenance it records Tool Maintenance Scheduled. On a tool already in maintenance it records the alternative outcome Tool Maintenance Tasks Changed { toolId, tasks, notes, changedBy assigned, changedAt assigned }, which replaces the list and notes. If the list and notes are the same as now, it records nothing
+    #   re-record-scheduled: Record Tool Maintenance Scheduled again with the new list
+    #   per-task-events: Separate per-task events (Task Added, Task Removed, Task Reworded), with tasks keyed by an id
+    # basis: ruling maintenance-model-2026-11/maintenance-tracking/add-tasks-command: scheduling a tool already in maintenance edits its scheduled tasks, including removing or rewording; constitution.md:183-187 (Amendment 7: a command that changes something is safe to repeat; state-setting commands carry no 'from' value); em-dsl.md validate rule 1: alternative outcomes of one command are one slice, written with `oneof { event A … event B … }`; keep-tools-in-working-order/keep-tools-in-working-order.em:11-18
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-notes-shape"
+    # class event · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: How are the free-text maintenance notes the ruling asks for carried?
+    # * notes-replaced: One optional notes: Text on Schedule Tool Maintenance and on both of its outcomes. An edit replaces it the same way it replaces the tasks, and Tool Maintenance shows the current notes: Text
+    #   notes-per-entry: Notes per entry, all shown as notes: Text[] (the round-2/3 choice)
+    # basis: ruling maintenance-events ('allow notes'); ruling add-tasks-command (edits, including removing or rewording); constitution.md:192 (empty text after trimming is absent)
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/tool-maintenance-view-fields"
+    # class view · cheap to undo · confidence medium · consumed by 1 node(s)
+    # Q: What does the Tool Maintenance view show now that scheduling can edit the tasks and notes?
+    # * current-row-with-last-change: One row per tool: toolId, toolName, scheduledBy, scheduledAt, tasks and notes (current, derived from Scheduled and Tasks Changed), and lastChangedBy and lastChangedAt (derived from Tasks Changed, absent until the first edit). Tasks Changed feeds it by 'updates from'
+    #   current-row-only: Current tasks and notes only, with no last-changed fields
+    #   accumulated-row: The round-2/3 accumulated row (all tasks ever, taskCount, lastAddedAt)
+    # basis: ruling maintenance-events ('how would I track the new tasks?'); ruling scheduled-by-shape (who acted comes from sign-in); chase-an-overdue-loan/chase-an-overdue-loan.em:4 (derived from two events pattern); keep-tools-in-working-order/keep-tools-in-working-order.em:20
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/edit-entry-screen"
+    # class command · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: From which screen does the shed manager issue the editing Schedule Tool Maintenance?
+    # * tool-inventory: From Tool Inventory, the command's single ui in the model. The screen that sends it pre-fills the current tasks and notes, which it reads from Tool Maintenance
+    #   both-screens: Also place the command on a second slice whose ui is Tool Maintenance
+    # basis: em-dsl.md validate rule 1 / command-repeated-across-slices; decision tool-inventory-unchanged (confirmed: Tool Inventory is the trigger screen); <percheron>/roles/modeler.md:33 (no new warning kinds)
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/edit-event-name"
+    # class naming · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: What is the event recorded when scheduling edits a tool already in maintenance, and what are its 'who' and 'when' fields called?
+    # * tasks-changed: Tool Maintenance Tasks Changed { …, changedBy, changedAt }
+    #   maintenance-changed: Tool Maintenance Changed
+    #   rescheduled: Tool Maintenance Rescheduled
+    # basis: ruling add-tasks-command ('edits the tool's scheduled tasks'); join-the-shed/join-the-shed.em (Neighbor Email Changed naming); decision maintenance-names (confirmed Tool Maintenance naming)
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/drop-add-tasks"
+    # class scope · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: Is a separate Add Tool Maintenance Tasks still needed once scheduling can edit the task list?
+    # * drop: No. Remove the round-2/3 slice, command, event and stub doc, because the edit through Schedule Tool Maintenance covers adding tasks
+    #   keep: Keep Add Tool Maintenance Tasks next to the edit as a shortcut for appending
+    # basis: ruling maintenance-model-2026-11/maintenance-tracking/add-tasks-command ('make it allow edits to the scheduled tasks instead'); constitution.md:186-187 (adding commands carry a 'from' value; state-setting ones don't)
+    ruling: confirm
+

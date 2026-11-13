@@ -1,0 +1,8 @@
+# Second review of the model, following the owner's rulings on the shaped slices (2026-11-12).
+# Three of those rulings need the model itself to change, which a shaper may not do.
+by: mikey
+rulings:
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-events"
+    ruling: overrule
+    own: "Tool Maintenance Scheduled also records who scheduled it; maintenance carries free-text notes as well as tasks; and tasks added to a tool that is already in maintenance are tracked, so the model needs a way to add them."
+    reason: "Owner, after reading the shaped slices: the event should record who scheduled maintenance; the task list should allow more characters and allow notes; and if a tool already in maintenance is scheduled again with new tasks, how would I track the new tasks?"

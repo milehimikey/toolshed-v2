@@ -1,0 +1,110 @@
+# Review file for maintenance-shape-2026-11: 12 decision(s) awaiting a ruling.
+# Fill in `ruling` on the ones you want to rule on, then:
+#   percheron rule-batch <engagement.yaml> <this file> --dry-run    (shows what would rerun)
+#   percheron rule-batch <engagement.yaml> <this file>
+#
+#   ruling: confirm | except | overrule
+#   choice: <option id>     overrule with one of the options listed
+#   own: "<your option>"   overrule with an option of your own
+#   reason: "<why>"        required for except and overrule
+#   classWide: true         make this ruling a precedent for its class
+# An entry with an empty ruling is skipped and stays in the queue.
+by: mikey
+rulings:
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/signed-in-without-identity-name"
+    # class error-flow · cheap to undo · confidence low · consumed by 8 node(s)
+    # Q: What if the caller has the shed-manager role but sign-in supplies no identity name to assign?
+    # * not-signed-in: Refuse with the existing not-signed-in
+    #   record-blank: Record the event with scheduledBy absent
+    # basis: constitution.md:166; constitution.md:213
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/notes-shape"
+    # class field-shape · cheap to undo · confidence medium · consumed by 8 node(s)
+    # Q: What are the shape and limit of the notes field?
+    # * optional-5000: Optional single Text, trimmed, empty means absent, at most 5000 characters, refused notes-too-long
+    #   unbounded: Optional Text with no limit
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:10; constitution.md:192
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/task-length-limit"
+    # class field-shape · cheap to undo · confidence medium · consumed by 8 node(s)
+    # Q: How many characters may one task have, now that 100 was overruled?
+    # * 1000: 1000 characters
+    #   500: 500 characters
+    #   none: No limit
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:3; .percheron/handoff/maintenance-model-report.md:25
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/check-order-after-change"
+    # class error-flow · cheap to undo · confidence high · consumed by 8 node(s)
+    # Q: Where do the identity and notes checks sit in the refusal order?
+    # * input-first: Sign-in (incl. identity name) and role, then tasks, then notes, then existence and state checks
+    #   state-first: Existence and state first
+    # basis: keep-tools-in-working-order/slices/schedule-tool-maintenance.md:Alternate & Error Flows
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/edit-skips-availability-checks"
+    # class error-flow · cheap to undo · confidence medium · consumed by 6 node(s)
+    # Q: Which checks apply when the command edits a tool already in maintenance, and in what order?
+    # * retired-then-edit: Auth, input, tool exists, retired, then edit (no loan/set-aside/holds checks)
+    #   all-checks: Run the loan, set-aside and holds checks on edits too
+    # basis: keep-tools-in-working-order/slices/schedule-tool-maintenance.md:Dependencies; keep-tools-in-working-order/keep-tools-in-working-order.em:4
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/edit-unchanged-comparison"
+    # class invariant · cheap to undo · confidence medium · consumed by 6 node(s)
+    # Q: When is a repeat of Schedule Tool Maintenance on a tool in maintenance 'the same' so that nothing is recorded?
+    # * exact-ordered: Tidied tasks equal the current tasks in the same order (exact, after trimming) and trimmed notes equal current notes (both absent equal)
+    #   as-set: Compare tasks ignoring order and case
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:4; constitution.md:183-186
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/schedule-tool-maintenance/edit-clears-notes"
+    # class field-shape · cheap to undo · confidence high · consumed by 6 node(s)
+    # Q: On an edit, does leaving notes out clear them or keep the current notes?
+    # * replace: Notes replace the current ones; absent clears them
+    #   keep: Absent notes keep the current notes
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:4; .percheron/handoff/maintenance-model-decisions.json: maintenance-notes-shape
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/view-tasks-no-cap-no-dedup"
+    # class field-shape · cheap to undo · confidence medium · consumed by 4 node(s)
+    # Q: Does the view cap the task count or drop repeated tasks across batches?
+    # * as-recorded: No cap, no dedup; show tasks as recorded
+    #   cap-10: Keep the old 1-10 entries limit
+    # basis: keep-tools-in-working-order/slices/tool-maintenance.md:80; task-length-limit decision in force
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/repeat-scheduled-appends-in-view"
+    # class invariant · cheap to undo · confidence high · consumed by 4 node(s)
+    # Q: What does the view do with a Tool Maintenance Scheduled for a tool that already has an entry, now that Schedule Tool Maintenance records Tool Maintenance Tasks Changed for a tool in maintenance?
+    # * ignore: Change nothing: it can only be a replay
+    #   replace: Treat it as a change and replace tasks and notes
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:17-18; keep-tools-in-working-order/keep-tools-in-working-order.em:3-8
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/changed-event-replaces-in-view"
+    # class read-model-shape · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: How does the view apply Tool Maintenance Tasks Changed, and does a replay need a guard?
+    # * replace: Replace tasks and notes with the event's; no guard, since the event carries the whole list
+    #   guard: Apply only if changedAt is later than lastChangedAt
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:4-6; keep-tools-in-working-order/keep-tools-in-working-order.em:20
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/last-changed-before-first-change"
+    # class read-model-shape · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: What do lastChangedBy and lastChangedAt hold before the tasks have been changed?
+    # * absent: Absent until the first Tool Maintenance Tasks Changed
+    #   scheduled: Fall back to scheduledBy and scheduledAt
+    # basis: keep-tools-in-working-order/keep-tools-in-working-order.em:20
+    ruling: confirm
+
+  - decision: "maintenance-shape-2026-11/tool-maintenance/notes-absent-when-none"
+    # class read-model-shape · cheap to undo · confidence high · consumed by 2 node(s)
+    # Q: With notes now a single Text, what does the row show when the latest event had no notes?
+    # * absent: Notes are absent
+    #   empty: Empty string
+    # basis: constitution.md (Amendment 7: text empty after trimming is absent); keep-tools-in-working-order/keep-tools-in-working-order.em:20
+    ruling: confirm
+

@@ -1,0 +1,102 @@
+# Review file for maintenance-model-2026-11: 11 decision(s) awaiting a ruling.
+# Fill in `ruling` on the ones you want to rule on, then:
+#   percheron rule-batch <engagement.yaml> <this file> --dry-run    (shows what would rerun)
+#   percheron rule-batch <engagement.yaml> <this file>
+#
+#   ruling: confirm | except | overrule
+#   choice: <option id>     overrule with one of the options listed
+#   own: "<your option>"   overrule with an option of your own
+#   reason: "<why>"        required for except and overrule
+#   classWide: true         make this ruling a precedent for its class
+# An entry with an empty ruling is skipped and stays in the queue.
+by: operator
+rulings:
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-events"
+    # class event · costly to undo · confidence medium · consumed by 0 node(s)
+    # Q: Which facts become events, and what do they carry?
+    # * scheduled-completed: Tool Maintenance Scheduled { toolId, toolName assigned, tasks: Text[], scheduledAt } and Tool Maintenance Completed { toolId, completedAt }
+    #   per-task-events: One event per task (Tool Sharpening Scheduled, ...) or a task-completed event per task
+    # basis: direction; .event-modeling.md:610-611; .event-modeling.md:412-417
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/one-step-lifecycle"
+    # class lifecycle · costly to undo · confidence medium · consumed by 0 node(s)
+    # Q: Does a tool move in maintenance → back, or through a separate 'needs attention' state that stays in the catalog before it is scheduled out?
+    # * two-states: Scheduled (out of catalog) and Completed (back in), two events
+    #   three-states: Needs Attention (still lendable), then Scheduled (out), then Completed
+    #   future-date: Scheduled for a future date; the tool leaves the catalog on that date
+    # basis: direction; constitution.md:197-198; .event-modeling.md:154-155
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/schedule-only-when-available"
+    # class scope · costly to undo · confidence medium · consumed by 0 node(s)
+    # Q: Which tools can be scheduled for maintenance: any tool, or only one that is in the shed and available?
+    # * available-only: Only a tool in the shed and available (not on loan, not set aside, no holds waiting, not retired, not already in maintenance)
+    #   any-time: Any time, including on loan or with holds waiting; it goes to maintenance on return
+    # basis: direction; .event-modeling.md:288-289; modeler role contract: 'Keep each such change as small as it can be'
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/tasks-shape"
+    # class event · costly to undo · confidence medium · consumed by 0 node(s)
+    # Q: How is 'what attention the tool needs' captured?
+    # * text-list: tasks: Text[] of free text (e.g. 'sharpen', 'clean')
+    #   enum: A fixed set of kinds (sharpening, cleaning, tuning, other)
+    #   single-text: One free-text description
+    # basis: direction; .event-modeling.md:437-439
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-actor"
+    # class actor · costly to undo · confidence high · consumed by 0 node(s)
+    # Q: Who is the 'tool owner' who tracks and schedules maintenance?
+    # * shed-manager: The existing Shed Manager persona
+    #   new-tool-owner-persona: A new Tool Owner persona
+    # basis: .event-modeling.md:97-101; toolshed.em:3-4; stock-the-shed/stock-the-shed.em:3-6
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/tool-inventory-unchanged"
+    # class existing-change · cheap to undo · confidence low · consumed by 0 node(s)
+    # Q: Should Tool Inventory, where Schedule Tool Maintenance is issued, also hear the maintenance events?
+    # * unchanged: No; Tool Inventory is only the trigger screen; repeats are safe (Amendment 7)
+    #   hears-maintenance: Tool Inventory hears both events and gains inMaintenance / canScheduleMaintenance
+    # basis: constitution.md:183-187; stock-the-shed/stock-the-shed.em:9
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-names"
+    # class naming · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: What are the new commands, events, view and storyline called?
+    # * tool-maintenance: Schedule/Complete Tool Maintenance; Tool Maintenance Scheduled/Completed; view and screen Tool Maintenance; storyline 'Keep tools in working order'
+    #   maintenance: Schedule/Complete Maintenance; Maintenance Scheduled/Completed; Maintenance Queue
+    # basis: stock-the-shed/stock-the-shed.em:6; take-a-tool-or-a-neighbor-out-of-the-shed/take-a-tool-or-a-neighbor-out-of-the-shed.em:5-6; toolshed.em:18-30
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-view"
+    # class view · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: Where does the shed manager see what tools need attention?
+    # * new-view: A new Tool Maintenance view and screen (shed manager), one row per tool in maintenance, cleared by completion or retirement
+    #   extend-inventory: Add maintenance fields to Tool Inventory
+    # basis: direction; stock-the-shed/stock-the-shed.em:8-11; .event-modeling.md:592-594
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/retire-ends-maintenance"
+    # class lifecycle · cheap to undo · confidence medium · consumed by 0 node(s)
+    # Q: What happens if a tool in maintenance is retired (e.g. beyond repair)?
+    # * retire-allowed: Retire is allowed and ends the maintenance; Tool Maintenance drops the row on Tool Retired
+    #   retire-refused: Retire is refused until maintenance is completed
+    # basis: .event-modeling.md:249-250; .event-modeling.md:288-289
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/maintenance-context"
+    # class boundary · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: Which context or swimlane do the maintenance events belong to?
+    # * tools: The existing Tools context
+    #   new-maintenance: A new Maintenance context
+    # basis: .event-modeling.md:136-140; toolshed.em:6-9
+    ruling: confirm
+
+  - decision: "maintenance-model-2026-11/maintenance-tracking/tool-catalog-hears-maintenance"
+    # class existing-change · cheap to undo · confidence high · consumed by 0 node(s)
+    # Q: How is a tool in maintenance taken out of the catalog?
+    # * catalog-continuations: Tool Catalog gains two continuations: again from Tool Maintenance Scheduled (drop) and Tool Maintenance Completed (restore)
+    #   status-value: Keep the tool listed with an 'in-maintenance' status
+    # basis: direction; take-a-tool-or-a-neighbor-out-of-the-shed/take-a-tool-or-a-neighbor-out-of-the-shed.em:17-20; constitution.md:140-148
+    ruling: confirm
