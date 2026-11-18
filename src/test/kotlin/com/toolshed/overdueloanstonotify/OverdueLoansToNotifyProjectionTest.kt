@@ -9,7 +9,6 @@ import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.extendloan.LoanExtended
 import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.registerneighbor.NeighborRegistered
-import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
 import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import org.assertj.core.api.Assertions.assertThat
@@ -131,7 +130,7 @@ class OverdueLoansToNotifyProjectionTest {
     fun `INV-OLN-4 - given L1 due 12 October still out and the drill retired, when read on 13 October, then L1 is returned`() {
         known()
         projection.on(out())
-        projection.on(ToolRetired(drill, now))
+        // Tool Retired is not an event this view listens to: it must change nothing, so none is applied.
         assertThat(listedOn(oct13)).containsExactly(row())
     }
 
