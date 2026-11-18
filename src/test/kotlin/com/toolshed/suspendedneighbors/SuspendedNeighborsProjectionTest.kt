@@ -62,7 +62,7 @@ class SuspendedNeighborsProjectionTest {
     // --- INV-SPN-1, INV-SPN-2, INV-SPN-4 ---
 
     @Test
-    fun `INV-SPN-1 INV-SPN-2 INV-SPN-4 given an empty list, when Ana is suspended on 7 October, then lists Ana with name, email and date`() {
+    fun `INV-SPN-1 INV-SPN-2 INV-SPN-4 given empty list, when Ana suspended 7 October, then lists Ana with name, email and date`() {
         val h = background()
         assertThat(h.list()).isEmpty()
         h.apply(NeighborSuspended(ana, on(10, 7)))
