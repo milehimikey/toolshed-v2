@@ -38,7 +38,7 @@ class NeighborsProjectionFixtureTest {
     fun afterEach() = fixture.stop()
 
     @Test
-    fun `INV-NBRS-1 INV-NBRS-2 given registrations and a suspension, when listed through the query gateway, then returns both with status`() {
+    fun `INV-NBRS-1 INV-NBRS-2 given registrations and a suspension, when listed via query gateway, then returns both`() {
         fixture
             .given()
             .events(
