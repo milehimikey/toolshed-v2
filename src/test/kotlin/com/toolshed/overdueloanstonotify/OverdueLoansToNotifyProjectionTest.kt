@@ -71,14 +71,14 @@ class OverdueLoansToNotifyProjectionTest {
     }
 
     @Test
-    fun `INV-OLN-1 INV-OLN-6 - given L1 due 12 October still out, when the list is read at 00_00 on 13 October, then L1 is returned with names and email`() {
+    fun `INV-OLN-1 INV-OLN-6 - given L1 due 12 October, when read at 00_00 on 13 October, then L1 returned with details`() {
         known()
         projection.on(out())
         assertThat(listedAt(Instant.parse("2026-10-13T06:00:00Z"))).containsExactly(row())
     }
 
     @Test
-    fun `INV-OLN-1 - given L1 due 1 November, when the day boundary crosses a daylight-saving change, then it is still midnight shed time`() {
+    fun `INV-OLN-1 - given L1 due 1 November, when DST changes, then boundary is still midnight shed time`() {
         known()
         projection.on(out(due = LocalDate.of(2026, 11, 1)))
         assertThat(listedAt(Instant.parse("2026-11-02T06:59:59Z"))).isEmpty()
@@ -169,7 +169,7 @@ class OverdueLoansToNotifyProjectionTest {
     }
 
     @Test
-    fun `INV-OLN-3 INV-OLN-9 - given a notice sent for L1, when the same Overdue Notice Sent and other events are replayed, then L1 stays off the list`() {
+    fun `INV-OLN-3 INV-OLN-9 - given notice sent for L1, when events are replayed, then L1 stays off the list`() {
         known()
         projection.on(out())
         projection.on(sent())

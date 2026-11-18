@@ -54,7 +54,7 @@ class OverdueLoansToNotifyProjectionFixtureTest {
         )
 
     @Test
-    fun `INV-OLN-1 INV-OLN-6 - given the loan's events, when read after the due date via the query gateway, then L1 is returned with its details`() {
+    fun `INV-OLN-1 INV-OLN-6 - given the loan events, when read after due date via query, then L1 is returned`() {
         start(Instant.parse("2026-10-13T06:00:00Z"))
         fixture
             .given()
