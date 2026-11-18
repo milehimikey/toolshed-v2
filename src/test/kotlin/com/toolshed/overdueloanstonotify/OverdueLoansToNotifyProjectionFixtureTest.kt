@@ -22,7 +22,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
 
-/** Built from [OverdueLoansToNotifyConfiguration.configure]: the list is answered through the query bus (INV-OLN-1, INV-OLN-3, INV-OLN-6). */
+/** Built from [OverdueLoansToNotifyConfiguration.configure]: answered via the query bus (INV-OLN-1, INV-OLN-3, INV-OLN-6). */
 class OverdueLoansToNotifyProjectionFixtureTest {
     private val zone = ZoneId.of("America/Denver")
     private val now = Instant.parse("2026-10-01T16:00:00Z")
@@ -88,7 +88,7 @@ class OverdueLoansToNotifyProjectionFixtureTest {
     }
 
     @Test
-    fun `INV-OLN-4 - given L1 due 12 October still out and Tool Retired for the drill, when read on 13 October via query, then L1 is returned`() {
+    fun `INV-OLN-4 - given L1 still out and drill retired, when read on 13 October, then L1 is returned`() {
         start(Instant.parse("2026-10-13T06:00:00Z"))
         fixture
             .given()
