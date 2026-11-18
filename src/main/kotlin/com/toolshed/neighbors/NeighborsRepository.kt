@@ -21,11 +21,18 @@ interface NeighborsRepository {
     fun changeEmail(
         neighborId: NeighborId,
         email: String,
+        changedAt: Instant,
     )
 
-    fun suspend(neighborId: NeighborId)
+    fun suspend(
+        neighborId: NeighborId,
+        suspendedAt: Instant,
+    )
 
-    fun reinstate(neighborId: NeighborId)
+    fun reinstate(
+        neighborId: NeighborId,
+        reinstatedAt: Instant,
+    )
 
     fun close(neighborId: NeighborId)
 
@@ -36,6 +43,9 @@ class InMemoryNeighborsRepository : NeighborsRepository {
     private val lock = Any()
     private val neighbors = HashMap<NeighborId, StoredNeighbor>()
     private val sequence = AtomicLong(0)
+
+    // Suspension events already applied, so a redelivery never undoes a later one (INV-NBRS-7).
+    private val appliedSuspensions = HashSet<Triple<NeighborId, Boolean, Instant>>()
 
     override fun register(
         neighborId: NeighborId,
@@ -54,11 +64,38 @@ class InMemoryNeighborsRepository : NeighborsRepository {
     override fun changeEmail(
         neighborId: NeighborId,
         email: String,
-    ) = update(neighborId) { it.copy(email = email) }
+        changedAt: Instant,
+    ) = update(neighborId) {
+        // An older change redelivered after a newer one must not win (INV-NBRS-5, INV-NBRS-7).
+        val latest = it.emailChangedAt
+        if (latest != null && changedAt.isBefore(latest)) it else it.copy(email = email, emailChangedAt = changedAt)
+    }
 
-    override fun suspend(neighborId: NeighborId) = update(neighborId) { it.copy(suspended = true) }
+    override fun suspend(
+        neighborId: NeighborId,
+        suspendedAt: Instant,
+    ) = setSuspended(neighborId, true, suspendedAt)
 
-    override fun reinstate(neighborId: NeighborId) = update(neighborId) { it.copy(suspended = false) }
+    override fun reinstate(
+        neighborId: NeighborId,
+        reinstatedAt: Instant,
+    ) = setSuspended(neighborId, false, reinstatedAt)
+
+    private fun setSuspended(
+        neighborId: NeighborId,
+        suspended: Boolean,
+        at: Instant,
+    ) = synchronized(lock) {
+        val firstTime = appliedSuspensions.add(Triple(neighborId, suspended, at))
+        update(neighborId) {
+            val latest = it.suspensionChangedAt
+            if (!firstTime || (latest != null && at.isBefore(latest))) {
+                it
+            } else {
+                it.copy(suspended = suspended, suspensionChangedAt = at)
+            }
+        }
+    }
 
     // Closed is final (INV-NBRS-4): nothing ever clears the flag.
     override fun close(neighborId: NeighborId) = update(neighborId) { it.copy(closed = true) }

@@ -27,19 +27,19 @@ class NeighborsProjection(
 
     @EventHandler
     fun on(event: NeighborEmailChanged) {
-        repository.changeEmail(event.neighborId, event.email)
+        repository.changeEmail(event.neighborId, event.email, event.changedAt)
         logger.debug { "neighbors neighborId=${event.neighborId.value} outcome=email-changed" }
     }
 
     @EventHandler
     fun on(event: NeighborSuspended) {
-        repository.suspend(event.neighborId)
+        repository.suspend(event.neighborId, event.suspendedAt)
         logger.debug { "neighbors neighborId=${event.neighborId.value} outcome=suspended" }
     }
 
     @EventHandler
     fun on(event: NeighborReinstated) {
-        repository.reinstate(event.neighborId)
+        repository.reinstate(event.neighborId, event.reinstatedAt)
         logger.debug { "neighbors neighborId=${event.neighborId.value} outcome=reinstated" }
     }
 

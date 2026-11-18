@@ -52,6 +52,8 @@ data class StoredNeighbor(
     val suspended: Boolean,
     val closed: Boolean,
     val sequence: Long,
+    val emailChangedAt: Instant? = null,
+    val suspensionChangedAt: Instant? = null,
 ) {
     /** Status rules, first that holds wins: closed, then suspended, then active (INV-NBRS-2, 4). */
     val status: NeighborStatus

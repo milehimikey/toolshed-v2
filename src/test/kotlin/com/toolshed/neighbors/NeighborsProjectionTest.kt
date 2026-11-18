@@ -121,6 +121,24 @@ class NeighborsProjectionTest {
         assertThat(h.list().single().status).isEqualTo(NeighborStatus.ACTIVE)
     }
 
+    @Test
+    fun `INV-NBRS-7 given Suspended then Reinstated, when the earlier Suspended is redelivered, then still active`() {
+        val h = Harness()
+        val suspended = NeighborSuspended(ana, at(10, 6))
+        h.apply(registered(ana, "Ana Ruiz", "ana@example.org", now), suspended, NeighborReinstated(ana, at(10, 7)), suspended)
+        val row = h.list().single()
+        assertThat(row.status).isEqualTo(NeighborStatus.ACTIVE)
+        assertThat(row.canSuspend).isTrue()
+    }
+
+    @Test
+    fun `INV-NBRS-7 INV-NBRS-5 given two email changes, when the first is redelivered, then the later email stands`() {
+        val h = Harness()
+        val first = NeighborEmailChanged(ana, "a@example.net", at(10, 6))
+        h.apply(registered(ana, "Ana Ruiz", "ana@example.org", now), first, NeighborEmailChanged(ana, "b@example.net", at(10, 7)), first)
+        assertThat(h.list().single().email).isEqualTo("b@example.net")
+    }
+
     // --- INV-NBRS-5 ---
     @Test
     fun `INV-NBRS-5 given Ana active, when Neighbor Email Changed, then shows the new email, name unchanged, still active`() {
