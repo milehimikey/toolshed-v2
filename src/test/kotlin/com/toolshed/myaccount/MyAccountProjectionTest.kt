@@ -197,8 +197,25 @@ class MyAccountProjectionTest {
         close()
         close()
         assertThat(ask(n1)!!.status).isEqualTo(AccountStatus.CLOSED)
-        projection.on(NeighborEmailChanged(n1, "x@example.org", now))
-        projection.on(NeighborEmailChanged(n1, "x@example.org", now))
+    }
+
+    @Test
+    fun `INV-MYAC-10 given email changed twice, when the first Neighbor Email Changed is redelivered, then still the latest email`() {
+        registerAna()
+        projection.on(NeighborEmailChanged(n1, "b@example.org", now.plusSeconds(10)))
+        projection.on(NeighborEmailChanged(n1, "c@example.org", now.plusSeconds(20)))
+        projection.on(NeighborEmailChanged(n1, "b@example.org", now.plusSeconds(10)))
+        assertThat(ask(n1)!!.email).isEqualTo("c@example.org")
+    }
+
+    @Test
+    fun `INV-MYAC-10 given an email changed, when the same Neighbor Email Changed is applied twice, then as after once`() {
+        registerAna()
+        projection.on(NeighborEmailChanged(n1, "b@example.org", now.plusSeconds(10)))
+        val once = ask(n1)
+        projection.on(NeighborEmailChanged(n1, "b@example.org", now.plusSeconds(10)))
+        assertThat(ask(n1)).isEqualTo(once)
+        assertThat(once!!.email).isEqualTo("b@example.org")
     }
 
     @Test

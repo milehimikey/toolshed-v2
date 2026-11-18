@@ -59,6 +59,28 @@ class MyAccountProjectionFixtureTest {
     }
 
     @Test
+    fun `INV-MYAC-7 given N1 active, when Tool Checked Out then Hold Placed for N1, then My Account is unchanged and active`() {
+        fixture
+            .given()
+            .events(
+                NeighborRegistered(n1, "Ana Ruiz", "ana@example.org", now),
+                ToolCheckedOut(LoanId(UUID.randomUUID()), ToolId(UUID.randomUUID()), n1, 7, LocalDate.of(2026, 10, 13), now),
+                HoldPlaced(HoldId(UUID.randomUUID()), ToolId(UUID.randomUUID()), n1, now),
+            ).then()
+            .expect { configuration ->
+                val gateway = configuration.getComponent(QueryGateway::class.java)
+                await().atMost(Duration.ofSeconds(5)).untilAsserted {
+                    val row = gateway.queryMany(GetMyAccount(n1), MyAccountRow::class.java).join().single()
+                    assertThat(row.name).isEqualTo("Ana Ruiz")
+                    assertThat(row.email).isEqualTo("ana@example.org")
+                    assertThat(row.status).isEqualTo(AccountStatus.ACTIVE)
+                    assertThat(row.canChangeEmail).isTrue()
+                    assertThat(row.canCloseAccount).isTrue()
+                }
+            }
+    }
+
+    @Test
     fun `INV-MYAC-5 INV-MYAC-7 given loans and holds recorded, when closed, then closed and the loan and hold changed nothing`() {
         fixture
             .given()

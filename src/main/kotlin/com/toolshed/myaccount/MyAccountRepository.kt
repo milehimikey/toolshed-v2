@@ -17,9 +17,11 @@ interface MyAccountRepository {
         email: String,
     )
 
+    /** Neighbor Email Changed at [at]; a redelivery, or an event older than one already applied, is a no-op (INV-MYAC-10). */
     fun changeEmail(
         neighborId: NeighborId,
         email: String,
+        at: Instant,
     )
 
     /** Neighbor Suspended at [at]; an event already applied is a no-op (INV-MYAC-10). */
@@ -52,10 +54,18 @@ class InMemoryMyAccountRepository : MyAccountRepository {
         accounts.putIfAbsent(neighborId, AccountEntry(neighborId, name, email))
     }
 
+    // The newest Neighbor Email Changed applied per account: a redelivery of an older change that arrives after a
+    // later one must not put a stale email back (INV-MYAC-10, "always the current one").
+    private val emailChangedAt = ConcurrentHashMap<NeighborId, Instant>()
+
     override fun changeEmail(
         neighborId: NeighborId,
         email: String,
-    ) = update(neighborId) { it.copy(email = email) }
+        at: Instant,
+    ) {
+        val latest = emailChangedAt.merge(neighborId, at) { old, new -> maxOf(old, new) }
+        if (latest == at) update(neighborId) { it.copy(email = email) }
+    }
 
     // Each suspend/reinstate event is identified by its neighbor, kind and time, so a redelivery that arrives after a
     // later event can't flip the status back (INV-MYAC-10).
