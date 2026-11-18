@@ -99,7 +99,7 @@ class MyAccountEndpointTest {
     }
 
     @Test
-    fun `INV-MYAC-2 INV-MYAC-3 INV-MYAC-9 INV-MYAC-11 - given Ana registered, when she reads her account, then it is active with both actions offered`() {
+    fun `INV-MYAC-2 INV-MYAC-3 INV-MYAC-9 INV-MYAC-11 - given Ana registered, when she reads it, then active with both actions offered`() {
         val ana = NeighborId(UUID.randomUUID())
         publish(NeighborRegistered(ana, "Ana Ruiz", "ana@example.org", Instant.now()))
 
