@@ -46,7 +46,7 @@ class MyAccountProjectionTest {
     private fun close(id: NeighborId = n1) = projection.on(NeighborAccountClosed(id, false, now))
 
     @Test
-    fun `INV-MYAC-2 INV-MYAC-3 INV-MYAC-9 INV-MYAC-11 given no account, when Neighbor Registered for N1, then active with both actions offered`() {
+    fun `INV-MYAC-2 INV-MYAC-3 INV-MYAC-9 INV-MYAC-11 given no account, when Neighbor Registered, then active with both actions offered`() {
         assertThat(ask(n1)).isNull()
         registerAna()
         val row = ask(n1)!!
@@ -166,7 +166,10 @@ class MyAccountProjectionTest {
         // real processor); here we only prove the stored account is untouched by the other slices' types.
         registerAna()
         val before = ask(n1)
-        val handlers = MyAccountProjection::class.java.declaredMethods.filter { it.name == "on" }.map { it.parameterTypes.single() }
+        val handlers =
+            MyAccountProjection::class.java.declaredMethods
+                .filter { it.name == "on" }
+                .map { it.parameterTypes.single() }
         assertThat(handlers).doesNotContain(ToolCheckedOut::class.java, HoldPlaced::class.java)
         assertThat(handlers).hasSize(5)
         assertThat(ask(n1)).isEqualTo(before)
