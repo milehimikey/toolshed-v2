@@ -6,6 +6,7 @@ import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.registerneighbor.NeighborRegistered
+import com.toolshed.retiretool.ToolRetired
 import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility.await
@@ -82,6 +83,23 @@ class OverdueLoansToNotifyProjectionFixtureTest {
                 await().during(Duration.ofMillis(500)).atMost(Duration.ofSeconds(5)).untilAsserted {
                     val rows = queryGateway.queryMany(ListOverdueLoansToNotify, OverdueLoanToNotifyRow::class.java).join()
                     assertThat(rows).isEmpty()
+                }
+            }
+    }
+
+    @Test
+    fun `INV-OLN-4 - given L1 due 12 October still out and Tool Retired for the drill, when read on 13 October via query, then L1 is returned`() {
+        start(Instant.parse("2026-10-13T06:00:00Z"))
+        fixture
+            .given()
+            .events(*setup, ToolRetired(drill, now))
+            .then()
+            .expect { configuration ->
+                val queryGateway = configuration.getComponent(QueryGateway::class.java)
+                await().during(Duration.ofMillis(500)).atMost(Duration.ofSeconds(5)).untilAsserted {
+                    val rows = queryGateway.queryMany(ListOverdueLoansToNotify, OverdueLoanToNotifyRow::class.java).join()
+                    assertThat(rows)
+                        .containsExactly(OverdueLoanToNotifyRow(l1, drill, ana, due, "Cordless drill", "Ana Ruiz", "ana@example.org"))
                 }
             }
     }
