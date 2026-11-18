@@ -1,10 +1,7 @@
 package com.toolshed.myaccount
 
 import com.toolshed.axon.CommandRejected
-import com.toolshed.axon.HoldId
-import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
-import com.toolshed.axon.ToolId
 import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
@@ -17,7 +14,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
-import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -161,21 +157,15 @@ class MyAccountProjectionTest {
     }
 
     @Test
-    fun `INV-MYAC-7 given N1 active, when a loan and a hold are recorded for N1, then My Account is unchanged`() {
-        // The projection has no handler for these events (MyAccountProjectionFixtureTest feeds them through the
-        // real processor); here we only prove the stored account is untouched by the other slices' types.
-        registerAna()
-        val before = ask(n1)
+    fun `INV-MYAC-7 - the projection handles only the five account events, never loans or holds`() {
+        // The When of this scenario (a loan and a hold recorded) runs through the real processor in
+        // MyAccountProjectionFixtureTest; this test only pins which events the projection listens to.
         val handlers =
             MyAccountProjection::class.java.declaredMethods
                 .filter { it.name == "on" }
                 .map { it.parameterTypes.single() }
         assertThat(handlers).doesNotContain(ToolCheckedOut::class.java, HoldPlaced::class.java)
         assertThat(handlers).hasSize(5)
-        assertThat(ask(n1)).isEqualTo(before)
-        // Constructing the events keeps the scenario's wording honest.
-        ToolCheckedOut(LoanId(uuid("l1")), ToolId(uuid("t1")), n1, 7, LocalDate.of(2026, 10, 13), now)
-        HoldPlaced(HoldId(uuid("h1")), ToolId(uuid("t1")), n1, now)
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.toolshed.myaccount
 
-import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
 import org.axonframework.messaging.queryhandling.gateway.QueryGateway
 import org.springframework.http.ResponseEntity
@@ -20,10 +19,10 @@ class MyAccountController(
     @GetMapping("/api/neighbors/{neighborId}/account")
     fun get(
         caller: Caller,
-        @PathVariable neighborId: UUID,
+        @PathVariable neighborId: String,
     ): ResponseEntity<MyAccountResponse> {
-        val query = GetMyAccount(NeighborId(neighborId))
-        caller.requireAccountOwner(query)
+        // Bound as text so identity is checked before the id is parsed (INV-MYAC-13 comes first).
+        val query = caller.requireAccountOwner(neighborId)
         val row = queries.queryMany(query, MyAccountRow::class.java).join().firstOrNull()
         return if (row == null) ResponseEntity.notFound().build() else ResponseEntity.ok(row.toResponse())
     }
