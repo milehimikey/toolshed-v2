@@ -7,8 +7,11 @@ import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.axonframework.messaging.eventhandling.annotation.EventHandler
 import org.springframework.stereotype.Component
+
+private val logger = KotlinLogging.logger {}
 
 /** Applies exactly the seven events the Tool Inventory view reads (INV-TINV-3). Holds and notices have no handler. */
 @Component
@@ -18,35 +21,42 @@ class ToolInventoryProjection(
     @EventHandler
     fun on(event: ToolAdded) {
         repository.addTool(event.toolId, event.name, event.description, event.defaultCheckoutPeriodDays, event.addedAt)
+        logger.info { "tool-inventory toolId=${event.toolId.value} outcome=tool-added" }
     }
 
     @EventHandler
     fun on(event: NeighborRegistered) {
         repository.registerNeighbor(event.neighborId, event.name)
+        logger.info { "tool-inventory neighborId=${event.neighborId.value} outcome=neighbor-registered" }
     }
 
     @EventHandler
     fun on(event: ToolCheckedOut) {
         repository.checkOut(event.loanId, event.toolId, event.neighborId, event.dueDate)
+        logger.info { "tool-inventory toolId=${event.toolId.value} loanId=${event.loanId.value} outcome=checked-out" }
     }
 
     @EventHandler
     fun on(event: LoanExtended) {
         repository.extend(event.loanId, event.dueDate)
+        logger.info { "tool-inventory loanId=${event.loanId.value} outcome=extended" }
     }
 
     @EventHandler
     fun on(event: ToolReturned) {
         repository.endLoan(event.loanId)
+        logger.info { "tool-inventory toolId=${event.toolId.value} loanId=${event.loanId.value} outcome=returned" }
     }
 
     @EventHandler
     fun on(event: ToolRetired) {
         repository.retire(event.toolId)
+        logger.info { "tool-inventory toolId=${event.toolId.value} outcome=retired" }
     }
 
     @EventHandler
     fun on(event: ToolLost) {
         repository.recordLost(event.loanId, event.toolId)
+        logger.info { "tool-inventory toolId=${event.toolId.value} loanId=${event.loanId.value} outcome=lost" }
     }
 }

@@ -12,6 +12,7 @@ import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
@@ -36,6 +37,7 @@ class ToolInventoryProjectionFixtureTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val drill = ToolId(UUID.nameUUIDFromBytes("drill".toByteArray()))
     private val ladder = ToolId(UUID.nameUUIDFromBytes("ladder".toByteArray()))
+    private val stilts = ToolId(UUID.nameUUIDFromBytes("stilts".toByteArray()))
     private val ana = NeighborId(UUID.nameUUIDFromBytes("ana".toByteArray()))
     private val ben = NeighborId(UUID.nameUUIDFromBytes("ben".toByteArray()))
     private val l1 = LoanId(UUID.nameUUIDFromBytes("l1".toByteArray()))
@@ -127,10 +129,11 @@ class ToolInventoryProjectionFixtureTest {
                     ToolAdded(drill, "Cordless drill", null, 7, now),
                     ToolCheckedOut(l1, drill, ana, 7, oct12, now),
                     ToolReturned(l1, drill, now, LocalDate.of(2026, 10, 6), false),
+                    ToolAdded(ladder, "Ladder", null, 3, now),
                 ),
-            until = { it.tools.any { row -> !row.onLoan } },
+            until = { it.tools.size == 2 },
         ) { inventory ->
-            val row = inventory.tools.single()
+            val row = inventory.tools.single { it.toolId == drill }
             assertThat(row.borrowerName).isNull()
             assertThat(row.dueDate).isNull()
             assertThat(row.canMarkLost).isFalse()
@@ -145,9 +148,10 @@ class ToolInventoryProjectionFixtureTest {
                     ToolAdded(drill, "Cordless drill", null, 7, now),
                     ToolAdded(ladder, "Ladder", null, 3, now),
                     ToolRetired(drill, now),
+                    ToolAdded(stilts, "Zebra stilts", null, 1, now),
                 ),
-            until = { it.tools.size == 1 },
-        ) { inventory -> assertThat(inventory.tools.single().toolId).isEqualTo(ladder) }
+            until = { it.tools.size == 2 },
+        ) { inventory -> assertThat(inventory.tools.map { it.toolId }).containsExactly(ladder, stilts) }
     }
 
     @Test
@@ -190,6 +194,7 @@ class ToolInventoryProjectionFixtureTest {
                     ToolAdded(drill, "Cordless drill", null, 7, now),
                     ToolCheckedOut(l1, drill, ana, 7, oct12, now),
                     HoldPlaced(h1, drill, ben, now),
+                    OverdueNoticeSent(l1, "ana@example.org", "Ana Ruiz", "Cordless drill", oct12, now),
                     ToolAdded(ladder, "Ladder", null, 3, now),
                 ),
             until = { it.tools.size == 2 },
