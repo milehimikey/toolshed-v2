@@ -33,13 +33,13 @@ class MyAccountProjection(
 
     @EventHandler
     fun on(event: NeighborSuspended) {
-        repository.suspend(event.neighborId)
+        repository.suspend(event.neighborId, event.suspendedAt)
         logger.debug { "my-account neighborId=${event.neighborId.value} outcome=suspended" }
     }
 
     @EventHandler
     fun on(event: NeighborReinstated) {
-        repository.reinstate(event.neighborId)
+        repository.reinstate(event.neighborId, event.reinstatedAt)
         logger.debug { "my-account neighborId=${event.neighborId.value} outcome=reinstated" }
     }
 

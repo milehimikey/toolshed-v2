@@ -3,6 +3,7 @@ package com.toolshed.myaccount
 import com.toolshed.axon.NeighborId
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -21,9 +22,17 @@ interface MyAccountRepository {
         email: String,
     )
 
-    fun suspend(neighborId: NeighborId)
+    /** Neighbor Suspended at [at]; an event already applied is a no-op (INV-MYAC-10). */
+    fun suspend(
+        neighborId: NeighborId,
+        at: Instant,
+    )
 
-    fun reinstate(neighborId: NeighborId)
+    /** Neighbor Reinstated at [at]; an event already applied is a no-op (INV-MYAC-10). */
+    fun reinstate(
+        neighborId: NeighborId,
+        at: Instant,
+    )
 
     fun close(neighborId: NeighborId)
 
@@ -48,9 +57,23 @@ class InMemoryMyAccountRepository : MyAccountRepository {
         email: String,
     ) = update(neighborId) { it.copy(email = email) }
 
-    override fun suspend(neighborId: NeighborId) = update(neighborId) { it.copy(suspended = true) }
+    // Each suspend/reinstate event is identified by its neighbor, kind and time, so a redelivery that arrives after a
+    // later event can't flip the status back (INV-MYAC-10).
+    private val statusEventsSeen = ConcurrentHashMap.newKeySet<Triple<NeighborId, Boolean, Instant>>()
 
-    override fun reinstate(neighborId: NeighborId) = update(neighborId) { it.copy(suspended = false) }
+    override fun suspend(
+        neighborId: NeighborId,
+        at: Instant,
+    ) {
+        if (statusEventsSeen.add(Triple(neighborId, true, at))) update(neighborId) { it.copy(suspended = true) }
+    }
+
+    override fun reinstate(
+        neighborId: NeighborId,
+        at: Instant,
+    ) {
+        if (statusEventsSeen.add(Triple(neighborId, false, at))) update(neighborId) { it.copy(suspended = false) }
+    }
 
     override fun close(neighborId: NeighborId) = update(neighborId) { it.copy(closed = true) }
 

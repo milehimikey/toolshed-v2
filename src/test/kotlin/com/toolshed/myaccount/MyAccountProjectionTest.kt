@@ -202,6 +202,25 @@ class MyAccountProjectionTest {
     }
 
     @Test
+    fun `INV-MYAC-10 given suspended then reinstated, when the same Neighbor Suspended is redelivered, then still active`() {
+        registerAna()
+        projection.on(NeighborSuspended(n1, now))
+        projection.on(NeighborReinstated(n1, now.plusSeconds(60)))
+        projection.on(NeighborSuspended(n1, now))
+        assertThat(ask(n1)!!.status).isEqualTo(AccountStatus.ACTIVE)
+    }
+
+    @Test
+    fun `INV-MYAC-10 given reinstated then suspended again, when the same Neighbor Reinstated is redelivered, then still suspended`() {
+        registerAna()
+        projection.on(NeighborSuspended(n1, now))
+        projection.on(NeighborReinstated(n1, now.plusSeconds(60)))
+        projection.on(NeighborSuspended(n1, now.plusSeconds(120)))
+        projection.on(NeighborReinstated(n1, now.plusSeconds(60)))
+        assertThat(ask(n1)!!.status).isEqualTo(AccountStatus.SUSPENDED)
+    }
+
+    @Test
     fun `INV-MYAC-1 given no account N9, when asked for N9, then not found`() {
         assertThat(queries.handle(GetMyAccount(n9))).isEmpty()
     }
