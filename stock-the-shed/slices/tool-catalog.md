@@ -4,17 +4,17 @@ pattern: state-view
 swimlane: Neighbor → Tools
 status: ready-to-implement
 ratifiedBy: Mike Key
-ratifiedOn: 2026-11-12
-ratifiedHash: sha256:c0b303bec3cb726770f5f122b93edf7f528ad1aef810ff884d1123fd527689bb
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:13719a18f741405509595b88d4d417374036c9c58d99cfea10bcae30137d9943
 reviewedBy: Mike Key
-reviewedOn: 2026-11-12
+reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/01689d1fc90e13b2356e10def6605b8c08aff62a
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
-version: 2
+version: 3
 ---
 # Slice: Tool Catalog
 
@@ -75,8 +75,10 @@ first that holds wins:
 4. **available** — otherwise.
 
 A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when Hold
-Cancelled, Hold Expired or Hold Collected is recorded for it; retiring the tool, recording it lost
-and closing the holder's account each record Hold Cancelled for the holds they end. Because the test reads current facts, the order events arrive
+Cancelled or Hold Expired is recorded for it, or when its holder checks the tool out (Tool
+Checked Out by the holder); retiring the tool, recording it lost and closing the holder's account
+each record Hold Cancelled for the holds they end. The catalog does not read Hold Collected: the
+holder's checkout already tells it the hold is over. Because the test reads current facts, the order events arrive
 in doesn't matter. For example, a lapsed set-aside whose tool has already gone out to someone
 else is checked-out, even before its Hold Expired lands.
 
@@ -141,9 +143,11 @@ and are never returned.
     back or is recorded lost (INV-TINV-2). Neighbors can do nothing with a retired tool; the shed
     manager may still need to record it lost.
 - **INV-TCAT-9:** Only Tool Added, Tool Checked Out, Loan Extended, Hold Placed, Hold Cancelled,
-  Tool Returned, Hold Fulfilled, Hold Collected, Hold Expired, Tool Retired, Tool Lost, Tool Maintenance Scheduled
+  Tool Returned, Hold Fulfilled, Hold Expired, Tool Retired, Tool Lost, Tool Maintenance Scheduled
   and Tool Maintenance Completed change the catalog.
   - Overdue notices, pickup emails and email changes are shown elsewhere, not here.
+  - Hold Collected is not on the list. It is recorded after the holder's Tool Checked Out, which
+    has already ended the hold here (INV-TCAT-4).
 - **INV-TCAT-10:** A tool recorded lost drops off the catalog.
   - Recording a tool lost ends its loan, retires it and ends its holds, all at once.
 - **INV-TCAT-11:** The catalog offers Check Out on an available, reserved or set-aside tool. It
