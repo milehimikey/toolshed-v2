@@ -172,8 +172,15 @@ first that holds wins:
 ## Alternate & Error Flows
 Reading this view is guarded like a command. A refused read returns nothing and one reason: the
 stable name, and the sentence shown on the screen. The checks run in this order:
-1. `not-signed-in` (INV-MYAC-13).
-2. `requester-mismatch` (INV-MYAC-14).
+1. `not-signed-in` (INV-MYAC-13). A caller with no sign-in gets this whatever the path holds,
+   a malformed neighbor ID included.
+2. Bad input. A signed-in caller whose path neighbor ID is missing or malformed gets the
+   bad-input response (400, constitution Amendment 7). It is not an invariant refusal and
+   not `requester-mismatch`.
+3. `requester-mismatch` (INV-MYAC-14). Only for a signed-in caller whose well-formed neighbor
+   ID is not their own.
+
+The order is the owner's ruling of 2026-11-20.
 
 | Reason | Sentence | Rule |
 |--------|----------|------|
