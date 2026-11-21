@@ -5,7 +5,9 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
+import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.extendloan.LoanExtended
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.placehold.HoldPlaced
@@ -13,6 +15,8 @@ import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceTasksChanged
 import com.toolshed.suspendneighbor.NeighborSuspended
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -61,6 +65,10 @@ class CheckOutToolDeciderTest {
             is ToolCheckedOut -> s.evolve(e)
             is LoanExtended -> s.evolve(e)
             is NeighborRegistered -> s.evolve(e)
+            is NeighborEmailChanged -> s.evolve(e)
+            is ToolMaintenanceScheduled -> s.evolve(e)
+            is ToolMaintenanceCompleted -> s.evolve(e)
+            is ToolMaintenanceTasksChanged -> Unit
             is NeighborSuspended -> s.evolve(e)
             is NeighborAccountClosed -> s.evolve(e)
             is HoldPlaced -> s.evolve(e)
@@ -223,5 +231,40 @@ class CheckOutToolDeciderTest {
                 NeighborAccountClosed(ben, false, now),
             )
         assertEquals(1, decide(s, request(ana)).size)
+    }
+
+    // --- INV-CHK-13 ---
+
+    private fun scheduled(tool: ToolId = drill) = ToolMaintenanceScheduled(tool, "Tool", listOf("Service"), null, "Mike", now)
+
+    @Test
+    fun `INV-CHK-13 - a tool in maintenance is refused until completed, and retiring it is refused as retired`() {
+        val inMaintenance = state(scheduled())
+        val e = refusal { decide(inMaintenance, request(ana)) }
+        assertEquals("tool-in-maintenance", e.reason)
+        assertEquals("INV-CHK-13", e.invariant)
+        assertEquals(1, decide(state(scheduled(), ToolMaintenanceCompleted(drill, now)), request(ana)).size)
+        assertEquals("tool-retired", refusal { decide(state(scheduled(), ToolRetired(drill, now)), request(ana)) }.reason)
+        // Changing the tasks leaves it in maintenance; maintenance on the ladder does not touch the drill.
+        val changed = state(scheduled(), ToolMaintenanceTasksChanged(drill, listOf("More"), null, "Mike", now))
+        assertEquals("tool-in-maintenance", refusal { decide(changed, request(ana)) }.reason)
+        assertEquals(1, decide(state(scheduled(ladder)), request(ana)).size)
+    }
+
+    @Test
+    fun `INV-CHK-13 INV-CHK-2 - maintenance is refused straight after retired and before on-loan`() {
+        val loan = LoanId(UUID.randomUUID())
+        val s = state(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now), scheduled())
+        assertEquals("tool-in-maintenance", refusal { decide(s, request(ana)) }.reason)
+    }
+
+    // --- Names and email copied onto the event ---
+
+    @Test
+    fun `INV-CHK-6 - the event carries the tool name, the borrower's name, and the email current at checkout`() {
+        val event = decide(state(NeighborEmailChanged(ana, "new@example.com", now)), request(ana)).single()
+        assertEquals("Drill", event.toolName)
+        assertEquals("Ana", event.neighborName)
+        assertEquals("new@example.com", event.neighborEmail)
     }
 }

@@ -6,7 +6,9 @@ import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.cancelhold.HoldCancelled
+import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.expirehold.HoldExpired
 import com.toolshed.extendloan.LoanExtended
 import com.toolshed.fulfillhold.HoldFulfilled
@@ -16,6 +18,7 @@ import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.suspendneighbor.NeighborSuspended
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler
@@ -34,7 +37,11 @@ class CheckOutState
     @EntityCreator
     constructor() {
         private val defaultPeriods = mutableMapOf<ToolId, Int>()
+        private val toolNames = mutableMapOf<ToolId, String>()
         private val retiredTools = mutableSetOf<ToolId>()
+        private val toolsInMaintenance = mutableSetOf<ToolId>()
+        private val neighborNames = mutableMapOf<NeighborId, String>()
+        private val neighborEmails = mutableMapOf<NeighborId, String>()
         private val registeredNeighbors = mutableSetOf<NeighborId>()
         private val suspendedNeighbors = mutableSetOf<NeighborId>()
         private val closedNeighbors = mutableSetOf<NeighborId>()
@@ -64,6 +71,14 @@ class CheckOutState
 
         internal fun hasTool(toolId: ToolId): Boolean = toolId in defaultPeriods
 
+        internal fun toolNameOf(toolId: ToolId): String = toolNames[toolId].orEmpty()
+
+        internal fun neighborNameOf(neighborId: NeighborId): String = neighborNames[neighborId].orEmpty()
+
+        internal fun neighborEmailOf(neighborId: NeighborId): String = neighborEmails[neighborId].orEmpty()
+
+        internal fun isInMaintenance(toolId: ToolId): Boolean = toolId in toolsInMaintenance
+
         internal fun isRetired(toolId: ToolId): Boolean = toolId in retiredTools
 
         internal fun hasNeighbor(neighborId: NeighborId): Boolean = neighborId in registeredNeighbors
@@ -89,11 +104,23 @@ class CheckOutState
         @EventSourcingHandler
         fun evolve(event: ToolAdded) {
             defaultPeriods[event.toolId] = event.defaultCheckoutPeriodDays
+            toolNames[event.toolId] = event.name
+        }
+
+        @EventSourcingHandler
+        fun evolve(event: ToolMaintenanceScheduled) {
+            toolsInMaintenance += event.toolId
+        }
+
+        @EventSourcingHandler
+        fun evolve(event: ToolMaintenanceCompleted) {
+            toolsInMaintenance -= event.toolId
         }
 
         @EventSourcingHandler
         fun evolve(event: ToolRetired) {
             retiredTools += event.toolId
+            toolsInMaintenance -= event.toolId
         }
 
         @EventSourcingHandler
@@ -125,6 +152,13 @@ class CheckOutState
         @EventSourcingHandler
         fun evolve(event: NeighborRegistered) {
             registeredNeighbors += event.neighborId
+            neighborNames[event.neighborId] = event.name
+            neighborEmails[event.neighborId] = event.email
+        }
+
+        @EventSourcingHandler
+        fun evolve(event: NeighborEmailChanged) {
+            neighborEmails[event.neighborId] = event.email
         }
 
         @EventSourcingHandler
@@ -194,11 +228,14 @@ class CheckOutState
                             ToolCheckedOut::class.java.name,
                             HoldPlaced::class.java.name,
                             HoldFulfilled::class.java.name,
+                            ToolMaintenanceScheduled::class.java.name,
+                            ToolMaintenanceCompleted::class.java.name,
                         ),
                     EventCriteria
                         .havingTags(Tag.of("neighborId", scope.neighborId.value.toString()))
                         .andBeingOneOfTypes(
                             NeighborRegistered::class.java.name,
+                            NeighborEmailChanged::class.java.name,
                             NeighborSuspended::class.java.name,
                             NeighborReinstated::class.java.name,
                             NeighborAccountClosed::class.java.name,
