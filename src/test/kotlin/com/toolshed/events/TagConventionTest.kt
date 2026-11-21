@@ -83,9 +83,9 @@ class TagConventionTest {
     }
 
     @Test
-    fun `every one of the 20 events tags exactly its own id fields, by field name`() {
+    fun `every one of the 23 events tags exactly its own id fields, by field name`() {
         val events = SampleEvents.all()
-        assertEquals(20, events.map { it::class }.distinct().size)
+        assertEquals(23, events.map { it::class }.distinct().size)
         events.forEach { event ->
             // Expected: one tag per direct id-typed property, keyed by its name. A list of ids (NeighborFlagged.loanIds)
             // is deliberately not in this set; it is the one documented exclusion.

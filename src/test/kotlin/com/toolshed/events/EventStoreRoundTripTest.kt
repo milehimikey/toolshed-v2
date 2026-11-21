@@ -22,7 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 /**
- * Publishes the 20 event contracts through a real Axon Server and reads them back through the
+ * Publishes the 23 event contracts through a real Axon Server and reads them back through the
  * streaming event source. The stream yields serialized payloads, so each one is decoded through
  * Axon's [EventConverter], which is the real read path.
  */
@@ -57,9 +57,9 @@ class EventStoreRoundTripTest {
     lateinit var eventConverter: EventConverter
 
     @Test
-    fun `all 20 events published through Axon Server read back identical and in order`() {
+    fun `all 23 events published through Axon Server read back identical and in order`() {
         val events = SampleEvents.all()
-        assertEquals(20, events.size)
+        assertEquals(23, events.size)
 
         val uow = unitOfWorkFactory.create()
         uow.onInvocation { ctx -> eventGateway.publish(ctx, events) }
