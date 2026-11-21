@@ -1,0 +1,132 @@
+# percheron engagement: build the tool maintenance feature on the cloud machine.
+# Seven slices of em engagement maintenance-build-2026-11: three new (schedule, view,
+# complete) and four revised (tool-catalog, check-out-tool, place-hold, retire-tool).
+#   - the work graph and each slice's document come from em (work.provider: em);
+#   - every slice is cut from and merged into feature/maintenance-build-2026-11, which the
+#     owner merges to main when the feature is whole;
+#   - agents and checks run in sandboxes on percheron-vm; the ledger is the Axon-backed
+#     service; the merge gate waits for GitHub's word that the pull request was merged;
+#   - the Kotlin declarations each finished slice touched are recorded (symbols).
+#
+# On the machine, from the toolshed-v2 checkout under /srv/percheron/work:
+#   PERCHERON_PARAMS=/percheron/agent sh /opt/percheron/deploy/percheron.sh selftest engagements/maintenance-build-2026-11.yaml
+#   PERCHERON_PARAMS=/percheron/agent sh /opt/percheron/deploy/percheron.sh run      engagements/maintenance-build-2026-11.yaml
+specVersion: "0.2"
+
+engagement:
+  name: maintenance-build-2026-11
+  mode: build
+
+work:
+  provider: em
+  config:
+    model: ../toolshed.em             # resolved from this file's directory
+    engagement: maintenance-build-2026-11
+    code: ../src                      # foundation check: the three maintenance events must exist
+    base: feature/maintenance-build-2026-11
+    branchPrefix: maint-build/        # impl/<key> branches of the first build still exist
+  transitions:
+    onDispatch: building
+    onGateParked: awaiting-merge
+    onGateCleared: merged
+    onEscalate: held
+    onReopen: planned
+
+tools:
+  em: ">=1.22.1 <2.0.0"
+  schemas: { engagementPlan: ">=1.4", validateSliceReady: ">=1.5" }
+
+policy:
+  ratifiers: [mikey]
+  mergeAuthority: human
+  exceptionRouting: human_only
+  budgets:
+    perNode: { usd: 14, dispatchFloorUsd: 1 }
+    perTask: { usd: 7, maxTurns: 120, wallClock: 25m }
+
+scheduling:
+  dispatchWhen: upstreamsMerged && ready
+  maxConcurrent: 3
+  levels: orderingHintOnly
+
+roles:
+  implementer: { adapter: sandbox, model: sonnet }
+  reviewer:    { adapter: sandbox, model: sonnet }
+  critic:
+    adapter: sandbox
+    model: opus
+    independence: { freshContext: true, modelNot: [implementer], blindTo: [review] }
+
+adapters:
+  sandbox:
+    image: percheron-sandbox:jvm
+    repo: https://github.com/milehimikey/toolshed-v2.git
+    gitTokenEnv: PERCHERON_GIT_TOKEN
+    agentEnv: [CLAUDE_CODE_OAUTH_TOKEN]
+    repoRoot: ..
+    stateDir: ../.percheron
+    # One read-only dependency cache for every sandbox, and the nested Docker daemon for Testcontainers (deploy/dind.sh).
+    mounts: ["/srv/percheron/cache/gradle:/home/agent/.gradle"]
+    runArgs: ["--network", "percheron-sandbox", "-e", "DOCKER_HOST=tcp://percheron-dind:2375", "-e", "TESTCONTAINERS_HOST_OVERRIDE=percheron-dind", "--memory", "6g"]
+
+ledger:
+  remote: http://percheron-ledger:8090
+
+observers:
+  pr-merged:
+    repo: milehimikey/toolshed-v2
+
+pipeline:
+  entry: implement
+  guards: { maxRounds: 3, maxHops: 16 }
+  steps:
+    - id: implement
+      kind: agent
+      role: implementer
+      contract: /opt/percheron/roles/implementer.md
+      produces: [evidenceMap, continuationNote]
+      on: { done: validate, handoff: validate, blocked: escalate, failed: implement }
+
+    - id: validate
+      kind: check
+      run:
+        # Each sandbox keeps its own Gradle home: Gradle's locks on a shared home do not work across
+        # containers. Dependencies come from a shared copy that Gradle only reads.
+        - ["env", "GRADLE_USER_HOME=/home/agent/.gradle-own", "GRADLE_RO_DEP_CACHE=/home/agent/.gradle/ro", "./gradlew", "ktlintCheck", "test", "--quiet"]
+        # Per slice: coverage of the whole model is red on main for reasons outside this feature.
+        - ["em", "coverage", "toolshed.em", "--tests", "src/test/kotlin", "--slice", "{node.key}", "--strict"]
+      on: { done: review, failed: implement }
+
+    - id: review
+      kind: agent
+      role: reviewer
+      contract: /opt/percheron/roles/reviewer.md
+      readOnly: true
+      parallelWith: [critique]
+      produces: [findings]
+      on: { done: merge-gate, failed: implement, blocked: escalate }
+
+    - id: critique
+      kind: agent
+      role: critic
+      contract: /opt/percheron/roles/critic.md
+      readOnly: true
+      parallelWith: [review]
+      produces: [findings]
+      on: { done: merge-gate, failed: implement, blocked: escalate }
+
+    # The adapter opens the pull request when the node gets here. Merging it on GitHub clears the gate.
+    - id: merge-gate
+      kind: human
+      gate:
+        summary: "validate PASS, review and critique done: merge this pull request into feature/maintenance-build-2026-11"
+        evidenceRef: .percheron/evidence
+      acceptance: { observer: pr-merged, candidateRef: pr, verdicts: [merged] }
+      on: { done: node-done, failed: escalate }
+
+# The owner's standing rule on the order of checks (cloud-rerun-2026-11/api-shape/1) is handed to every task.
+decisions:
+  classes: [api-shape]
+
+symbols:
+  languages: [kotlin]

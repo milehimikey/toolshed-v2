@@ -9,6 +9,7 @@ import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.expirehold.HoldExpired
 import com.toolshed.extendloan.LoanExtended
 import com.toolshed.flagneighbor.NeighborFlagged
@@ -21,6 +22,8 @@ import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceTasksChanged
 import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import com.toolshed.sendpickupnotice.PickupNoticeSent
 import com.toolshed.suspendneighbor.NeighborSuspended
@@ -28,7 +31,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
-/** One instance of each of the 20 emitted events, with a non-null optional where one exists. */
+/** One instance of each of the 23 emitted events, with a non-null optional where one exists. */
 object SampleEvents {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val today = LocalDate.of(2026, 10, 6)
@@ -59,5 +62,8 @@ object SampleEvents {
             ToolRetired(tool, now),
             ToolLost(loan, tool, now),
             NeighborAccountClosed(neighbor, true, now),
+            ToolMaintenanceScheduled(tool, "Drill", listOf("Sharpen bits", "Clean chuck"), "Chuck sticks when cold", "Mike", now),
+            ToolMaintenanceTasksChanged(tool, listOf("Sharpen bits"), "Chuck sticks when cold", "Mike", now),
+            ToolMaintenanceCompleted(tool, now),
         )
 }
