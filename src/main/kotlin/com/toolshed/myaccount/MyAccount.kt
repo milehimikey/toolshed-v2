@@ -1,12 +1,12 @@
 package com.toolshed.myaccount
 
-import com.toolshed.axon.CommandRejected
 import com.toolshed.axon.NeighborId
 import com.toolshed.web.Caller
-import com.toolshed.web.REQUESTER_MISMATCH
 import com.toolshed.web.Refusal
 import com.toolshed.web.requireNeighbor
 import com.toolshed.web.requireSignedIn
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 /** Where an account stands, as My Account shows it. The status rules decide which one applies. */
@@ -43,14 +43,15 @@ data class GetMyAccount(
 )
 
 /**
- * The same checks on a raw path id, run before the id is parsed so no sign-in is refused first (INV-MYAC-13).
- * An id that isn't a UUID can't be the signed-in neighbor's own, so it is a mismatch (INV-MYAC-14).
+ * The checks on a raw path id, in the owner's ruling order: no sign-in first (INV-MYAC-13), then a malformed id is
+ * bad input (400, Amendment 7), then another neighbor's well-formed id is a mismatch (INV-MYAC-14).
  */
 fun Caller.requireAccountOwner(rawNeighborId: String): GetMyAccount {
     requireSignedIn(Refusal("INV-MYAC-13", "Please sign in."))
-    val query =
-        runCatching { UUID.fromString(rawNeighborId) }.getOrNull()?.let { GetMyAccount(NeighborId(it)) }
-            ?: throw CommandRejected("INV-MYAC-14", REQUESTER_MISMATCH, "You can only see your own account.")
+    val id =
+        runCatching { UUID.fromString(rawNeighborId) }.getOrNull()
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "neighborId must be a UUID")
+    val query = GetMyAccount(NeighborId(id))
     requireAccountOwner(query)
     return query
 }
