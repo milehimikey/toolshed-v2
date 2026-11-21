@@ -1,6 +1,7 @@
 package com.toolshed.retiretool
 
 import com.toolshed.axon.CommandRejected
+import com.toolshed.cancelhold.HoldCancelled
 import java.time.Instant
 
 /** A refused retirement. [invariant] is the doc's INV id, [reason] the stable name, the message the doc sentence. */
@@ -17,12 +18,14 @@ object RetireToolDecider {
         command: RetireTool,
         state: ToolState,
         retiredAt: Instant,
-    ): List<ToolRetired> {
+    ): List<Any> {
         if (!state.hasTool(command.toolId)) refuse("INV-RTR-10", "tool-not-found", "There is no such tool.")
         // INV-RTR-2: retiring a tool already retired (including one recorded lost) succeeds with nothing recorded.
         if (state.isRetired(command.toolId)) return emptyList()
 
-        return listOf(ToolRetired(command.toolId, retiredAt))
+        // The tool's live holds end in the same decision, waiting or set aside (INV-RTR-6): one Hold Cancelled each.
+        val cancelled = state.liveHoldsOn(command.toolId).map { HoldCancelled(it, retiredAt) }
+        return listOf<Any>(ToolRetired(command.toolId, retiredAt)) + cancelled
     }
 
     private fun refuse(
