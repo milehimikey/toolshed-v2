@@ -5,11 +5,13 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
+import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
-import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.placehold.HoldPlaced
 import com.toolshed.retiretool.ToolRetired
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.sendoverduenotice.OverdueNoticeSent
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
@@ -151,7 +153,7 @@ class ToolCatalogProjectionFixtureTest {
                     ToolCheckedOut(l1, drill, ana, 7, LocalDate.of(2026, 10, 12), now),
                     HoldPlaced(h1, drill, ben, now),
                     HoldPlaced(h2, drill, ana, now),
-                    NeighborAccountClosed(ana, false, now),
+                    HoldCancelled(h2, now),
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
@@ -225,6 +227,46 @@ class ToolCatalogProjectionFixtureTest {
                 val gateway = config.getComponent(QueryGateway::class.java)
                 val catalog = queryUntil(gateway) { it.tools.size == 3 }
                 assertThat(catalog.tools.map { it.toolId }).containsExactly(drill, second, ladder)
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-TCAT-15 maintenance scheduled hides the tool from the query answer`() {
+        fixture
+            .given()
+            .recorded(
+                listOf(
+                    ToolAdded(drill, "Cordless drill", null, 7, now),
+                    ToolAdded(ladder, "Ladder", null, 3, now.plusSeconds(1)),
+                    ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Charge batteries"), null, "Mo", now),
+                ),
+            ).execute { config ->
+                val gateway = config.getComponent(QueryGateway::class.java)
+                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == ladder } }
+                assertThat(catalog.tools.map { it.toolId }).containsExactly(ladder)
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-TCAT-16 maintenance completed lists the tool again as available through the query`() {
+        fixture
+            .given()
+            .recorded(
+                listOf(
+                    ToolAdded(drill, "Cordless drill", null, 7, now),
+                    ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Charge batteries"), null, "Mo", now),
+                    ToolMaintenanceCompleted(drill, now),
+                ),
+            ).execute { config ->
+                val gateway = config.getComponent(QueryGateway::class.java)
+                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == drill } }
+                assertThat(catalog.tools.single().status).isEqualTo(ToolCatalogStatus.AVAILABLE)
             }.`when`()
             .nothing()
             .then()

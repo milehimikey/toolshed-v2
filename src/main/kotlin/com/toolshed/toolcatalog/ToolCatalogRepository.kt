@@ -40,6 +40,7 @@ class ToolCatalogRepository {
         val sequence: Long,
         val loan: OpenLoan? = null,
         val holds: List<Hold> = emptyList(),
+        val inMaintenance: Boolean = false,
     )
 
     private val tools = ConcurrentHashMap<ToolId, Tool>()
@@ -131,22 +132,28 @@ class ToolCatalogRepository {
         tools.remove(toolId)
     }
 
-    /** Ends every hold the closed account holds, on every tool, wherever they are waiting (INV-TCAT-6). */
-    fun closeAccount(neighborId: NeighborId) {
-        tools.keys.forEach { toolId ->
-            tools.computeIfPresent(toolId) { _, tool ->
-                if (tool.holds.any { it.neighborId == neighborId }) {
-                    tool.copy(holds = tool.holds.filterNot { it.neighborId == neighborId })
-                } else {
-                    tool
-                }
-            }
+    /**
+     * Takes a listed tool out of the list but keeps its entry so completing the maintenance can restore it
+     * (INV-TCAT-15). A tool that is not listed (retired, lost, already in maintenance) is left as it is.
+     */
+    fun scheduleMaintenance(toolId: ToolId) {
+        tools.computeIfPresent(toolId) { _, tool -> if (tool.inMaintenance) tool else tool.copy(inMaintenance = true) }
+    }
+
+    /**
+     * Lists a tool in maintenance again as available: no loan, no holds (INV-TCAT-16). A tool that is not in
+     * maintenance, or that was retired or lost (its entry is gone), changes nothing.
+     */
+    fun completeMaintenance(toolId: ToolId) {
+        tools.computeIfPresent(toolId) { _, tool ->
+            if (tool.inMaintenance) tool.copy(inMaintenance = false, loan = null, holds = emptyList()) else tool
         }
     }
 
     /** The screen's rows, in INV-TCAT-13 order, with status, due date, holds waiting and the two offers derived here. */
     fun rows(): List<ToolCatalogRow> =
         tools.values
+            .filterNot { it.inMaintenance }
             .sortedWith(compareBy({ it.name.lowercase() }, { it.addedAt }, { it.sequence }))
             .map { tool ->
                 val waiting = tool.holds.count { !it.fulfilled }

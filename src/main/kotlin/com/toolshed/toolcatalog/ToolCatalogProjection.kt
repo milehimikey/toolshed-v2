@@ -3,7 +3,7 @@ package com.toolshed.toolcatalog
 import com.toolshed.addtool.ToolAdded
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
-import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.expirehold.HoldExpired
 import com.toolshed.extendloan.LoanExtended
 import com.toolshed.fulfillhold.HoldFulfilled
@@ -11,11 +11,12 @@ import com.toolshed.placehold.HoldPlaced
 import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import org.axonframework.messaging.eventhandling.annotation.EventHandler
 import org.springframework.stereotype.Component
 
 /**
- * Applies exactly the eleven events the Tool Catalog view reads (INV-TCAT-9). Overdue notices,
+ * Applies exactly the twelve events the Tool Catalog view reads (INV-TCAT-9). Overdue notices,
  * pickup emails and email changes are not in the view, so they have no handler here.
  */
 @Component
@@ -73,7 +74,12 @@ class ToolCatalogProjection(
     }
 
     @EventHandler
-    fun on(event: NeighborAccountClosed) {
-        repository.closeAccount(event.neighborId)
+    fun on(event: ToolMaintenanceScheduled) {
+        repository.scheduleMaintenance(event.toolId)
+    }
+
+    @EventHandler
+    fun on(event: ToolMaintenanceCompleted) {
+        repository.completeMaintenance(event.toolId)
     }
 }

@@ -249,7 +249,7 @@ class ToolCatalogProjectionTest {
         r.add(drill, "Cordless drill")
         r.placeHold(h1, drill, cara)
         r.fulfillHold(h1, drill)
-        r.closeAccount(cara)
+        r.cancelHold(h1)
         assertThat(r.rowOf(drill).status).isEqualTo(ToolCatalogStatus.AVAILABLE)
     }
 
@@ -282,7 +282,8 @@ class ToolCatalogProjectionTest {
         r.placeHold(h2, drill, cara)
         r.placeHold(h3, hedgeTrimmer, cara)
 
-        r.closeAccount(cara)
+        r.cancelHold(h2)
+        r.cancelHold(h3)
 
         val drillRow = r.rowOf(drill)
         val trimmerRow = r.rowOf(hedgeTrimmer)
@@ -410,5 +411,70 @@ class ToolCatalogProjectionTest {
         val rows = r.rows()
         assertThat(rows).hasSize(300)
         assertThat(rows.all { it.status == ToolCatalogStatus.AVAILABLE }).isTrue()
+    }
+
+    // --- INV-TCAT-15: a tool in maintenance drops off at once ---
+
+    @Test
+    fun `INV-TCAT-15 a tool sent for maintenance drops off, the other tool is unchanged`() {
+        val r = ToolCatalogRepository()
+        r.add(drill, "Cordless drill")
+        r.add(ladder, "Ladder")
+        r.scheduleMaintenance(drill)
+        assertThat(r.rows().map { it.toolId }).containsExactly(ladder)
+        assertThat(r.rowOf(ladder).status).isEqualTo(ToolCatalogStatus.AVAILABLE)
+    }
+
+    @Test
+    fun `INV-TCAT-15 maintenance scheduled for a tool that is not listed changes nothing`() {
+        val r = ToolCatalogRepository()
+        r.add(drill, "Cordless drill")
+        r.retire(drill)
+        r.scheduleMaintenance(drill)
+        r.scheduleMaintenance(ladder)
+        r.completeMaintenance(drill)
+        assertThat(r.rows()).isEmpty()
+    }
+
+    // --- INV-TCAT-16: completed maintenance lists the tool again as available ---
+
+    @Test
+    fun `INV-TCAT-16 maintenance completed lists the tool again as available with its original details`() {
+        val r = ToolCatalogRepository()
+        r.add(drill, "Cordless drill", description = "18V, two batteries", days = 7)
+        r.scheduleMaintenance(drill)
+        r.completeMaintenance(drill)
+        val row = r.rowOf(drill)
+        assertThat(row.name).isEqualTo("Cordless drill")
+        assertThat(row.description).isEqualTo("18V, two batteries")
+        assertThat(row.defaultCheckoutPeriodDays).isEqualTo(7)
+        assertThat(row.addedAt).isEqualTo(now)
+        assertThat(row.status).isEqualTo(ToolCatalogStatus.AVAILABLE)
+        assertThat(row.dueDate).isNull()
+        assertThat(row.holdsWaiting).isZero()
+        assertThat(row.canCheckOut).isTrue()
+        assertThat(row.canPlaceHold).isFalse()
+    }
+
+    @Test
+    fun `INV-TCAT-16 maintenance completed for a tool retired in maintenance leaves it unlisted (INV-TCAT-8)`() {
+        val r = ToolCatalogRepository()
+        r.add(drill, "Cordless drill")
+        r.scheduleMaintenance(drill)
+        r.retire(drill)
+        r.completeMaintenance(drill)
+        assertThat(r.rows()).isEmpty()
+    }
+
+    @Test
+    fun `INV-TCAT-16 and INV-TCAT-12 maintenance events repeated or out of place change nothing`() {
+        val r = ToolCatalogRepository()
+        r.add(ladder, "Ladder")
+        r.add(drill, "Cordless drill")
+        r.scheduleMaintenance(drill)
+        r.completeMaintenance(ladder)
+        r.scheduleMaintenance(drill)
+        assertThat(r.rows().map { it.toolId }).containsExactly(ladder)
+        assertThat(r.rowOf(ladder).status).isEqualTo(ToolCatalogStatus.AVAILABLE)
     }
 }
