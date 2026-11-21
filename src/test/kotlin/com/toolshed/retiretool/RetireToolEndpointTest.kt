@@ -136,6 +136,25 @@ class RetireToolEndpointTest {
         }
     }
 
+    @Test
+    fun `INV-RTR-10 PUT a retirement with a malformed tool id answers 400 bad input`() {
+        mockMvc
+            .put("/api/tools/not-a-uuid/retirement") {
+                header("X-Toolshed-Neighbor-Id", UUID.randomUUID().toString())
+                header("X-Toolshed-Role", "shed-manager")
+            }.andExpect { status { isBadRequest() } }
+    }
+
+    @Test
+    fun `INV-RTR-1 PUT a retirement with a malformed tool id and no sign-in answers not-signed-in first`() {
+        mockMvc
+            .put("/api/tools/not-a-uuid/retirement") { accept = MediaType.APPLICATION_PROBLEM_JSON }
+            .andExpect {
+                status { isEqualTo(422) }
+                jsonPath("$.reason") { value("not-signed-in") }
+            }
+    }
+
     /** Reads the store from the start for a few seconds and returns the Tool Retired events for [tool]. */
     private fun retiredFor(tool: ToolId): List<ToolRetired> {
         val found = mutableListOf<ToolRetired>()
