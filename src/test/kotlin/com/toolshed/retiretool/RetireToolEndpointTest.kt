@@ -137,7 +137,7 @@ class RetireToolEndpointTest {
     }
 
     @Test
-    fun `INV-RTR-10 PUT a retirement with a malformed tool id answers 400 bad input`() {
+    fun `PUT a retirement with a malformed tool id is bad input, so 400`() {
         mockMvc
             .put("/api/tools/not-a-uuid/retirement") {
                 header("X-Toolshed-Neighbor-Id", UUID.randomUUID().toString())
