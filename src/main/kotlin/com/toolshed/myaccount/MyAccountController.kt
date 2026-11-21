@@ -10,7 +10,7 @@ import java.util.UUID
 
 /**
  * GET /api/neighbors/{neighborId}/account: the signed-in neighbor's own My Account (Amendment 3). Another
- * neighbor's id is refused (INV-MYAC-14), no sign-in is refused first (INV-MYAC-13), a malformed id is 400, an unknown id is 404.
+ * neighbor's id is refused (INV-MYAC-14), no sign-in is refused first (INV-MYAC-13), a malformed id is not the neighbor's own so it is refused too, an unknown id is 404.
  */
 @RestController
 class MyAccountController(
