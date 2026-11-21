@@ -86,11 +86,11 @@ class MyAccountEndpointTest {
     }
 
     @Test
-    fun `INV-MYAC-14 - given Ben signed in, when a malformed id is asked for, then refused requester-mismatch`() {
+    fun `INV-MYAC-14 - given Ben signed in, when a malformed id is asked for, then bad input 400, not requester-mismatch`() {
         read("not-a-uuid", caller = UUID.randomUUID().toString()).andExpect {
-            status { isEqualTo(422) }
-            jsonPath("$.invariant") { value("INV-MYAC-14") }
-            jsonPath("$.reason") { value("requester-mismatch") }
+            status { isBadRequest() }
+            jsonPath("$.invariant") { doesNotExist() }
+            jsonPath("$.reason") { doesNotExist() }
         }
     }
 
