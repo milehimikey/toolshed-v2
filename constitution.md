@@ -169,6 +169,9 @@ and over Amendments 1–5, where they differ.
    Every neighbor command carries the `neighborId` it acts for. A request whose signed-in
    neighbor isn't that neighbor is refused `requester-mismatch`. A shed-manager command from a
    caller without the role is refused `not-shed-manager`. Both checks come before any other.
+   One exception, by the owner's ruling of 2026-11-20: a missing or malformed id is bad input
+   (Amendment 7) and is answered after `not-signed-in` and before `requester-mismatch`, since
+   an id that is not an id cannot be compared with the signed-in neighbor's.
    Neighbors only ever see their own account, loans and holds. Views are guarded the same way. A
    shed-manager view refuses other callers `not-shed-manager`, and a neighbor's own views refuse
    another neighbor's data `requester-mismatch`. Any caller who isn't signed in is refused
