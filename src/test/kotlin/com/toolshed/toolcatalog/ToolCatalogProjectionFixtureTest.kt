@@ -109,12 +109,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog =
-                    queryUntil(gateway) {
-                        it.tools.any { row ->
-                            row.toolId == drill && row.status == ToolCatalogStatus.CHECKED_OUT
-                        }
-                    }
+                val catalog = settled(gateway)
                 val row = catalog.tools.single { it.toolId == drill }
                 assertThat(row.dueDate).isEqualTo(LocalDate.of(2026, 10, 12))
             }.`when`()
@@ -137,12 +132,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog =
-                    queryUntil(gateway) {
-                        it.tools.any { row ->
-                            row.toolId == drill && row.status == ToolCatalogStatus.SET_ASIDE
-                        }
-                    }
+                val catalog = settled(gateway)
                 val row = catalog.tools.single { it.toolId == drill }
                 assertThat(row.holdsWaiting).isEqualTo(1)
                 assertThat(row.canCheckOut).isTrue()
@@ -209,12 +199,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val before =
-                    queryUntil(gateway) {
-                        it.tools.any { row ->
-                            row.toolId == drill && row.status == ToolCatalogStatus.CHECKED_OUT
-                        }
-                    }
+                val before = settled(gateway)
                 assertThat(before.tools.single { it.toolId == drill }.dueDate).isEqualTo(LocalDate.of(2026, 10, 12))
             }.`when`()
             .event(
