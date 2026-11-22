@@ -6,7 +6,6 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
-import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.extendloan.LoanExtended
@@ -74,30 +73,6 @@ class CheckOutToolAxonFixtureTest {
             .event(NeighborRegistered(cara, "Cara", "cara@example.com", now))
     }
 
-    private val names = mapOf(drill to "Cordless drill", ladder to "Ladder")
-    private val people =
-        mapOf(ana to ("Ana" to "ana@example.com"), ben to ("Ben" to "ben@example.com"), cara to ("Cara" to "cara@example.com"))
-
-    /** The Tool Checked Out the handler records: the command's facts plus the names and email it copies. */
-    private fun recorded(
-        loan: LoanId,
-        tool: ToolId,
-        neighbor: NeighborId,
-        days: Int,
-        due: LocalDate,
-        at: Instant,
-    ) = ToolCheckedOut(
-        loan,
-        tool,
-        neighbor,
-        days,
-        due,
-        at,
-        toolName = names.getValue(tool),
-        neighborName = people.getValue(neighbor).first,
-        neighborEmail = people.getValue(neighbor).second,
-    )
-
     private fun checkout(
         loan: LoanId,
         tool: ToolId,
@@ -127,7 +102,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -138,7 +113,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana, "3"))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 3, LocalDate.of(2026, 10, 8), now))
+            .events(ToolCheckedOut(loan, drill, ana, 3, LocalDate.of(2026, 10, 8), now))
     }
 
     @Test
@@ -149,7 +124,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana, "1"))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 1, LocalDate.of(2026, 10, 6), now))
+            .events(ToolCheckedOut(loan, drill, ana, 1, LocalDate.of(2026, 10, 6), now))
     }
 
     @Test
@@ -160,7 +135,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana, "7"))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -278,7 +253,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     // --- INV-CHK-5: overdue loans ---
@@ -302,7 +277,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -316,7 +291,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -330,7 +305,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     // --- INV-CHK-8: no loan limit ---
@@ -345,7 +320,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     // --- INV-CHK-12: idempotency by loan ID ---
@@ -396,7 +371,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ben))
             .then()
             .success()
-            .events(recorded(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -409,7 +384,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ben))
             .then()
             .success()
-            .events(recorded(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -451,7 +426,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ben))
             .then()
             .success()
-            .events(recorded(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -529,7 +504,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, cara))
             .then()
             .success()
-            .events(recorded(loan, drill, cara, 7, LocalDate.of(2026, 10, 25), lapsedNow))
+            .events(ToolCheckedOut(loan, drill, cara, 7, LocalDate.of(2026, 10, 25), lapsedNow))
     }
 
     @Test
@@ -542,7 +517,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 25), lapsedNow))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 25), lapsedNow))
     }
 
     @Test
@@ -555,7 +530,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ben))
             .then()
             .success()
-            .events(recorded(loan, drill, ben, 7, LocalDate.of(2026, 10, 25), lapsedNow))
+            .events(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 25), lapsedNow))
     }
 
     // --- a closed holder's holds end (close-account.md) ---
@@ -571,7 +546,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, cara))
             .then()
             .success()
-            .events(recorded(loan, drill, cara, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, cara, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -585,7 +560,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     // --- INV-CHK-13: tools in maintenance ---
@@ -610,7 +585,7 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(loan, drill, ana))
             .then()
             .success()
-            .events(recorded(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
     }
 
     @Test
@@ -633,31 +608,5 @@ class CheckOutToolAxonFixtureTest {
             .command(checkout(LoanId(UUID.randomUUID()), drill, ana))
             .then()
             .exceptionSatisfies { assertRefused("tool-in-maintenance", it) }
-    }
-
-    // --- Event fields copied at checkout (INV-CHK-6: the event's facts) ---
-
-    @Test
-    fun `INV-CHK-6 - given ana changed her email, when she checks out, then the event carries the current email and the names`() {
-        val loan = LoanId(UUID.randomUUID())
-        world()
-            .event(NeighborEmailChanged(ana, "ana@new.example.com", now))
-            .`when`()
-            .command(checkout(loan, drill, ana))
-            .then()
-            .success()
-            .events(
-                ToolCheckedOut(
-                    loan,
-                    drill,
-                    ana,
-                    7,
-                    LocalDate.of(2026, 10, 12),
-                    now,
-                    toolName = "Cordless drill",
-                    neighborName = "Ana",
-                    neighborEmail = "ana@new.example.com",
-                ),
-            )
     }
 }

@@ -17,8 +17,4 @@ data class ToolCheckedOut(
     val loanPeriodDays: Int,
     val dueDate: LocalDate,
     val checkedOutAt: Instant,
-    // Copied at checkout so the loan's readers never look them up. Defaults keep existing callers compiling.
-    val toolName: String = "",
-    val neighborName: String = "",
-    val neighborEmail: String = "",
 )

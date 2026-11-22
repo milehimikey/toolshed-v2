@@ -5,7 +5,6 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
-import com.toolshed.changeemail.NeighborEmailChanged
 import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.extendloan.LoanExtended
@@ -65,7 +64,6 @@ class CheckOutToolDeciderTest {
             is ToolCheckedOut -> s.evolve(e)
             is LoanExtended -> s.evolve(e)
             is NeighborRegistered -> s.evolve(e)
-            is NeighborEmailChanged -> s.evolve(e)
             is ToolMaintenanceScheduled -> s.evolve(e)
             is ToolMaintenanceCompleted -> s.evolve(e)
             is ToolMaintenanceTasksChanged -> Unit
@@ -256,15 +254,5 @@ class CheckOutToolDeciderTest {
         val loan = LoanId(UUID.randomUUID())
         val s = state(ToolCheckedOut(loan, drill, ben, 7, LocalDate.of(2026, 10, 12), now), scheduled())
         assertEquals("tool-in-maintenance", refusal { decide(s, request(ana)) }.reason)
-    }
-
-    // --- Names and email copied onto the event ---
-
-    @Test
-    fun `INV-CHK-6 - the event carries the tool name, the borrower's name, and the email current at checkout`() {
-        val event = decide(state(NeighborEmailChanged(ana, "new@example.com", now)), request(ana)).single()
-        assertEquals("Drill", event.toolName)
-        assertEquals("Ana", event.neighborName)
-        assertEquals("new@example.com", event.neighborEmail)
     }
 }

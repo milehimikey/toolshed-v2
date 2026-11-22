@@ -81,9 +81,6 @@ object CheckOutToolDecider {
                 loanPeriodDays = days,
                 dueDate = today.plusDays(days.toLong()),
                 checkedOutAt = checkedOutAt,
-                toolName = state.toolNameOf(command.toolId),
-                neighborName = state.neighborNameOf(command.neighborId),
-                neighborEmail = state.neighborEmailOf(command.neighborId),
             ),
         )
     }
