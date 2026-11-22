@@ -222,7 +222,7 @@ class PlaceHoldAxonFixtureTest {
             ToolMaintenanceScheduled(t2, "Ladder", listOf("Replace rung"), null, "Mike Key", now)
 
     @Test
-    fun `INV-HOLD-16 given the ladder is in the shed with maintenance scheduled, when Ben places a hold, then refused tool-in-maintenance`() {
+    fun `INV-HOLD-16 given maintenance scheduled on the ladder, when Ben places a hold, then refused tool-in-maintenance`() {
         fixture
             .given()
             .recorded(ladderScheduled())
