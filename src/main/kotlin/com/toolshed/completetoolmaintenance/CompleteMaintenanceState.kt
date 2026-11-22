@@ -18,7 +18,7 @@ import org.axonframework.messaging.eventstreaming.EventCriteria
  * rule and never looser (the house idiom).
  */
 @EventSourced(idType = MaintenanceLedger::class)
-class MaintenanceState
+class CompleteMaintenanceState
     @EntityCreator
     constructor() {
         private val tools = mutableSetOf<ToolId>()

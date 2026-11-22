@@ -31,7 +31,7 @@ internal data class Work(
  * Fulfilled carry no tool, so a hold is followed to its tool through those two (see the slice doc's Dependencies).
  */
 @EventSourced(idType = MaintenanceLedger::class)
-class MaintenanceState
+class ScheduleMaintenanceState
     @EntityCreator
     constructor() {
         private val toolNames = mutableMapOf<ToolId, String>()
