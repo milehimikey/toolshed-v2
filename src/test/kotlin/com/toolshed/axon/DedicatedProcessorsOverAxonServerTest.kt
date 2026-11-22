@@ -32,6 +32,8 @@ import com.toolshed.toolcatalog.ToolCatalogConfiguration
 import com.toolshed.toolcatalog.ToolCatalogProjection
 import com.toolshed.toolinventory.ToolInventoryConfiguration
 import com.toolshed.toolinventory.ToolInventoryProjection
+import com.toolshed.toolmaintenance.ToolMaintenanceConfiguration
+import com.toolshed.toolmaintenance.ToolMaintenanceProjection
 import com.toolshed.undeliverednotices.UndeliveredNoticesConfiguration
 import com.toolshed.undeliverednotices.UndeliveredNoticesProjection
 import io.axoniq.framework.testcontainer.AxonServerContainer
@@ -93,6 +95,7 @@ class DedicatedProcessorsOverAxonServerTest {
                 Arguments.of(SuspendedNeighborsConfiguration.PROCESSOR, SuspendedNeighborsProjection::class.java),
                 Arguments.of(ToolCatalogConfiguration.PROCESSOR, ToolCatalogProjection::class.java),
                 Arguments.of(ToolInventoryConfiguration.PROCESSOR, ToolInventoryProjection::class.java),
+                Arguments.of(ToolMaintenanceConfiguration.PROCESSOR, ToolMaintenanceProjection::class.java),
                 Arguments.of(UndeliveredNoticesConfiguration.PROCESSOR, UndeliveredNoticesProjection::class.java),
             )
     }
