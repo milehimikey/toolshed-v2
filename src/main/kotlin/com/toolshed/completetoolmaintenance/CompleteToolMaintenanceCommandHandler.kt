@@ -18,7 +18,7 @@ class CompleteToolMaintenanceCommandHandler(
     @CommandHandler
     fun handle(
         command: CompleteToolMaintenance,
-        @InjectEntity state: MaintenanceState,
+        @InjectEntity state: CompleteMaintenanceState,
         context: ProcessingContext,
     ) {
         val recorded =

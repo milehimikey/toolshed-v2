@@ -18,7 +18,7 @@ object CompleteToolMaintenanceConfiguration {
         val stateEntity =
             EventSourcedEntityModule.autodetected(
                 MaintenanceLedger::class.java,
-                MaintenanceState::class.java,
+                CompleteMaintenanceState::class.java,
             )
         val commandHandlingModule =
             CommandHandlingModule
