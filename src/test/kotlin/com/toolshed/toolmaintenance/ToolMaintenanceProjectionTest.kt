@@ -331,4 +331,31 @@ class ToolMaintenanceProjectionTest {
         assertThat(row.scheduledAt).isEqualTo(nov3)
         assertThat(row.scheduledBy).isEqualTo("Sam")
     }
+
+    @Test
+    fun `INV-TMNT-6 INV-TMNT-2 a Scheduled replayed after Completed does not bring the entry back`() {
+        val original = scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"), at = nov3)
+        projection.on(ToolMaintenanceCompleted(trimmer, nov3at11))
+        projection.on(original)
+        assertThat(rows()).isEmpty()
+    }
+
+    @Test
+    fun `INV-TMNT-6 INV-TMNT-3 a Scheduled replayed after Tool Retired does not bring the entry back`() {
+        val original = scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"), at = nov3)
+        projection.on(ToolRetired(trimmer, nov3at11))
+        projection.on(original)
+        assertThat(rows()).isEmpty()
+    }
+
+    @Test
+    fun `INV-TMNT-4 INV-TMNT-6 a later Scheduled after Completed still makes a new entry, and an old Completed replay leaves it`() {
+        val first = scheduled(trimmer, "Hedge trimmer", listOf("a"), at = nov3)
+        val done = ToolMaintenanceCompleted(trimmer, nov3at11)
+        projection.on(done)
+        scheduled(trimmer, "Hedge trimmer", listOf("b"), at = nov4)
+        projection.on(first)
+        projection.on(done)
+        assertThat(rowOf(trimmer).tasks).containsExactly("b")
+    }
 }

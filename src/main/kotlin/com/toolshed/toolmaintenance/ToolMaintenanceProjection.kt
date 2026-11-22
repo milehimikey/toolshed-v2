@@ -44,12 +44,12 @@ class ToolMaintenanceProjection(
     @EventHandler
     fun on(event: ToolMaintenanceCompleted) {
         logger.debug { "tool-maintenance completed toolId=${event.toolId.value}" }
-        repository.remove(event.toolId)
+        repository.complete(event.toolId, event.completedAt)
     }
 
     @EventHandler
     fun on(event: ToolRetired) {
         logger.debug { "tool-maintenance tool-retired toolId=${event.toolId.value}" }
-        repository.remove(event.toolId)
+        repository.retire(event.toolId)
     }
 }

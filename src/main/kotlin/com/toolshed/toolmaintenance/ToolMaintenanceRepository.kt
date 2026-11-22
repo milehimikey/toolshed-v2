@@ -13,9 +13,24 @@ import java.util.concurrent.ConcurrentHashMap
 class ToolMaintenanceRepository {
     private val entries = ConcurrentHashMap<ToolId, ToolMaintenanceRow>()
 
-    /** Creates the entry; a tool that already has one keeps it as it was (INV-TMNT-13). */
+    private val dropped = ConcurrentHashMap.newKeySet<ToolId>()
+    private val lastMaintenanceSeen = ConcurrentHashMap<ToolId, Instant>()
+
+    /**
+     * Creates the entry; a tool that already has one keeps it as it was (INV-TMNT-13). A tool retired for good never
+     * comes back, and an event whose scheduledAt is not later than the latest maintenance instant seen for the tool is
+     * a replay and is ignored (INV-TMNT-6); a genuinely later one makes a fresh entry (INV-TMNT-4).
+     */
     fun schedule(row: ToolMaintenanceRow) {
-        entries.putIfAbsent(row.toolId, row)
+        if (row.toolId in dropped) return
+        lastMaintenanceSeen.compute(row.toolId) { _, seen ->
+            if (seen != null && !row.scheduledAt.isAfter(seen)) {
+                seen
+            } else {
+                entries.putIfAbsent(row.toolId, row)
+                row.scheduledAt
+            }
+        }
     }
 
     /** Replaces tasks and notes as a whole (INV-TMNT-11); a tool with no entry changes nothing (INV-TMNT-12). */
@@ -31,8 +46,27 @@ class ToolMaintenanceRepository {
         }
     }
 
-    /** Removes the entry; a tool with none changes nothing (INV-TMNT-2, INV-TMNT-3). */
-    fun remove(toolId: ToolId) {
+    /**
+     * Removes the entry when maintenance is completed (INV-TMNT-2); a tool with none changes nothing. A completion
+     * earlier than the latest maintenance instant seen is a replay and is ignored (INV-TMNT-6).
+     */
+    fun complete(
+        toolId: ToolId,
+        completedAt: Instant,
+    ) {
+        lastMaintenanceSeen.compute(toolId) { _, seen ->
+            if (seen != null && completedAt.isBefore(seen)) {
+                seen
+            } else {
+                entries.remove(toolId)
+                completedAt
+            }
+        }
+    }
+
+    /** Removes the entry for good: a retired tool never shows as needing attention again (INV-TMNT-3, INV-TMNT-6). */
+    fun retire(toolId: ToolId) {
+        dropped.add(toolId)
         entries.remove(toolId)
     }
 
