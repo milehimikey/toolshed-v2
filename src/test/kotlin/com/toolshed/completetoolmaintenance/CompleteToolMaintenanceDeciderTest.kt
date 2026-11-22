@@ -22,8 +22,8 @@ class CompleteToolMaintenanceDeciderTest {
     private val added = ToolAdded(trimmer, "Hedge trimmer", null, 7, now)
     private val scheduled = ToolMaintenanceScheduled(trimmer, "Hedge trimmer", listOf("sharpen"), null, "Mike", now)
 
-    private fun stateWith(vararg events: Any): MaintenanceState {
-        val state = MaintenanceState()
+    private fun stateWith(vararg events: Any): CompleteMaintenanceState {
+        val state = CompleteMaintenanceState()
         events.forEach { event ->
             when (event) {
                 is ToolAdded -> state.evolve(event)
@@ -37,7 +37,8 @@ class CompleteToolMaintenanceDeciderTest {
         return state
     }
 
-    private fun decide(state: MaintenanceState) = CompleteToolMaintenanceDecider.decide(CompleteToolMaintenance(trimmer), state, now)
+    private fun decide(state: CompleteMaintenanceState) =
+        CompleteToolMaintenanceDecider.decide(CompleteToolMaintenance(trimmer), state, now)
 
     // --- INV-CTMN-5: a tool in maintenance is completed, recording only the completion ---
 

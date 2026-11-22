@@ -15,7 +15,7 @@ object CompleteToolMaintenanceDecider {
     /** Pure decision. The checks run in the doc's order; the first that fails is the reason returned. */
     fun decide(
         command: CompleteToolMaintenance,
-        state: MaintenanceState,
+        state: CompleteMaintenanceState,
         completedAt: Instant,
     ): List<ToolMaintenanceCompleted> {
         if (!state.hasTool(command.toolId)) refuse("INV-CTMN-3", "tool-not-found", "There is no such tool.")
