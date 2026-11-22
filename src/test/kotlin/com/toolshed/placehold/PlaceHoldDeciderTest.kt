@@ -8,11 +8,13 @@ import com.toolshed.axon.ToolId
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.suspendneighbor.NeighborSuspended
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -42,6 +44,8 @@ class PlaceHoldDeciderTest {
                 is ToolLost -> state.evolve(event)
                 is ToolCheckedOut -> state.evolve(event)
                 is ToolReturned -> state.evolve(event)
+                is ToolMaintenanceScheduled -> state.evolve(event)
+                is ToolMaintenanceCompleted -> state.evolve(event)
                 is NeighborRegistered -> state.evolve(event)
                 is NeighborSuspended -> state.evolve(event)
                 is NeighborAccountClosed -> state.evolve(event)
@@ -200,5 +204,41 @@ class PlaceHoldDeciderTest {
     fun `INV-HOLD-2 a free ladder with no holds is refused available`() {
         val state = stateWith(ToolAdded(ladder, "Ladder", null, 7, now), NeighborRegistered(ben, "Ben Cole", "ben@example.org", now))
         refusedWith("tool-available") { decide(state, tool = ladder, by = ben) }
+    }
+
+    // --- INV-HOLD-16: maintenance is refused before the available check, and retired wins ---
+
+    private val ladderAdded = ToolAdded(ladder, "Ladder", null, 7, now)
+    private val ben1 = NeighborRegistered(ben, "Ben Cole", "ben@example.org", now)
+    private val ladderScheduled = ToolMaintenanceScheduled(ladder, "Ladder", listOf("Replace rung"), null, "Mike Key", now)
+
+    @Test
+    fun `INV-HOLD-16 a ladder in maintenance is refused tool-in-maintenance, not available`() {
+        val state = stateWith(ladderAdded, ben1, ladderScheduled)
+        refusedWith("tool-in-maintenance") { decide(state, tool = ladder, by = ben) }
+    }
+
+    @Test
+    fun `INV-HOLD-16 a ladder back from maintenance is refused tool-available`() {
+        val state = stateWith(ladderAdded, ben1, ladderScheduled, ToolMaintenanceCompleted(ladder, now))
+        refusedWith("tool-available") { decide(state, tool = ladder, by = ben) }
+    }
+
+    @Test
+    fun `INV-HOLD-16 a ladder retired in maintenance is refused tool-retired`() {
+        val state = stateWith(ladderAdded, ben1, ladderScheduled, ToolRetired(ladder, now))
+        refusedWith("tool-retired") { decide(state, tool = ladder, by = ben) }
+    }
+
+    @Test
+    fun `INV-HOLD-16 a ladder lost in maintenance is refused tool-retired`() {
+        val state = stateWith(ladderAdded, ben1, ladderScheduled, ToolLost(loan, ladder, now))
+        refusedWith("tool-retired") { decide(state, tool = ladder, by = ben) }
+    }
+
+    @Test
+    fun `INV-HOLD-16 maintenance on the ladder does not stop a hold on the drill`() {
+        val state = stateWith(*shed(ladderAdded, ladderScheduled))
+        assertThat(decide(state, tool = drill)).hasSize(1)
     }
 }
