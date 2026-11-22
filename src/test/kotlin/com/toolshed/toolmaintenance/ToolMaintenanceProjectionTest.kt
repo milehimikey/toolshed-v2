@@ -57,7 +57,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-1 ---
 
     @Test
-    fun `INV-TMNT-1 given no tools, when Tool Maintenance Scheduled for the hedge trimmer, then listed with its tasks in order and scheduledAt`() {
+    fun `INV-TMNT-1 given no tools when trimmer scheduled then listed in order`() {
         assertThat(rows()).isEmpty()
         scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades", "oil hinges"))
         val row = rowOf(trimmer)
@@ -67,7 +67,7 @@ class ToolMaintenanceProjectionTest {
     }
 
     @Test
-    fun `INV-TMNT-1 given the hedge trimmer listed, when Tool Maintenance Scheduled for the ladder, then both are listed with their own tasks`() {
+    fun `INV-TMNT-1 given hedge trimmer listed when ladder scheduled then both listed`() {
         scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"))
         scheduled(ladder, "Ladder", listOf("replace rung"))
         assertThat(rows()).hasSize(2)
@@ -76,7 +76,7 @@ class ToolMaintenanceProjectionTest {
     }
 
     @Test
-    fun `INV-TMNT-1 given one Cordless drill listed, when a second tool named Cordless drill is scheduled, then both are separate entries`() {
+    fun `INV-TMNT-1 given one Cordless drill listed when second drill scheduled then both are separate entries`() {
         scheduled(drill, "Cordless drill", listOf("clean"))
         scheduled(drill2, "Cordless drill", listOf("tune"))
         assertThat(rows().map { it.toolId }).containsExactly(drill, drill2)
@@ -96,7 +96,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-2 ---
 
     @Test
-    fun `INV-TMNT-2 given the trimmer and the ladder listed, when Tool Maintenance Completed for the trimmer, then it drops off and the ladder is unchanged`() {
+    fun `INV-TMNT-2 given trimmer and the ladder listed when Tool Maintenance Completed for the trimmer then ladder unchanged`() {
         scheduled(trimmer, "Hedge trimmer", listOf("a"))
         val ladderRow = scheduled(ladder, "Ladder", listOf("b")).let { rowOf(ladder) }
         projection.on(ToolMaintenanceCompleted(trimmer, nov3at10))
@@ -113,7 +113,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-3 ---
 
     @Test
-    fun `INV-TMNT-3 given the trimmer and the ladder listed, when Tool Retired for the trimmer, then it drops off and the ladder is unchanged`() {
+    fun `INV-TMNT-3 given trimmer and the ladder listed when Tool Retired for the trimmer then ladder unchanged`() {
         scheduled(trimmer, "Hedge trimmer", listOf("a"))
         scheduled(ladder, "Ladder", listOf("b"))
         val ladderRow = rowOf(ladder)
@@ -122,7 +122,7 @@ class ToolMaintenanceProjectionTest {
     }
 
     @Test
-    fun `INV-TMNT-3 INV-TMNT-5 given the ladder listed, when Tool Retired for the cordless drill not in maintenance, then only the ladder is listed`() {
+    fun `INV-TMNT-3 INV-TMNT-5 given ladder listed when drill retired not in maintenance then only the ladder is listed`() {
         scheduled(ladder, "Ladder", listOf("b"))
         projection.on(ToolRetired(drill, nov3at10))
         assertThat(rows().map { it.toolId }).containsExactly(ladder)
@@ -131,7 +131,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-4 ---
 
     @Test
-    fun `INV-TMNT-4 given the trimmer sent, changed, completed, when scheduled again with replace cord later, then one fresh entry without lastChanged`() {
+    fun `INV-TMNT-4 given trimmer sent, changed, completed when rescheduled later then one fresh entry without lastChanged`() {
         scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"), notes = "old notes", by = "Sam")
         changed(trimmer, listOf("x"), "n")
         projection.on(ToolMaintenanceCompleted(trimmer, nov3at11))
@@ -149,7 +149,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-5 ---
 
     @Test
-    fun `INV-TMNT-5 given the trimmer listed, when Tool Added for a drill and a Hold Placed for the ladder, then only the trimmer is listed`() {
+    fun `INV-TMNT-5 given trimmer listed when drill added and ladder held then only the trimmer is listed`() {
         scheduled(trimmer, "Hedge trimmer", listOf("a"))
         val before = rows()
         // The projection has no handler for these events: only the four maintenance events change the view.
@@ -170,7 +170,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-6 ---
 
     @Test
-    fun `INV-TMNT-6 given the trimmer listed once, when the same Tool Maintenance Scheduled is applied again, then still once with the same tasks and scheduledAt`() {
+    fun `INV-TMNT-6 given trimmer listed once when Scheduled again then still once`() {
         val event = scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"))
         projection.on(event)
         assertThat(rows()).hasSize(1)
@@ -179,7 +179,7 @@ class ToolMaintenanceProjectionTest {
     }
 
     @Test
-    fun `INV-TMNT-6 given the trimmer dropped off after completion, when the same Tool Maintenance Completed is applied again, then unchanged`() {
+    fun `INV-TMNT-6 given trimmer dropped off after completion when Completed again then unchanged`() {
         scheduled(trimmer, "Hedge trimmer", listOf("a"))
         scheduled(ladder, "Ladder", listOf("b"))
         val done = ToolMaintenanceCompleted(trimmer, nov3at10)
@@ -251,7 +251,7 @@ class ToolMaintenanceProjectionTest {
     }
 
     @Test
-    fun `INV-TMNT-10 given a neighbor signed in without the role, when the tools in maintenance are asked for, then refused not-shed-manager`() {
+    fun `INV-TMNT-10 given a neighbor signed in without the role when asked then refused not-shed-manager`() {
         assertThatThrownBy {
             Caller(neighborId = NeighborId(UUID.randomUUID()), isShedManager = false).requireToolMaintenanceReader()
         }.isInstanceOfSatisfying(CommandRejected::class.java) {
@@ -269,7 +269,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-11 ---
 
     @Test
-    fun `INV-TMNT-11 given the trimmer with one task and notes, when Tasks Changed with three tasks and new notes, then replaced as a whole`() {
+    fun `INV-TMNT-11 given trimmer with one task and notes when Changed to three tasks then replaced as a whole`() {
         scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"), notes = "blade chipped near the tip", by = "Alex")
         changed(trimmer, listOf("sharpen blades", "replace cord", "oil hinges"), "cord frayed", by = "Sam", at = nov3at11)
         val row = rowOf(trimmer)
@@ -315,7 +315,7 @@ class ToolMaintenanceProjectionTest {
     }
 
     @Test
-    fun `INV-TMNT-11 INV-TMNT-6 given tasks changed to replace cord, when the same Tasks Changed is applied again, then still the one task`() {
+    fun `INV-TMNT-11 INV-TMNT-6 given tasks changed to replace cord when Changed again then still the one task`() {
         scheduled(trimmer, "Hedge trimmer", listOf("a"))
         val event = changed(trimmer, listOf("replace cord"))
         val after = rowOf(trimmer)
@@ -327,7 +327,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-12 ---
 
     @Test
-    fun `INV-TMNT-12 given the ladder listed, when Tasks Changed for the cordless drill not in maintenance, then only the ladder is listed`() {
+    fun `INV-TMNT-12 given ladder listed when drill changed not in maintenance then only the ladder is listed`() {
         scheduled(ladder, "Ladder", listOf("b"))
         changed(drill, listOf("x"))
         assertThat(rows().map { it.toolId }).containsExactly(ladder)
@@ -345,7 +345,7 @@ class ToolMaintenanceProjectionTest {
     // --- INV-TMNT-13 ---
 
     @Test
-    fun `INV-TMNT-13 INV-TMNT-6 given the trimmer changed to replace cord, when the same 09 00 Scheduled is applied again, then replace cord and 09 00 stay`() {
+    fun `INV-TMNT-13 INV-TMNT-6 given trimmer changed to replace cord when 09 00 Scheduled again then both stay`() {
         val original = scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"), by = "Sam", at = nov3)
         changed(trimmer, listOf("replace cord"))
         projection.on(original)
