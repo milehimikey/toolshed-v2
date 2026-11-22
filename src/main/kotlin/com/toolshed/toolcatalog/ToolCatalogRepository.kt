@@ -40,12 +40,14 @@ class ToolCatalogRepository {
         val sequence: Long,
         val loan: OpenLoan? = null,
         val holds: List<Hold> = emptyList(),
+        val inMaintenance: Boolean = false,
     )
 
     private val tools = ConcurrentHashMap<ToolId, Tool>()
     private val dropped = ConcurrentHashMap.newKeySet<ToolId>()
     private val toolOfLoan = ConcurrentHashMap<LoanId, ToolId>()
     private val toolOfHold = ConcurrentHashMap<HoldId, ToolId>()
+    private val lastMaintenanceSeen = ConcurrentHashMap<ToolId, Instant>()
     private val sequence = AtomicLong()
 
     fun addTool(
@@ -131,7 +133,7 @@ class ToolCatalogRepository {
         tools.remove(toolId)
     }
 
-    /** Ends every hold the closed account holds, on every tool, wherever they are waiting (INV-TCAT-6). */
+    /** Ends every hold the closed account holds, on every tool, wherever they are waiting (INV-TCAT-4, INV-TCAT-6). */
     fun closeAccount(neighborId: NeighborId) {
         tools.keys.forEach { toolId ->
             tools.computeIfPresent(toolId) { _, tool ->
@@ -144,9 +146,51 @@ class ToolCatalogRepository {
         }
     }
 
+    /**
+     * Takes a listed tool out of the list but keeps its entry so completing the maintenance can restore it
+     * (INV-TCAT-15). A tool that is not listed (retired, lost, already in maintenance) is left as it is. An event
+     * whose [scheduledAt] is not later than the latest maintenance instant seen for the tool is ignored; otherwise
+     * the instant is remembered whether or not the event changes anything (INV-TCAT-12).
+     */
+    fun scheduleMaintenance(
+        toolId: ToolId,
+        scheduledAt: Instant,
+    ) {
+        lastMaintenanceSeen.compute(toolId) { _, seen ->
+            if (seen != null && !scheduledAt.isAfter(seen)) {
+                seen
+            } else {
+                tools.computeIfPresent(toolId) { _, tool -> if (tool.inMaintenance) tool else tool.copy(inMaintenance = true) }
+                scheduledAt
+            }
+        }
+    }
+
+    /**
+     * Lists a tool in maintenance again as available: no loan, no holds (INV-TCAT-16). A tool that is not in
+     * maintenance, or that was retired or lost (its entry is gone), changes nothing. An event whose [completedAt]
+     * is earlier than the latest maintenance instant seen for the tool is ignored (INV-TCAT-12).
+     */
+    fun completeMaintenance(
+        toolId: ToolId,
+        completedAt: Instant,
+    ) {
+        lastMaintenanceSeen.compute(toolId) { _, seen ->
+            if (seen != null && completedAt.isBefore(seen)) {
+                seen
+            } else {
+                tools.computeIfPresent(toolId) { _, tool ->
+                    if (tool.inMaintenance) tool.copy(inMaintenance = false, loan = null, holds = emptyList()) else tool
+                }
+                completedAt
+            }
+        }
+    }
+
     /** The screen's rows, in INV-TCAT-13 order, with status, due date, holds waiting and the two offers derived here. */
     fun rows(): List<ToolCatalogRow> =
         tools.values
+            .filterNot { it.inMaintenance }
             .sortedWith(compareBy({ it.name.lowercase() }, { it.addedAt }, { it.sequence }))
             .map { tool ->
                 val waiting = tool.holds.count { !it.fulfilled }
