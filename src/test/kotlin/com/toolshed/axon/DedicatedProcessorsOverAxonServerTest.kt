@@ -61,7 +61,7 @@ import kotlin.test.assertTrue
 
 /**
  * Every event handling component in the running app, over a real Axon Server, is alone on the named pooled-streaming
- * processor its slice fixture uses: the fourteen projections and the two notice outboxes. Without an explicit definition
+ * processor its slice fixture uses: the fifteen projections and the two notice outboxes. Without an explicit definition
  * the Spring starter names each processor after the component's package, so fixture and app would disagree on names and
  * an outbox that stops its processor on purpose (INV-OVN-4, INV-PKN-4) could stall a neighbour.
  */
@@ -171,6 +171,6 @@ class DedicatedProcessorsOverAxonServerTest {
     fun `no processor is named after a package - every handler has an explicit definition`() {
         val packageNamed = processors().keys.filter { it.startsWith("com.toolshed") }
         assertTrue(packageNamed.isEmpty(), "package-named processors still exist: $packageNamed")
-        assertEquals(16, processors().size, "expected 14 projections + 2 outboxes; processors: ${processors().keys}")
+        assertEquals(17, processors().size, "expected 15 projections + 2 outboxes; processors: ${processors().keys}")
     }
 }
