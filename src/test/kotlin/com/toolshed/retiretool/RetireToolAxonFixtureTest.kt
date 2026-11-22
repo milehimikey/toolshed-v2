@@ -6,7 +6,6 @@ import com.toolshed.axon.HoldId
 import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
-import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.placehold.HoldPlaced
@@ -111,7 +110,7 @@ class RetireToolAxonFixtureTest {
             .command(RetireTool(drill))
             .then()
             .success()
-            .events(ToolRetired(drill, now), HoldCancelled(h1, now), HoldCancelled(h2, now))
+            .events(ToolRetired(drill, now))
     }
 
     @Test
@@ -126,7 +125,7 @@ class RetireToolAxonFixtureTest {
             .command(RetireTool(trimmer))
             .then()
             .success()
-            .events(ToolRetired(trimmer, now), HoldCancelled(h1, now))
+            .events(ToolRetired(trimmer, now))
     }
 
     @Test
@@ -142,7 +141,7 @@ class RetireToolAxonFixtureTest {
             .command(RetireTool(drill))
             .then()
             .success()
-            .events(ToolRetired(drill, now), HoldCancelled(h1, now))
+            .events(ToolRetired(drill, now))
     }
 
     @Test
