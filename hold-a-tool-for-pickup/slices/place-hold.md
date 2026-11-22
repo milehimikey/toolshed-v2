@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Holds
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:d7a5e5b80a0ae0e67e14809e33cd6c56e7ffae14e5140c4080fa61f8df62c8a5
 reviewedBy: Mike Key
 reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/9

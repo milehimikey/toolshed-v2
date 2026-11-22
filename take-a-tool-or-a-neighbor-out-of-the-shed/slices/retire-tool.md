@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Shed Manager → Tools
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:0f11668880ea9908fa76cf0d52c5c300f94dee7ca8e4e6e3e0ca44efcbd1168a
 reviewedBy: Mike Key
 reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/26

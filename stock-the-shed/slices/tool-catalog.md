@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-view
 swimlane: Neighbor → Tools
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:adfb3eb06aed9d3a43ea4726b99580897243a2e503e0726cb46a769803700b29
 reviewedBy: Mike Key
 reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/01689d1fc90e13b2356e10def6605b8c08aff62a

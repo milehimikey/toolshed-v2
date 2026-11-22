@@ -2,7 +2,10 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Loans
-status: reviewed
+status: ready-to-implement
+ratifiedBy: Mike Key
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:0ae32d05a9ee7ad7e81e05475f02f364beb8204917dc429d090a09a8dab0d3b1
 reviewedBy: Mike Key
 reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/8
