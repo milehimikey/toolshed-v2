@@ -15,8 +15,8 @@ class ScheduleToolMaintenanceDeciderTest {
     private val ladder = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000a1"))
     private val unknown = ToolId(UUID.fromString("00000000-0000-0000-0000-0000000000ff"))
 
-    private fun stateWith(vararg events: Any): MaintenanceState {
-        val state = MaintenanceState()
+    private fun stateWith(vararg events: Any): ScheduleMaintenanceState {
+        val state = ScheduleMaintenanceState()
         events.forEach { event ->
             when (event) {
                 is ToolAdded -> state.evolve(event)
@@ -34,7 +34,7 @@ class ScheduleToolMaintenanceDeciderTest {
         tasks: List<String>?,
         notes: String? = null,
         tool: ToolId = ladder,
-        state: MaintenanceState = free,
+        state: ScheduleMaintenanceState = free,
         name: String? = "Dana",
     ) = ScheduleToolMaintenanceDecider.decide(ScheduleToolMaintenance(tool, tasks, notes, name), state, now)
 
