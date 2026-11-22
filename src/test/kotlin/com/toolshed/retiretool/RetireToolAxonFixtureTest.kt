@@ -12,6 +12,7 @@ import com.toolshed.placehold.HoldPlaced
 import com.toolshed.recordtoollost.ToolLost
 import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.web.Caller
 import org.assertj.core.api.Assertions.assertThat
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
@@ -141,6 +142,18 @@ class RetireToolAxonFixtureTest {
             .then()
             .success()
             .events(ToolRetired(drill, now))
+    }
+
+    @Test
+    fun `INV-RTR-6 given the ladder is in maintenance, when the shed manager retires it, then Tool Retired and nothing else`() {
+        fixture
+            .given()
+            .recorded(shed() + ToolMaintenanceScheduled(ladder, "Ladder", listOf("Sharpen"), null, "Mike Key", now))
+            .`when`()
+            .command(RetireTool(ladder))
+            .then()
+            .success()
+            .events(ToolRetired(ladder, now))
     }
 
     @Test
