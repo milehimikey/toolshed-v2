@@ -1,7 +1,11 @@
 package com.toolshed.toolmaintenance
 
+import com.toolshed.addtool.ToolAdded
+import com.toolshed.axon.HoldId
+import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
+import com.toolshed.placehold.HoldPlaced
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.scheduletoolmaintenance.ToolMaintenanceTasksChanged
@@ -97,6 +101,33 @@ class ToolMaintenanceProjectionFixtureTest {
                 val gateway = config.getComponent(QueryGateway::class.java)
                 val view = queryUntil(gateway) { it.tools.map { row -> row.toolId } == listOf(drill) }
                 assertThat(view.tools.single().tasks).containsExactly("c")
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-TMNT-5 given trimmer listed when drill added and a hold placed then only the trimmer is listed`() {
+        val drill = ToolId(UUID.nameUUIDFromBytes("drill".toByteArray()))
+        val hold = HoldId(UUID.nameUUIDFromBytes("hold".toByteArray()))
+        val neighbor = NeighborId(UUID.nameUUIDFromBytes("neighbor".toByteArray()))
+        fixture
+            .given()
+            .recorded(
+                listOf(
+                    scheduled(trimmer, "Hedge trimmer", "sharpen blades"),
+                    ToolAdded(drill, "Cordless drill", null, 7, nov3),
+                    HoldPlaced(hold, trimmer, neighbor, nov3at11),
+                ),
+            ).execute { config ->
+                val gateway = config.getComponent(QueryGateway::class.java)
+                // Let the later events be delivered too, then the view must still list only the trimmer.
+                Awaitility.await().pollDelay(Duration.ofSeconds(2)).atMost(Duration.ofSeconds(30)).untilAsserted {
+                    val view = gateway.query(ListToolsInMaintenance, ToolMaintenance::class.java).join()
+                    assertThat(view.tools.map { it.toolId }).containsExactly(trimmer)
+                    assertThat(view.tools.single().tasks).containsExactly("sharpen blades")
+                }
             }.`when`()
             .nothing()
             .then()

@@ -1,11 +1,9 @@
 package com.toolshed.toolmaintenance
 
-import com.toolshed.addtool.ToolAdded
 import com.toolshed.axon.CommandRejected
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
-import com.toolshed.placehold.HoldPlaced
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.scheduletoolmaintenance.ToolMaintenanceTasksChanged
@@ -144,27 +142,6 @@ class ToolMaintenanceProjectionTest {
         assertThat(row.scheduledAt).isEqualTo(nov4)
         assertThat(row.lastChangedBy).isNull()
         assertThat(row.lastChangedAt).isNull()
-    }
-
-    // --- INV-TMNT-5 ---
-
-    @Test
-    fun `INV-TMNT-5 given trimmer listed when drill added and ladder held then only the trimmer is listed`() {
-        scheduled(trimmer, "Hedge trimmer", listOf("a"))
-        val before = rows()
-        // The projection has no handler for these events: only the four maintenance events change the view.
-        val handled =
-            ToolMaintenanceProjection::class.java.declaredMethods
-                .filter { it.name == "on" }
-                .map { it.parameterTypes.single() }
-        assertThat(handled).containsExactlyInAnyOrder(
-            ToolMaintenanceScheduled::class.java,
-            ToolMaintenanceTasksChanged::class.java,
-            ToolMaintenanceCompleted::class.java,
-            ToolRetired::class.java,
-        )
-        assertThat(handled).doesNotContain(ToolAdded::class.java, HoldPlaced::class.java)
-        assertThat(rows()).isEqualTo(before)
     }
 
     // --- INV-TMNT-6 ---

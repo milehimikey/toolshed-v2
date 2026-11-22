@@ -64,15 +64,17 @@ class ToolMaintenanceEndpointTest {
             accept = MediaType.APPLICATION_JSON
         }
 
-    private fun rowFor(tool: ToolId): JsonNode {
-        var found: JsonNode? = null
-        Awaitility.await().atMost(Duration.ofSeconds(20)).untilAsserted {
-            val body = listAsManager().andReturn().response.contentAsString
-            found = mapper.readTree(body).path("tools").firstOrNull { it.path("toolId").asText() == tool.value.toString() }
-            assertThat(found).isNotNull
-        }
-        return found!!
-    }
+    private fun rowFor(tool: ToolId): JsonNode =
+        Awaitility
+            .await()
+            .atMost(Duration.ofSeconds(20))
+            .until(
+                {
+                    val body = listAsManager().andReturn().response.contentAsString
+                    mapper.readTree(body).path("tools").firstOrNull { it.path("toolId").asText() == tool.value.toString() }
+                },
+                { it != null },
+            ).let { requireNotNull(it) }
 
     @Test
     fun `INV-TMNT-1 the shed manager lists a tool in maintenance with its tasks and who scheduled it`() {
@@ -90,6 +92,11 @@ class ToolMaintenanceEndpointTest {
         val row = rowFor(tool)
         assertThat(row.path("scheduledBy").asText()).isEqualTo("Sam")
         assertThat(row.path("tasks").map { it.asText() }).containsExactly("sharpen blades", "oil hinges")
+        // Absent values go out as JSON null, as the sibling views do: the fields are present and null.
+        listOf("notes", "lastChangedBy", "lastChangedAt").forEach { field ->
+            assertThat(row.has(field)).describedAs(field).isTrue()
+            assertThat(row.get(field).isNull).describedAs(field).isTrue()
+        }
     }
 
     @Test
