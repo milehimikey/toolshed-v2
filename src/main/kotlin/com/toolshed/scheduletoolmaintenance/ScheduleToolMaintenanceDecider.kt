@@ -15,7 +15,7 @@ object ScheduleToolMaintenanceDecider {
      */
     fun decide(
         command: ScheduleToolMaintenance,
-        state: MaintenanceState,
+        state: ScheduleMaintenanceState,
         at: Instant,
     ): List<Any> {
         val managerName = command.managerName?.trim()?.takeIf { it.isNotEmpty() }
