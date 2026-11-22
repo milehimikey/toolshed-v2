@@ -21,7 +21,7 @@ class ScheduleToolMaintenanceCommandHandler(
     @CommandHandler
     fun handle(
         command: ScheduleToolMaintenance,
-        @InjectEntity state: MaintenanceState,
+        @InjectEntity state: ScheduleMaintenanceState,
         context: ProcessingContext,
     ) {
         val recorded =
