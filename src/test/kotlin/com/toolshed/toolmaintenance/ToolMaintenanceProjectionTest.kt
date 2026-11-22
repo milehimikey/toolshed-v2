@@ -358,4 +358,22 @@ class ToolMaintenanceProjectionTest {
         projection.on(done)
         assertThat(rowOf(trimmer).tasks).containsExactly("b")
     }
+
+    @Test
+    fun `INV-TMNT-6 INV-TMNT-4 a Tasks Changed from an earlier maintenance replayed leaves the later entry as it was`() {
+        scheduled(trimmer, "Hedge trimmer", listOf("sharpen blades"), at = nov3)
+        val firstChange = changed(trimmer, listOf("x"), notes = "n", by = "Sam", at = nov3at11)
+        val done = ToolMaintenanceCompleted(trimmer, nov3at11.plusSeconds(3600))
+        projection.on(done)
+        val second = scheduled(trimmer, "Hedge trimmer", listOf("replace cord"), by = "Alex", at = nov4)
+        projection.on(firstChange)
+        projection.on(done)
+        projection.on(second)
+        val row = rowOf(trimmer)
+        assertThat(row.tasks).containsExactly("replace cord")
+        assertThat(row.notes).isNull()
+        assertThat(row.scheduledBy).isEqualTo("Alex")
+        assertThat(row.lastChangedBy).isNull()
+        assertThat(row.lastChangedAt).isNull()
+    }
 }

@@ -118,7 +118,7 @@ class ToolMaintenanceProjectionFixtureTest {
                 listOf(
                     scheduled(trimmer, "Hedge trimmer", "sharpen blades"),
                     ToolAdded(drill, "Cordless drill", null, 7, nov3),
-                    HoldPlaced(hold, trimmer, neighbor, nov3at11),
+                    HoldPlaced(hold, ladder, neighbor, nov3at11),
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)

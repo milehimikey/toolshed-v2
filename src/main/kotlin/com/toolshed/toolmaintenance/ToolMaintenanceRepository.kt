@@ -42,6 +42,9 @@ class ToolMaintenanceRepository {
         changedAt: Instant,
     ) {
         entries.computeIfPresent(toolId) { _, row ->
+            // A change recorded before this entry's maintenance was scheduled belongs to an earlier maintenance:
+            // a replay, left out (INV-TMNT-6, INV-TMNT-4).
+            if (changedAt.isBefore(row.scheduledAt)) return@computeIfPresent row
             row.copy(tasks = tasks, notes = notes, lastChangedBy = changedBy, lastChangedAt = changedAt)
         }
     }
