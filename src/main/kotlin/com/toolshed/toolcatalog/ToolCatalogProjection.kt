@@ -3,6 +3,7 @@ package com.toolshed.toolcatalog
 import com.toolshed.addtool.ToolAdded
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
+import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.expirehold.HoldExpired
 import com.toolshed.extendloan.LoanExtended
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component
 private val logger = KotlinLogging.logger {}
 
 /**
- * Applies exactly the twelve events the Tool Catalog view reads (INV-TCAT-9). Overdue notices,
+ * Applies exactly the thirteen events the Tool Catalog view reads (INV-TCAT-9). Overdue notices,
  * pickup emails and email changes are not in the view, so they have no handler here.
  */
 @Component
@@ -87,14 +88,20 @@ class ToolCatalogProjection(
     }
 
     @EventHandler
+    fun on(event: NeighborAccountClosed) {
+        repository.closeAccount(event.neighborId)
+        logger.debug { "tool-catalog neighborId=${event.neighborId.value} outcome=account-closed" }
+    }
+
+    @EventHandler
     fun on(event: ToolMaintenanceScheduled) {
-        repository.scheduleMaintenance(event.toolId)
+        repository.scheduleMaintenance(event.toolId, event.scheduledAt)
         logger.debug { "tool-catalog toolId=${event.toolId.value} outcome=maintenance-scheduled" }
     }
 
     @EventHandler
     fun on(event: ToolMaintenanceCompleted) {
-        repository.completeMaintenance(event.toolId)
+        repository.completeMaintenance(event.toolId, event.completedAt)
         logger.debug { "tool-catalog toolId=${event.toolId.value} outcome=maintenance-completed" }
     }
 }

@@ -7,6 +7,7 @@ import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
+import com.toolshed.closeaccount.NeighborAccountClosed
 import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.placehold.HoldPlaced
@@ -52,7 +53,17 @@ class ToolCatalogProjectionFixtureTest {
         fixture.stop()
     }
 
-    private fun AxonTestPhase.Given.recorded(events: List<Any>): AxonTestPhase.Given = events.fold(this) { phase, e -> phase.event(e) }
+    // The marker is recorded after the scenario's events, so once the view lists it, every earlier event has been applied.
+    private val marker = ToolId(UUID.nameUUIDFromBytes("marker".toByteArray()))
+
+    private fun AxonTestPhase.Given.recorded(events: List<Any>): AxonTestPhase.Given =
+        (events + ToolAdded(marker, "~marker", null, 1, now.plusSeconds(3600))).fold(this) { phase, e -> phase.event(e) }
+
+    /** Waits until the view has applied every recorded event (it lists the marker), then answers without the marker. */
+    private fun settled(gateway: QueryGateway): ToolCatalog {
+        val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == marker } }
+        return ToolCatalog(catalog.tools.filterNot { it.toolId == marker })
+    }
 
     private fun queryUntil(
         gateway: QueryGateway,
@@ -73,7 +84,7 @@ class ToolCatalogProjectionFixtureTest {
             .recorded(listOf(ToolAdded(drill, "Cordless drill", "18V, two batteries", 7, now)))
             .execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == drill } }
+                val catalog = settled(gateway)
                 val row = catalog.tools.single { it.toolId == drill }
                 assertThat(row.description).isEqualTo("18V, two batteries")
                 assertThat(row.defaultCheckoutPeriodDays).isEqualTo(7)
@@ -143,7 +154,7 @@ class ToolCatalogProjectionFixtureTest {
     }
 
     @Test
-    fun `INV-TCAT-6 an account closed removes only that neighbor's holds`() {
+    fun `INV-TCAT-6 a cancelled hold leaves the other waiting hold, the tool stays checked out`() {
         val h2 = HoldId(UUID.nameUUIDFromBytes("h2".toByteArray()))
         fixture
             .given()
@@ -157,7 +168,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == drill && row.holdsWaiting == 1 } }
+                val catalog = settled(gateway)
                 val row = catalog.tools.single { it.toolId == drill }
                 assertThat(row.status).isEqualTo(ToolCatalogStatus.CHECKED_OUT)
                 assertThat(row.holdsWaiting).isEqualTo(1)
@@ -179,7 +190,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == drill } }
+                val catalog = settled(gateway)
                 assertThat(catalog.tools.map { it.toolId }).containsExactly(drill)
             }.`when`()
             .nothing()
@@ -225,7 +236,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog = queryUntil(gateway) { it.tools.size == 3 }
+                val catalog = settled(gateway)
                 assertThat(catalog.tools.map { it.toolId }).containsExactly(drill, second, ladder)
             }.`when`()
             .nothing()
@@ -245,7 +256,7 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == ladder } }
+                val catalog = settled(gateway)
                 assertThat(catalog.tools.map { it.toolId }).containsExactly(ladder)
             }.`when`()
             .nothing()
@@ -265,8 +276,76 @@ class ToolCatalogProjectionFixtureTest {
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val catalog = queryUntil(gateway) { it.tools.any { row -> row.toolId == drill } }
+                val catalog = settled(gateway)
                 assertThat(catalog.tools.single().status).isEqualTo(ToolCatalogStatus.AVAILABLE)
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-TCAT-6 Neighbor Account Closed removes only that neighbor's holds through the query`() {
+        val h2 = HoldId(UUID.nameUUIDFromBytes("h2".toByteArray()))
+        fixture
+            .given()
+            .recorded(
+                listOf(
+                    ToolAdded(drill, "Cordless drill", null, 7, now),
+                    ToolCheckedOut(l1, drill, ana, 7, LocalDate.of(2026, 10, 12), now),
+                    HoldPlaced(h1, drill, ben, now),
+                    HoldPlaced(h2, drill, ana, now),
+                    NeighborAccountClosed(ben, false, now),
+                ),
+            ).execute { config ->
+                val catalog = settled(config.getComponent(QueryGateway::class.java))
+                val row = catalog.tools.single { it.toolId == drill }
+                assertThat(row.status).isEqualTo(ToolCatalogStatus.CHECKED_OUT)
+                assertThat(row.holdsWaiting).isEqualTo(1)
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-TCAT-12 INV-TCAT-16 a maintenance scheduled redelivered after completion leaves the tool listed as available`() {
+        val at10 = Instant.parse("2026-11-02T10:00:00Z")
+        val at14 = Instant.parse("2026-11-02T14:00:00Z")
+        fixture
+            .given()
+            .recorded(
+                listOf(
+                    ToolAdded(drill, "Cordless drill", null, 7, now),
+                    ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Charge batteries"), null, "Mo", at10),
+                    ToolMaintenanceCompleted(drill, at14),
+                    ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Charge batteries"), null, "Mo", at10),
+                ),
+            ).execute { config ->
+                val catalog = settled(config.getComponent(QueryGateway::class.java))
+                assertThat(catalog.tools.single { it.toolId == drill }.status).isEqualTo(ToolCatalogStatus.AVAILABLE)
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-TCAT-15 a maintenance scheduled again after completion hides the tool through the query`() {
+        val at10 = Instant.parse("2026-11-02T10:00:00Z")
+        val at14 = Instant.parse("2026-11-02T14:00:00Z")
+        val at16 = Instant.parse("2026-11-02T16:00:00Z")
+        fixture
+            .given()
+            .recorded(
+                listOf(
+                    ToolAdded(drill, "Cordless drill", null, 7, now),
+                    ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Charge batteries"), null, "Mo", at10),
+                    ToolMaintenanceCompleted(drill, at14),
+                    ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Sharpen bit"), null, "Mo", at16),
+                ),
+            ).execute { config ->
+                assertThat(settled(config.getComponent(QueryGateway::class.java)).tools).isEmpty()
             }.`when`()
             .nothing()
             .then()
