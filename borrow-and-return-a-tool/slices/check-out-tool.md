@@ -2,12 +2,7 @@
 schemaVersion: 1
 pattern: state-change
 swimlane: Neighbor → Loans
-status: ready-to-implement
-ratifiedBy: Mike Key
-ratifiedOn: 2026-11-12
-ratifiedHash: sha256:479a87ebaaba7f97afe755f800049f19d8b8447cea6f29e435b328d0d20fbe80
-reviewedBy: Mike Key
-reviewedOn: 2026-11-12
+status: draft
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/8
 shippedVersion: 1
 conformedVersion: 1
@@ -26,9 +21,7 @@ Step 1 of 12 in **Borrow and return a tool** · the story starts here · before 
 ## Intent
 Let a neighbor borrow a tool, self-service, from the Tool Catalog. The checkout opens a loan with
 a due date set from the tool's default checkout period, or from a shorter period the neighbor
-chooses. It is also how a holder collects a tool set aside for them: there is no separate pickup
-command. The checkout records only Tool Checked Out; the hold's end is recorded by the Hold
-Collector (Collect Hold), which reacts to the checkout.
+chooses. It is also how a holder collects a tool set aside for them: there is no separate pickup.
 
 ## Trigger & Actor
 The neighbor who will borrow the tool, from the Tool Catalog screen, on a tool the catalog offers
@@ -54,27 +47,28 @@ checkedOutAt is that same moment.
 
 ## Event(s) Emitted
 **Event:** `Tool Checked Out` → context `Loans`
-**Read by:** Tool Inventory, Tool Catalog and My Loans; Holds To Fulfill (the tool is out);
-Overdue Loans To Notify (the loan's due date); Holds To Collect (the borrower's hold on the tool,
-if any, is now collected).
+**Read by:** Tool Inventory, Tool Catalog and My Loans; My Holds, Holds To Fulfill, Pickups To
+Expire and Pickup Notices To Send (a holder's checkout ends their hold); Overdue Loans To Notify
+and Neighbors To Flag (the loan's due date); Undelivered Notices and Flagged Neighbors (loan
+details shown there).
 
 | Field | Type | Immutable Fact? | Source / Notes |
 |-------|------|-----------------|----------------|
 | loanId | LoanId | yes | From the command. Identifies the loan everywhere from here on. |
 | toolId | ToolId | yes | From the command. |
-| toolName | Text | yes | Set by the system: the tool's name as recorded by Tool Added, copied so the loan's readers never look it up. |
 | neighborId | NeighborId | yes | From the command: the borrower. |
-| neighborName | Text | yes | Set by the system: the borrower's name as recorded by Neighbor Registered. |
-| neighborEmail | Text | yes | Set by the system: the borrower's email current at checkout (Neighbor Registered, replaced by any Neighbor Email Changed). Readers that email later keep the address current themselves. |
 | loanPeriodDays | Int | yes | The period the loan started with: loanPeriodDays from the command, or the tool's default checkout period when it was absent. |
 | dueDate | Date | yes | Set by the system: the checkout date (today) plus loanPeriodDays. A later Loan Extended sets a new dueDate; this one never changes. |
 | checkedOutAt | Instant | yes | Set by the system: the UTC moment of the clock reading above. Its date in the shed's local time zone is the checkout date. |
 
+The event doesn't name the hold it ends. A holder has at most one hold on a tool, so readers
+match the ended hold by toolId and neighborId (INV-CHK-9).
+
 ## Read Model / View
 This slice produces no view of its own. Tool Checked Out changes the tool's entry in Tool
-Inventory and Tool Catalog, starts the loan's entry in My Loans, and puts the borrower's hold on
-the tool, if any, on Holds To Collect for the Hold Collector. Each view is specified in its own
-doc. All are eventually consistent.
+Inventory and Tool Catalog, starts the loan's entry in My Loans, and ends the borrower's hold on
+the tool in My Holds and the hold to-do lists. Each view is specified in its own doc. All are
+eventually consistent.
 
 ## Invariants / Business Rules
 - **INV-CHK-1:** A neighbor checks a tool out themselves, for themselves.
@@ -128,9 +122,8 @@ doc. All are eventually consistent.
   it had been fulfilled.
   - The tool is then on loan, so it is not set aside for anyone, and the next hold waits for its
     return. When the tool comes back, the former holder is no longer in the queue.
-  - The hold's end is recorded as Hold Collected by the Hold Collector (Collect Hold), which
-    reacts to the checkout through Holds To Collect. The views that show holds end it from that
-    event; this slice records nothing about the hold.
+  - The views that show holds end it by matching the checkout's toolId and neighborId; a holder
+    has at most one hold on a tool.
 - **INV-CHK-11:** The tool must have been added, and the borrower must be a registered account.
 - **INV-CHK-13:** A tool that is in maintenance can't be checked out.
   - A tool is in maintenance from Tool Maintenance Scheduled until Tool Maintenance Completed or
@@ -255,8 +248,8 @@ October.
   - **Given:** Hold Fulfilled was recorded for Ben's hold on the drill with a collect-by date of
     6 October, so the drill is set aside for him
   - **When:** Ben checks out the drill on 5 October
-  - **Then:** Tool Checked Out is recorded for the drill and Ben, due 12 October. Nothing else is
-    recorded; the Hold Collector then records Hold Collected for Ben's hold.
+  - **Then:** Tool Checked Out is recorded for the drill and Ben, due 12 October. Ben's hold
+    ends with it.
 - **Holder collects on the collect-by date (INV-CHK-3)**
   - **Given:** the drill is set aside for Ben, to collect by 5 October
   - **When:** Ben checks out the drill on 5 October
@@ -280,7 +273,7 @@ October.
     Cara's is behind it, and Hold Fulfilled has not yet been recorded
   - **When:** Ben checks out the drill
   - **Then:** Tool Checked Out is recorded for the drill and Ben. Ben's hold ends without ever
-    being fulfilled, by the Hold Collected the collector then records.
+    being fulfilled.
 - **An early collector is out of the queue when the tool returns (INV-CHK-9, INV-CHK-3a)**
   - **Given:** Ben checked out the drill as the front holder before his hold was fulfilled, with
     Cara's hold behind his. He has since returned it, and Cara's hold is still waiting.
@@ -307,8 +300,8 @@ October.
 - **Next holder takes a lapsed set-aside before the expiry is recorded (INV-CHK-3a, INV-CHK-3b)**
   - **Given:** as above, on 18 October, before Hold Expired is recorded
   - **When:** Cara checks out the drill
-  - **Then:** Tool Checked Out is recorded for the drill and Cara; the collector then records Hold
-    Collected for her hold. Ben's hold still gets its Hold Expired.
+  - **Then:** Tool Checked Out is recorded for the drill and Cara, and her hold ends. Ben's hold
+    still gets its Hold Expired.
 - **Lapsed set-aside, no hold waiting, taken by someone else (INV-CHK-3b)**
   - **Given:** the drill was set aside for Ben, to collect by 17 October, no other hold is
     waiting, and Hold Expired has not yet been recorded
@@ -430,8 +423,9 @@ There are no external calls, retries or compensations in this slice.
     checked against these keys when it is.
 - **Downstream read models / slices affected:** Tool Inventory, Tool Catalog, My Loans, My Holds,
   Overdue Loans To Notify, Undelivered Notices, Holds To Fulfill, Pickup Notices To Send, Pickups
-  To Expire and Neighbors To Flag. Extend Loan, Return Tool and Record Tool
+  To Expire, Neighbors To Flag and Flagged Neighbors. Extend Loan, Return Tool and Record Tool
   Lost act on the loan by its loan ID.
 
 ## Open Questions
-- [x] Flagged Neighbors and Suspended Neighbors were folded into the Neighbors view (model reshape 2026-11-01, merged-from on slices/neighbors.md v2): reword this doc's mentions of them to Neighbors — v2: reworded; Check Out Tool no longer feeds the merged Neighbors view, Return Tool does (2026-11-01)
+- [x] Tool Checked Out carries toolName, neighborName and neighborEmail (model change of 2026-11-01, commits d31e5a2 and a36d4d6) — v2: not built; Tool Checked Out keeps its shipped fields, and this version adds only the maintenance rule; deferred to v3 (2026-11-21, Mike Key)
+- [x] The hold a checkout ends is recorded as Hold Collected by the Hold Collector, and Flagged Neighbors is folded into Neighbors (model change of 2026-11-01, commits 0fcc660, 3ef3492 and c101b60) — v2: not built; views end the hold by matching the checkout's toolId and neighborId, as shipped; deferred to v3 (2026-11-21, Mike Key)
