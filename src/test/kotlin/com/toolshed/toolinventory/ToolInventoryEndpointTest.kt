@@ -92,6 +92,7 @@ class ToolInventoryEndpointTest {
             status { isEqualTo(422) }
             jsonPath("$.invariant") { value("INV-TINV-11") }
             jsonPath("$.reason") { value("not-signed-in") }
+            jsonPath("$.detail") { value("Please sign in.") }
         }
     }
 }

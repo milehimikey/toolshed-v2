@@ -266,4 +266,44 @@ class ToolInventoryProjectionTest {
         assertThat(rows[1].borrowerName).isEqualTo("Ben")
         assertThat(rows[1].dueDate).isEqualTo(oct20)
     }
+
+    // --- INV-TINV-8: events for a tool that is no longer listed ---
+
+    @Test
+    fun `INV-TINV-8 replayed Loan Extended, Tool Returned, Tool Lost and Tool Checked Out for a tool no longer listed change nothing`() {
+        val r = ToolInventoryRepository()
+        r.registerNeighbor(ana, "Ana Ruiz")
+        r.add(drill, "Cordless drill")
+        r.add(ladder, "Ladder")
+        r.checkOut(l1, drill, ana, oct12)
+        r.retire(drill)
+        r.endLoan(l1)
+        r.checkOut(l2, ladder, ana, oct20)
+        r.recordLost(ladder)
+        val before = r.read()
+        assertThat(before).isEmpty()
+
+        r.extend(l1, oct19)
+        r.endLoan(l1)
+        r.recordLost(drill)
+        r.checkOut(l1, drill, ana, oct12)
+        r.extend(l2, oct19)
+        r.endLoan(l2)
+        r.recordLost(ladder)
+        assertThat(r.read()).isEqualTo(before)
+    }
+
+    @Test
+    fun `INV-TINV-8 replayed Tool Checked Out after its loan was returned leaves the tool in the shed`() {
+        val r = ToolInventoryRepository()
+        r.registerNeighbor(ana, "Ana Ruiz")
+        r.add(drill, "Cordless drill")
+        r.checkOut(l1, drill, ana, oct12)
+        r.endLoan(l1)
+        r.checkOut(l1, drill, ana, oct12)
+        r.extend(l1, oct19)
+        val row = r.rowOf(drill)
+        assertThat(row.onLoan).isFalse()
+        assertThat(row.dueDate).isNull()
+    }
 }
