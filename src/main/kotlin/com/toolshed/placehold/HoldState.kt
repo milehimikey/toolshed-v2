@@ -8,6 +8,7 @@ import com.toolshed.axon.ToolId
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.expirehold.HoldExpired
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.recordtoollost.ToolLost
@@ -15,6 +16,7 @@ import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.suspendneighbor.NeighborSuspended
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler
@@ -50,6 +52,7 @@ class HoldState
     constructor() {
         private val tools = mutableSetOf<ToolId>()
         private val retired = mutableSetOf<ToolId>()
+        private val inMaintenance = mutableSetOf<ToolId>()
         private val registered = mutableSetOf<NeighborId>()
         private val closed = mutableSetOf<NeighborId>()
         private val suspended = mutableSetOf<NeighborId>()
@@ -64,6 +67,9 @@ class HoldState
         fun isRegistered(neighborId: NeighborId): Boolean = neighborId in registered
 
         fun isRetired(toolId: ToolId): Boolean = toolId in retired
+
+        /** In maintenance from Tool Maintenance Scheduled until Completed or Retired; a retired tool is not (INV-HOLD-16). */
+        fun isInMaintenance(toolId: ToolId): Boolean = toolId in inMaintenance
 
         fun isClosed(neighborId: NeighborId): Boolean = neighborId in closed
 
@@ -92,14 +98,26 @@ class HoldState
         @EventSourcingHandler
         fun evolve(event: ToolRetired) {
             retired.add(event.toolId)
+            inMaintenance.remove(event.toolId)
             endHoldsOn(event.toolId)
         }
 
         @EventSourcingHandler
         fun evolve(event: ToolLost) {
             retired.add(event.toolId)
+            inMaintenance.remove(event.toolId)
             endLoan(event.loanId)
             endHoldsOn(event.toolId)
+        }
+
+        @EventSourcingHandler
+        fun evolve(event: ToolMaintenanceScheduled) {
+            inMaintenance.add(event.toolId)
+        }
+
+        @EventSourcingHandler
+        fun evolve(event: ToolMaintenanceCompleted) {
+            inMaintenance.remove(event.toolId)
         }
 
         @EventSourcingHandler
@@ -177,6 +195,8 @@ class HoldState
                         ToolLost::class.java.name,
                         ToolCheckedOut::class.java.name,
                         ToolReturned::class.java.name,
+                        ToolMaintenanceScheduled::class.java.name,
+                        ToolMaintenanceCompleted::class.java.name,
                         HoldPlaced::class.java.name,
                         HoldFulfilled::class.java.name,
                         HoldCancelled::class.java.name,

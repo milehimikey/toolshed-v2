@@ -40,6 +40,9 @@ object CheckOutToolDecider {
         // 4. A retired tool, including one recorded lost.
         if (state.isRetired(command.toolId)) refuse("INV-CHK-4", "tool-retired", "This tool has been retired.")
 
+        // 4b. In maintenance, straight after retired and before on-loan.
+        if (state.isInMaintenance(command.toolId)) refuse("INV-CHK-13", "tool-in-maintenance", "This tool is in maintenance.")
+
         // 5. Already on loan.
         if (state.openLoansOf(command.toolId).isNotEmpty()) {
             refuse("INV-CHK-2", "tool-checked-out", "This tool is already checked out.")

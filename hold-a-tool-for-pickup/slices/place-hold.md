@@ -4,10 +4,10 @@ pattern: state-change
 swimlane: Neighbor → Holds
 status: ready-to-implement
 ratifiedBy: Mike Key
-ratifiedOn: 2026-11-12
-ratifiedHash: sha256:060b2014dfa92be8b15608de0f570ea6d54be481254cfe7aaf53bcc1b4e20095
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:d7a5e5b80a0ae0e67e14809e33cd6c56e7ffae14e5140c4080fa61f8df62c8a5
 reviewedBy: Mike Key
-reviewedOn: 2026-11-12
+reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/pull/9
 shippedVersion: 1
 conformedVersion: 1
@@ -58,10 +58,7 @@ Holds To Fulfill (the queue the hold fulfiller works from).
 |-------|------|-----------------|----------------|
 | holdId | HoldId | yes | From the command. Identifies the hold everywhere from here on. |
 | toolId | ToolId | yes | From the command. |
-| toolName | Text | yes | Set by the system: the tool's name as recorded by Tool Added, copied so the hold's readers never look it up. |
 | neighborId | NeighborId | yes | From the command: the holder. |
-| neighborName | Text | yes | Set by the system: the holder's name as recorded by Neighbor Registered. |
-| neighborEmail | Text | yes | Set by the system: the holder's email current when the hold is placed (Neighbor Registered, replaced by any Neighbor Email Changed). |
 | placedAt | Instant | yes | The UTC moment the event is recorded, set by the system. For display only: the queue is the order Hold Placed is recorded, since two holds can share a timestamp. |
 
 Every field is fixed for good. A hold's later life (fulfilled, cancelled, expired, ended) is
@@ -357,4 +354,4 @@ email.
   Extend Loan refuses while a hold is waiting.
 
 ## Open Questions
-None.
+- [x] Hold Placed carries toolName, neighborName and neighborEmail (model change of 2026-11-01, commits d31e5a2 and a36d4d6) — v2: not built; Hold Placed keeps holdId, toolId, neighborId and placedAt as shipped, and this version adds only the maintenance rule; deferred to v3 (2026-11-21, Mike Key)

@@ -4,17 +4,17 @@ pattern: state-view
 swimlane: Neighbor → Tools
 status: ready-to-implement
 ratifiedBy: Mike Key
-ratifiedOn: 2026-11-12
-ratifiedHash: sha256:c0b303bec3cb726770f5f122b93edf7f528ad1aef810ff884d1123fd527689bb
+ratifiedOn: 2026-11-21
+ratifiedHash: sha256:adfb3eb06aed9d3a43ea4726b99580897243a2e503e0726cb46a769803700b29
 reviewedBy: Mike Key
-reviewedOn: 2026-11-12
+reviewedOn: 2026-11-21
 implementedIn: https://github.com/milehimikey/toolshed-v2/commit/01689d1fc90e13b2356e10def6605b8c08aff62a
 conformedVersion: 1
 conformedAt: 49d67795aabbe79704390bd08ef9925876074139
 conformedOn: 2026-11-01
 shippedVersion: 1
 shippedOn: 2026-10-26
-version: 2
+version: 3
 ---
 # Slice: Tool Catalog
 
@@ -43,7 +43,8 @@ holds from it.
 ## Read Model / View
 - **View:** `Tool Catalog` built from events: "Tool Added", "Tool Checked Out", "Loan Extended",
   "Hold Placed", "Hold Cancelled", "Tool Returned", "Hold Fulfilled", "Hold Expired", "Tool
-  Retired", "Tool Lost", "Tool Maintenance Scheduled", "Tool Maintenance Completed"
+  Retired", "Tool Lost", "Neighbor Account Closed", "Tool Maintenance Scheduled", "Tool
+  Maintenance Completed"
 - **Consumed by:** the Tool Catalog screen (Neighbor)
 - **Freshness / consistency expectation:** eventual. An entry reflects an event shortly after it
   is recorded (seconds, not minutes). No action on this screen depends on it being instant,
@@ -74,9 +75,9 @@ first that holds wins:
 3. **reserved** — otherwise, at least one hold on the tool is waiting.
 4. **available** — otherwise.
 
-A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when Hold
-Cancelled, Hold Expired or Hold Collected is recorded for it; retiring the tool, recording it lost
-and closing the holder's account each record Hold Cancelled for the holds they end. Because the test reads current facts, the order events arrive
+A hold is waiting from Hold Placed until it is fulfilled or ends. A hold ends when it is
+cancelled or expires, the holder checks the tool out, the tool is retired or recorded lost, or
+the holder closes their account. Because the test reads current facts, the order events arrive
 in doesn't matter. For example, a lapsed set-aside whose tool has already gone out to someone
 else is checked-out, even before its Hold Expired lands.
 
@@ -84,6 +85,17 @@ else is checked-out, even before its Hold Expired lands.
 Completed puts it back (INV-TCAT-15, INV-TCAT-16). While a tool is in maintenance the view keeps
 its entry, so that completing the maintenance can restore it, but the entry is not listed and no
 query returns it. A tool that has been retired or recorded lost is never restored.
+
+Completing the maintenance always restores the entry as available, with no loan, no due date and
+no holds. Check Out Tool and Place Hold refuse a tool in maintenance, so a loan or hold event that
+reaches the view for such a tool can only be a replay or out of place, and nothing of it survives
+the completion.
+
+So that a redelivered maintenance event can't undo a later one, the view keeps, for each tool, the
+latest instant it has seen on a maintenance event: scheduledAt of Tool Maintenance Scheduled or
+completedAt of Tool Maintenance Completed, whether or not the event changed anything. A Tool
+Maintenance Scheduled whose scheduledAt is not later than that instant is ignored. A Tool
+Maintenance Completed whose completedAt is earlier than that instant is ignored (INV-TCAT-12).
 
 To match later events to a tool, the view also keeps, for each tool, the loan ID of the current
 loan and the hold ID and holder of each live hold. These are bookkeeping, not part of the row,
@@ -141,8 +153,8 @@ and are never returned.
     back or is recorded lost (INV-TINV-2). Neighbors can do nothing with a retired tool; the shed
     manager may still need to record it lost.
 - **INV-TCAT-9:** Only Tool Added, Tool Checked Out, Loan Extended, Hold Placed, Hold Cancelled,
-  Tool Returned, Hold Fulfilled, Hold Collected, Hold Expired, Tool Retired, Tool Lost, Tool Maintenance Scheduled
-  and Tool Maintenance Completed change the catalog.
+  Tool Returned, Hold Fulfilled, Hold Expired, Tool Retired, Tool Lost, Neighbor Account Closed,
+  Tool Maintenance Scheduled and Tool Maintenance Completed change the catalog.
   - Overdue notices, pickup emails and email changes are shown elsewhere, not here.
 - **INV-TCAT-10:** A tool recorded lost drops off the catalog.
   - Recording a tool lost ends its loan, retires it and ends its holds, all at once.
@@ -155,6 +167,10 @@ and are never returned.
   - The same order as every list in the shed.
 - **INV-TCAT-12:** Applying the same event twice leaves the catalog as if it had been applied
   once.
+  - This holds for a maintenance event applied again after a later one: a Tool Maintenance
+    Scheduled redelivered after the tool's Tool Maintenance Completed does not hide the tool
+    again. The view tells the two apart by scheduledAt and completedAt (see Maintenance, under
+    Read Model / View).
 - **INV-TCAT-15:** A tool in maintenance drops off the catalog at once.
   - Tool Maintenance Scheduled removes the tool from the list, so neighbors can't see it, check
     it out or place a hold on it. The shed manager sees it on the Tool Maintenance screen.
@@ -259,12 +275,12 @@ and are never returned.
   - **Then:** the catalog shows the drill as reserved, with 1 hold waiting.
 - **Set-aside holder closes their account, no hold waiting (INV-TCAT-4)**
   - **Given:** the catalog shows the drill as set aside for Cara, with no holds waiting
-  - **When:** Close Account records Hold Cancelled for Cara's hold
+  - **When:** Neighbor Account Closed is recorded for Cara
   - **Then:** the catalog lists the drill as available.
 - **Waiting holder closes their account (INV-TCAT-6)**
   - **Given:** the catalog shows the drill as checked out, with 2 holds waiting, one of them
     Cara's, and the hedge trimmer as checked out with 1 hold waiting, Cara's
-  - **When:** Close Account records Hold Cancelled for each of Cara's two holds
+  - **When:** Neighbor Account Closed is recorded for Cara
   - **Then:** the catalog shows the drill with 1 hold waiting and the hedge trimmer with none.
     Both are still checked out.
 - **Tool retired in the shed (INV-TCAT-8)**
@@ -303,6 +319,16 @@ and are never returned.
   - **When:** Tool Maintenance Completed is recorded for the ladder, and Tool Maintenance
     Scheduled is applied again for the drill
   - **Then:** the ladder is still listed once, as available, and the drill is still not listed.
+- **Maintenance scheduled redelivered after completion (INV-TCAT-12, INV-TCAT-16)**
+  - **Given:** Tool Maintenance Scheduled was recorded for the drill at 10:00 and Tool Maintenance
+    Completed at 14:00, and the catalog lists the drill as available
+  - **When:** the same Tool Maintenance Scheduled, with scheduledAt 10:00, is applied again
+  - **Then:** the catalog still lists the drill as available.
+- **Maintenance scheduled again after completion (INV-TCAT-15)**
+  - **Given:** Tool Maintenance Scheduled was recorded for the drill at 10:00 and Tool Maintenance
+    Completed at 14:00, and the catalog lists the drill as available
+  - **When:** a new Tool Maintenance Scheduled is recorded for the drill, with scheduledAt 16:00
+  - **Then:** the drill drops off the catalog.
 - **Events the catalog doesn't hear (INV-TCAT-9)**
   - **Given:** the catalog shows the drill as checked out, due 12 October
   - **When:** Overdue Notice Sent is recorded for the drill's loan
@@ -334,7 +360,8 @@ and are never returned.
   change nothing.
 - **Maintenance events out of place:** Tool Maintenance Completed for a tool that is not in
   maintenance, or for a retired or lost tool, and Tool Maintenance Scheduled for a tool that is
-  not listed, change nothing. A retired or lost tool is never restored (INV-TCAT-16).
+  not listed, change nothing. A retired or lost tool is never restored (INV-TCAT-16). A
+  maintenance event older than one already seen for the tool changes nothing (INV-TCAT-12).
 - **Hold events for a tool that is no longer listed:** a hold can't be placed on a retired tool,
   and retirement ends its holds, so a hold event for an unlisted tool can only be a replay. It
   changes nothing.
@@ -363,20 +390,20 @@ and are never returned.
   - Hold Expired (Expire Hold): holdId.
   - Tool Retired (Retire Tool): toolId.
   - Tool Lost (Record Tool Lost): loanId.
-  - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId. Its other fields (toolName,
-    tasks, notes, scheduledBy, scheduledAt) are for the Tool Maintenance screen; the catalog
-    reads none of them and returns none of them.
-  - Tool Maintenance Completed (Complete Tool Maintenance): toolId.
+  - Neighbor Account Closed (Close Account): neighborId.
+  - Tool Maintenance Scheduled (Schedule Tool Maintenance): toolId, scheduledAt. Its other fields
+    (toolName, tasks, notes, scheduledBy) are for the Tool Maintenance screen; the catalog reads
+    none of them. It returns neither those nor scheduledAt.
+  - Tool Maintenance Completed (Complete Tool Maintenance): toolId, completedAt. completedAt is
+    not returned.
   - Tool Maintenance Tasks Changed (Schedule Tool Maintenance) is not heard: a change to the
     tasks or notes of a tool already in maintenance leaves the catalog as it is (INV-TCAT-9).
-  - Hold Cancelled is also recorded by Retire Tool, Record Tool Lost and Close Account, one per
-    hold they end.
   - Tool Added and the loan events' keys match slices/add-tool.md and slices/tool-inventory.md.
-    The hold events are specified in slices not yet written in depth;
+    The hold events and Neighbor Account Closed are specified in slices not yet written in depth;
     these keys are this view's assumptions, and each of those slices is checked against them when
     it is.
 - **Downstream read models / slices affected:** none. The screen it feeds issues Check Out Tool
   and Place Hold.
 
 ## Open Questions
-None.
+- [x] Hold endings are read as Hold Cancelled and Hold Collected, and Neighbor Account Closed is no longer read (model change of 2026-11-01, commits dda500c and 0fcc660) — v3: not built; the catalog ends holds as shipped and still reads Neighbor Account Closed. This version adds maintenance only; deferred to v4 (2026-11-21, Mike Key)

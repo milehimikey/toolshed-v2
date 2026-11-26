@@ -9,6 +9,7 @@ import com.toolshed.axon.ToolId
 import com.toolshed.cancelhold.HoldCancelled
 import com.toolshed.checkouttool.ToolCheckedOut
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.expirehold.HoldExpired
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.recordtoollost.ToolLost
@@ -16,6 +17,7 @@ import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
 import com.toolshed.suspendneighbor.NeighborSuspended
 import com.toolshed.web.Caller
 import org.assertj.core.api.Assertions.assertThat
@@ -210,6 +212,50 @@ class PlaceHoldAxonFixtureTest {
             .then()
             .success()
             .events(placed(h8, by = cleo))
+    }
+
+    // --- INV-HOLD-16: tools in maintenance ---
+
+    private fun ladderScheduled(): List<Any> =
+        shedWithDrillOnLoan() +
+            ToolAdded(t2, "Ladder", null, 7, now) +
+            ToolMaintenanceScheduled(t2, "Ladder", listOf("Replace rung"), null, "Mike Key", now)
+
+    @Test
+    fun `INV-HOLD-16 given maintenance scheduled on the ladder, when Ben places a hold, then refused tool-in-maintenance`() {
+        fixture
+            .given()
+            .recorded(ladderScheduled())
+            .`when`()
+            .command(PlaceHold(h1, t2, ben))
+            .then()
+            .exceptionSatisfies { ex ->
+                assertRejected(ex, "INV-HOLD-16", "tool-in-maintenance", "This tool is in maintenance.")
+            }
+    }
+
+    @Test
+    fun `INV-HOLD-16 given maintenance was scheduled and then completed, when Ben places a hold, then refused tool-available`() {
+        fixture
+            .given()
+            .recorded(ladderScheduled() + ToolMaintenanceCompleted(t2, now))
+            .`when`()
+            .command(PlaceHold(h1, t2, ben))
+            .then()
+            .exceptionSatisfies { ex ->
+                assertRejected(ex, "INV-HOLD-2", "tool-available", "This tool is available. Check it out instead.")
+            }
+    }
+
+    @Test
+    fun `INV-HOLD-16 given maintenance was scheduled and the ladder then retired, when Ben places a hold, then refused tool-retired`() {
+        fixture
+            .given()
+            .recorded(ladderScheduled() + ToolRetired(t2, now))
+            .`when`()
+            .command(PlaceHold(h1, t2, ben))
+            .then()
+            .exceptionSatisfies { ex -> assertRejected(ex, "INV-HOLD-3", "tool-retired", "This tool has been retired.") }
     }
 
     // --- retired and lost tools ---

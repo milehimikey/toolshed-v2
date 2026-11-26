@@ -28,6 +28,9 @@ object PlaceHoldDecider {
             refuse("INV-HOLD-14", "neighbor-not-found", "There is no such neighbor.")
         }
         if (state.isRetired(command.toolId)) refuse("INV-HOLD-3", "tool-retired", "This tool has been retired.")
+        if (state.isInMaintenance(command.toolId)) {
+            refuse("INV-HOLD-16", "tool-in-maintenance", "This tool is in maintenance.")
+        }
         if (state.isClosed(command.neighborId)) refuse("INV-HOLD-4", "account-closed", "This account is closed.")
         if (state.isSuspended(command.neighborId)) {
             refuse("INV-HOLD-9", "neighbor-suspended", "You can't place holds while your account is suspended.")

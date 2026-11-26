@@ -7,6 +7,7 @@ import com.toolshed.axon.LoanId
 import com.toolshed.axon.NeighborId
 import com.toolshed.axon.ToolId
 import com.toolshed.closeaccount.NeighborAccountClosed
+import com.toolshed.completetoolmaintenance.ToolMaintenanceCompleted
 import com.toolshed.extendloan.LoanExtended
 import com.toolshed.fulfillhold.HoldFulfilled
 import com.toolshed.placehold.HoldPlaced
@@ -15,6 +16,8 @@ import com.toolshed.registerneighbor.NeighborRegistered
 import com.toolshed.reinstateneighbor.NeighborReinstated
 import com.toolshed.retiretool.ToolRetired
 import com.toolshed.returntool.ToolReturned
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceScheduled
+import com.toolshed.scheduletoolmaintenance.ToolMaintenanceTasksChanged
 import com.toolshed.suspendneighbor.NeighborSuspended
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 import org.axonframework.test.fixture.AxonTestFixture
@@ -558,5 +561,52 @@ class CheckOutToolAxonFixtureTest {
             .then()
             .success()
             .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+    }
+
+    // --- INV-CHK-13: tools in maintenance ---
+
+    @Test
+    fun `INV-CHK-13 - given the drill has been sent to maintenance, when ana checks it out, then refused tool-in-maintenance`() {
+        world()
+            .event(ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Replace battery"), null, "Mike", now))
+            .`when`()
+            .command(checkout(LoanId(UUID.randomUUID()), drill, ana))
+            .then()
+            .exceptionSatisfies { assertRefused("tool-in-maintenance", it) }
+    }
+
+    @Test
+    fun `INV-CHK-13 - given the drill was sent to maintenance and completed, when ana checks it out, then recorded`() {
+        val loan = LoanId(UUID.randomUUID())
+        world()
+            .event(ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Replace battery"), null, "Mike", now))
+            .event(ToolMaintenanceCompleted(drill, now))
+            .`when`()
+            .command(checkout(loan, drill, ana))
+            .then()
+            .success()
+            .events(ToolCheckedOut(loan, drill, ana, 7, LocalDate.of(2026, 10, 12), now))
+    }
+
+    @Test
+    fun `INV-CHK-13 INV-CHK-4 - given the drill was sent to maintenance then retired, when ana checks it out, then refused tool-retired`() {
+        world()
+            .event(ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Replace battery"), null, "Mike", now))
+            .event(ToolRetired(drill, now))
+            .`when`()
+            .command(checkout(LoanId(UUID.randomUUID()), drill, ana))
+            .then()
+            .exceptionSatisfies { assertRefused("tool-retired", it) }
+    }
+
+    @Test
+    fun `INV-CHK-13 - given maintenance tasks changed while in maintenance, when ana checks out, then still refused tool-in-maintenance`() {
+        world()
+            .event(ToolMaintenanceScheduled(drill, "Cordless drill", listOf("Replace battery"), null, "Mike", now))
+            .event(ToolMaintenanceTasksChanged(drill, listOf("Replace chuck"), null, "Mike", now))
+            .`when`()
+            .command(checkout(LoanId(UUID.randomUUID()), drill, ana))
+            .then()
+            .exceptionSatisfies { assertRefused("tool-in-maintenance", it) }
     }
 }
