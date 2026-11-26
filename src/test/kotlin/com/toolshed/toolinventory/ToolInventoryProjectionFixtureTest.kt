@@ -98,13 +98,14 @@ class ToolInventoryProjectionFixtureTest {
                     ToolAdded(drill, "Cordless drill", null, 7, now),
                     ToolCheckedOut(l1, ladder, ben, 3, oct12, now),
                     ToolRetired(ladder, now),
+                    ToolReturned(l1, ladder, now, oct12, false),
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
-                val inventory = queryUntil(gateway) { it.tools.any { row -> row.retired } }
-                assertThat(inventory.tools).hasSize(2)
+                val inventory = queryUntil(gateway) { it.tools.size == 1 }
+                assertThat(inventory.tools.single().toolId).isEqualTo(drill)
             }.`when`()
-            .event(ToolReturned(l1, ladder, now, oct12, false))
+            .nothing()
             .then()
             .noEvents()
     }
