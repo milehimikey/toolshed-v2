@@ -91,6 +91,19 @@ class MyAccountEndpointTest {
     }
 
     @Test
+    fun `bad-input check 2 - given a signed-in caller and a blank id in the path, then bad input 400`() {
+        read("%20", caller = UUID.randomUUID().toString()).andExpect { status { isEqualTo(400) } }
+    }
+
+    @Test
+    fun `INV-MYAC-13 - given no sign-in and a blank id in the path, then still refused not-signed-in, not 400`() {
+        read("%20", caller = null).andExpect {
+            status { isEqualTo(422) }
+            jsonPath("$.reason") { value("not-signed-in") }
+        }
+    }
+
+    @Test
     fun `INV-MYAC-14 - given Ben signed in, when Ana's account is asked for, then refused requester-mismatch`() {
         read(UUID.randomUUID().toString(), caller = UUID.randomUUID().toString()).andExpect {
             status { isEqualTo(422) }

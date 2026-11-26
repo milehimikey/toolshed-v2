@@ -156,16 +156,36 @@ class MyAccountProjectionFixtureTest {
     }
 
     @Test
-    fun `INV-MYAC-1 INV-MYAC-7 - another neighbor's change and loans and holds leave N1 unchanged, and an unknown id is not found`() {
+    fun `INV-MYAC-1 INV-MYAC-7 - given N1 active, when Neighbor Suspended for N2, then N1 is unchanged`() {
+        fixture
+            .given()
+            .recorded(listOf(registeredAna(), NeighborRegistered(n2, "Ben Okafor", "ben@example.org", now), NeighborSuspended(n2, now)))
+            .execute { config ->
+                val gateway = config.getComponent(QueryGateway::class.java)
+                queryUntil(gateway, n2) { it?.status == "suspended" }
+                val ana = queryUntil(gateway, n1) { it != null }!!
+                assertThat(
+                    ana,
+                ).isEqualTo(MyAccount(n1, "Ana Ruiz", "ana@example.org", "active", canChangeEmail = true, canCloseAccount = true))
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-MYAC-7 - given N1 active, when Tool Checked Out and later Hold Placed for N1, then N1 is unchanged`() {
+        // N2's Neighbor Suspended is recorded after the loan and hold, so once N2 shows suspended the processor
+        // (which handles events in order) has already seen, and ignored, Tool Checked Out and Hold Placed.
         fixture
             .given()
             .recorded(
                 listOf(
                     registeredAna(),
                     NeighborRegistered(n2, "Ben Okafor", "ben@example.org", now),
-                    NeighborSuspended(n2, now),
                     ToolCheckedOut(LoanId(UUID.randomUUID()), ToolId(UUID.randomUUID()), n1, 7, LocalDate.of(2026, 10, 13), now),
                     HoldPlaced(HoldId(UUID.randomUUID()), ToolId(UUID.randomUUID()), n1, now),
+                    NeighborSuspended(n2, now),
                 ),
             ).execute { config ->
                 val gateway = config.getComponent(QueryGateway::class.java)
@@ -174,6 +194,20 @@ class MyAccountProjectionFixtureTest {
                 assertThat(
                     ana,
                 ).isEqualTo(MyAccount(n1, "Ana Ruiz", "ana@example.org", "active", canChangeEmail = true, canCloseAccount = true))
+            }.`when`()
+            .nothing()
+            .then()
+            .noEvents()
+    }
+
+    @Test
+    fun `INV-MYAC-1 - given no account N9, when My Account is asked for N9, then not found`() {
+        fixture
+            .given()
+            .recorded(listOf(registeredAna()))
+            .execute { config ->
+                val gateway = config.getComponent(QueryGateway::class.java)
+                queryUntil(gateway, n1) { it != null }
                 assertThat(gateway.query(GetMyAccount(n9), MyAccountAnswer::class.java).join().account).isNull()
             }.`when`()
             .nothing()
@@ -183,12 +217,16 @@ class MyAccountProjectionFixtureTest {
 
     @Test
     fun `INV-MYAC-10 - the same Neighbor Registered applied twice leaves one unchanged account`() {
+        // The later Neighbor Suspended is the sentinel: once N1 shows suspended, the replayed Neighbor Registered
+        // before it has been applied, and the changed email must have survived it.
         fixture
             .given()
-            .recorded(listOf(registeredAna(), NeighborEmailChanged(n1, "ana.ruiz@example.net", now), registeredAna()))
-            .execute { config ->
-                val account = queryUntil(config.getComponent(QueryGateway::class.java), n1) { it?.email == "ana.ruiz@example.net" }!!
-                assertThat(account.status).isEqualTo("active")
+            .recorded(
+                listOf(registeredAna(), NeighborEmailChanged(n1, "ana.ruiz@example.net", now), registeredAna(), NeighborSuspended(n1, now)),
+            ).execute { config ->
+                val account = queryUntil(config.getComponent(QueryGateway::class.java), n1) { it?.status == "suspended" }!!
+                assertThat(account.email).isEqualTo("ana.ruiz@example.net")
+                assertThat(account.name).isEqualTo("Ana Ruiz")
             }.`when`()
             .nothing()
             .then()
