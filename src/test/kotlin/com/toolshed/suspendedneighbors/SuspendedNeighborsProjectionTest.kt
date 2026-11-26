@@ -163,7 +163,7 @@ class SuspendedNeighborsProjectionTest {
     }
 
     @Test
-    fun `INV-SPN-9 INV-SPN-3 given Ana suspended again, when the tail Reinstated and Suspended is replayed, then Ana stays listed with the new date`() {
+    fun `INV-SPN-9 INV-SPN-3 given Ana suspended again, when the tail is replayed, then Ana stays listed with the new date`() {
         val h = background()
         val tail = arrayOf(NeighborReinstated(ana, on(11, 1)), NeighborSuspended(ana, on(2, 3, 2027)))
         h.apply(NeighborSuspended(ana, on(10, 7)), *tail)
