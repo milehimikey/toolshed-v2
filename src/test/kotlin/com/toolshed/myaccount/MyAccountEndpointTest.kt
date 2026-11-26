@@ -86,7 +86,7 @@ class MyAccountEndpointTest {
     }
 
     @Test
-    fun `INV-MYAC-14 - given a signed-in caller and a malformed id in the path, then bad input 400, not requester-mismatch`() {
+    fun `bad-input check 2 - given a signed-in caller and a malformed id in the path, then bad input 400, not requester-mismatch`() {
         read("not-a-uuid", caller = UUID.randomUUID().toString()).andExpect { status { isEqualTo(400) } }
     }
 
