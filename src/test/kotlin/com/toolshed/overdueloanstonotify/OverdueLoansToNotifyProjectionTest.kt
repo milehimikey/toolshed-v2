@@ -72,7 +72,7 @@ class OverdueLoansToNotifyProjectionTest {
     }
 
     @Test
-    fun `INV-OLN-1 INV-OLN-6 - given L1 due 12 October still out, when read at 00-00 on 13 October shed time, then L1 is returned with names and email`() {
+    fun `INV-OLN-1 INV-OLN-6 - given L1 due 12 October still out, when read at 00-00 on 13 October, then L1 is returned with details`() {
         known()
         projection.on(checkedOut())
         assertThat(listedAt(Instant.parse("2026-10-13T06:00:00Z"))).containsExactly(l1Row())
@@ -133,7 +133,7 @@ class OverdueLoansToNotifyProjectionTest {
     }
 
     @Test
-    fun `INV-OLN-6 - given email changed on 10 October before the loan is overdue, when read on 13 October, then L1 carries the new email`() {
+    fun `INV-OLN-6 - given email changed on 10 October, when read on 13 October, then L1 carries the new email`() {
         known()
         projection.on(checkedOut())
         projection.on(NeighborEmailChanged(ana, "ana@example.org", now))
@@ -166,7 +166,7 @@ class OverdueLoansToNotifyProjectionTest {
     }
 
     @Test
-    fun `INV-OLN-3 INV-OLN-9 - given notice sent for L1, when the same Overdue Notice Sent is applied again, then L1 is still off the list`() {
+    fun `INV-OLN-3 INV-OLN-9 - given notice sent for L1, when the same notice event is replayed, then L1 is still off the list`() {
         known()
         projection.on(checkedOut())
         projection.on(noticeSent())
@@ -175,7 +175,7 @@ class OverdueLoansToNotifyProjectionTest {
     }
 
     @Test
-    fun `INV-OLN-8 - given L1 has left the list, when a replayed Loan Extended, Tool Returned or Tool Lost arrives, then nothing changes`() {
+    fun `INV-OLN-8 - given L1 has left the list, when a replayed Extended, Returned or Lost arrives, then nothing changes`() {
         known()
         projection.on(checkedOut())
         projection.on(noticeSent())

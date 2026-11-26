@@ -11,6 +11,5 @@ class ListLoansToNotifyQueryHandler(
     private val clock: Clock,
 ) {
     @QueryHandler
-    fun handle(query: ListLoansToNotify): List<LoanToNotifyRow> =
-        repository.overdue(clock.instant().atZone(clock.zone).toLocalDate())
+    fun handle(query: ListLoansToNotify): List<LoanToNotifyRow> = repository.overdue(clock.instant().atZone(clock.zone).toLocalDate())
 }
