@@ -100,6 +100,19 @@ class NeighborsProjectionTest {
         assertThat(h.list().single().status).isEqualTo(NeighborStatus.ACTIVE)
     }
 
+    @Test
+    fun `INV-NBRS-7 INV-NBRS-5 given two email changes, when the earlier Neighbor Email Changed is applied again, then the latest email stays`() {
+        val h = Harness()
+        val first = NeighborEmailChanged(ana, "b@example.org", at(10, 2))
+        h.apply(
+            registered(ana, "Ana Ruiz", "ana@example.org"),
+            first,
+            NeighborEmailChanged(ana, "c@example.org", at(10, 3)),
+            first,
+        )
+        assertThat(h.list().single().email).isEqualTo("c@example.org")
+    }
+
     // --- INV-NBRS-5 ---
 
     @Test

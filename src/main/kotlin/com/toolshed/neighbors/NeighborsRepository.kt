@@ -21,6 +21,7 @@ interface NeighborsRepository {
     fun changeEmail(
         neighborId: NeighborId,
         email: String,
+        changedAt: Instant,
     )
 
     fun suspended(
@@ -57,8 +58,14 @@ class InMemoryNeighborsRepository : NeighborsRepository {
     override fun changeEmail(
         neighborId: NeighborId,
         email: String,
+        changedAt: Instant,
     ) = synchronized(lock) {
-        accounts.computeIfPresent(neighborId) { _, account -> account.copy(email = email) }
+        // Keep the latest change only: redelivering an earlier Neighbor Email Changed must not put back a replaced
+        // email (INV-NBRS-7, INV-NBRS-5).
+        accounts.computeIfPresent(neighborId) { _, account ->
+            val last = account.emailChangedAt
+            if (last != null && changedAt <= last) account else account.copy(email = email, emailChangedAt = changedAt)
+        }
         Unit
     }
 

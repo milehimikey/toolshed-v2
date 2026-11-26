@@ -27,7 +27,7 @@ class NeighborsProjection(
 
     @EventHandler
     fun on(event: NeighborEmailChanged) {
-        repository.changeEmail(event.neighborId, event.email)
+        repository.changeEmail(event.neighborId, event.email, event.changedAt)
         logger.debug { "neighbors neighborId=${event.neighborId.value} outcome=email-changed" }
     }
 
