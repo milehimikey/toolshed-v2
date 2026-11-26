@@ -27,7 +27,11 @@ interface SuspendedNeighborsRepository {
         suspendedAt: Instant,
     )
 
-    fun remove(neighborId: NeighborId)
+    /** Ends the suspension current at [at]; a removal recorded before the current entry's suspendedAt is a replay. */
+    fun remove(
+        neighborId: NeighborId,
+        at: Instant,
+    )
 
     fun entries(): List<StoredSuspension>
 
@@ -74,11 +78,15 @@ class InMemorySuspendedNeighborsRepository : SuspendedNeighborsRepository {
         Unit
     }
 
-    override fun remove(neighborId: NeighborId) =
-        synchronized(lock) {
-            entries.remove(neighborId)
-            Unit
-        }
+    override fun remove(
+        neighborId: NeighborId,
+        at: Instant,
+    ) = synchronized(lock) {
+        // INV-SPN-9: a replayed Reinstated/Closed that predates the current suspension ended an earlier one.
+        val current = entries[neighborId]
+        if (current != null && !at.isBefore(current.suspendedAt)) entries.remove(neighborId)
+        Unit
+    }
 
     override fun entries(): List<StoredSuspension> = synchronized(lock) { entries.values.toList() }
 

@@ -163,6 +163,31 @@ class SuspendedNeighborsProjectionTest {
     }
 
     @Test
+    fun `INV-SPN-9 INV-SPN-3 given Ana suspended again, when the tail Reinstated and Suspended is replayed, then Ana stays listed with the new date`() {
+        val h = background()
+        val tail = arrayOf(NeighborReinstated(ana, on(11, 1)), NeighborSuspended(ana, on(2, 3, 2027)))
+        h.apply(NeighborSuspended(ana, on(10, 7)), *tail)
+
+        h.apply(*tail)
+
+        assertThat(h.list().map { it.neighborId to it.suspendedAt }).containsExactly(ana to on(2, 3, 2027))
+    }
+
+    @Test
+    fun `INV-SPN-9 INV-SPN-3 given Ana suspended again, when the earlier Account Closed is replayed, then Ana stays listed`() {
+        val h = background()
+        h.apply(
+            NeighborSuspended(ana, on(10, 7)),
+            NeighborAccountClosed(ana, true, on(10, 20)),
+            NeighborSuspended(ana, on(2, 3, 2027)),
+        )
+
+        h.apply(NeighborAccountClosed(ana, true, on(10, 20)), NeighborSuspended(ana, on(2, 3, 2027)))
+
+        assertThat(h.list().map { it.neighborId to it.suspendedAt }).containsExactly(ana to on(2, 3, 2027))
+    }
+
+    @Test
     fun `INV-SPN-9 given a repeated registration after an email change, then the current email is kept`() {
         val h = Harness()
         val registered = NeighborRegistered(ana, "Ana Ruiz", "ana@example.org", now)

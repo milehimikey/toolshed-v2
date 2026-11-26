@@ -39,13 +39,13 @@ class SuspendedNeighborsProjection(
 
     @EventHandler
     fun on(event: NeighborReinstated) {
-        repository.remove(event.neighborId)
+        repository.remove(event.neighborId, event.reinstatedAt)
         logger.debug { "suspended-neighbors neighborId=${event.neighborId.value} outcome=removed reason=reinstated" }
     }
 
     @EventHandler
     fun on(event: NeighborAccountClosed) {
-        repository.remove(event.neighborId)
+        repository.remove(event.neighborId, event.closedAt)
         logger.debug { "suspended-neighbors neighborId=${event.neighborId.value} outcome=removed reason=account-closed" }
     }
 }

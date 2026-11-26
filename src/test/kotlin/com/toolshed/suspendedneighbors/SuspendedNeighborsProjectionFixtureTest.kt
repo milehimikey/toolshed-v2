@@ -23,6 +23,7 @@ import java.util.UUID
 class SuspendedNeighborsProjectionFixtureTest {
     private val now = Instant.parse("2026-10-06T04:00:00Z")
     private val ana = NeighborId(UUID.nameUUIDFromBytes("n1".toByteArray()))
+    private val ben = NeighborId(UUID.nameUUIDFromBytes("n2".toByteArray()))
 
     private lateinit var repository: InMemorySuspendedNeighborsRepository
     private lateinit var fixture: AxonTestFixture
@@ -60,12 +61,13 @@ class SuspendedNeighborsProjectionFixtureTest {
             .events(
                 NeighborRegistered(ana, "Ana Ruiz", "ana@example.org", now),
                 NeighborSuspended(ana, now),
-                NeighborReinstated(ana, now),
+                NeighborReinstated(ana, now.plusSeconds(3600)),
+                NeighborRegistered(ben, "Ben Ito", "ben@example.org", now),
             ).then()
             .expect { configuration ->
                 val queryGateway = configuration.getComponent(QueryGateway::class.java)
-                // Waits until the processor has applied the setup, so an empty result reflects the drop-off.
-                await().atMost(Duration.ofSeconds(5)).until { repository.neighborName(ana) != null }
+                // Ben is registered after the reinstatement: once he is known, the suspension and reinstatement were applied.
+                await().atMost(Duration.ofSeconds(5)).until { repository.neighborName(ben) != null }
                 await().atMost(Duration.ofSeconds(5)).untilAsserted {
                     assertThat(queryGateway.query(ListSuspendedNeighbors, SuspendedNeighbors::class.java).join().entries).isEmpty()
                 }
