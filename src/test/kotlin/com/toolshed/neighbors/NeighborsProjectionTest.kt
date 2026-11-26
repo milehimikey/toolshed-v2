@@ -101,7 +101,7 @@ class NeighborsProjectionTest {
     }
 
     @Test
-    fun `INV-NBRS-7 INV-NBRS-5 given two email changes, when the earlier Neighbor Email Changed is applied again, then the latest email stays`() {
+    fun `INV-NBRS-7 INV-NBRS-5 given two email changes, when the earlier one is applied again, then the latest email stays`() {
         val h = Harness()
         val first = NeighborEmailChanged(ana, "b@example.org", at(10, 2))
         h.apply(
