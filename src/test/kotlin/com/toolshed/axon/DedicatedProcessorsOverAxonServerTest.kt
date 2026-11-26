@@ -32,6 +32,8 @@ import com.toolshed.toolcatalog.ToolCatalogConfiguration
 import com.toolshed.toolcatalog.ToolCatalogProjection
 import com.toolshed.toolinventory.ToolInventoryConfiguration
 import com.toolshed.toolinventory.ToolInventoryProjection
+import com.toolshed.toolmaintenance.ToolMaintenanceConfiguration
+import com.toolshed.toolmaintenance.ToolMaintenanceProjection
 import com.toolshed.undeliverednotices.UndeliveredNoticesConfiguration
 import com.toolshed.undeliverednotices.UndeliveredNoticesProjection
 import io.axoniq.framework.testcontainer.AxonServerContainer
@@ -59,7 +61,7 @@ import kotlin.test.assertTrue
 
 /**
  * Every event handling component in the running app, over a real Axon Server, is alone on the named pooled-streaming
- * processor its slice fixture uses: the fourteen projections and the two notice outboxes. Without an explicit definition
+ * processor its slice fixture uses: the fifteen projections and the two notice outboxes. Without an explicit definition
  * the Spring starter names each processor after the component's package, so fixture and app would disagree on names and
  * an outbox that stops its processor on purpose (INV-OVN-4, INV-PKN-4) could stall a neighbour.
  */
@@ -93,6 +95,7 @@ class DedicatedProcessorsOverAxonServerTest {
                 Arguments.of(SuspendedNeighborsConfiguration.PROCESSOR, SuspendedNeighborsProjection::class.java),
                 Arguments.of(ToolCatalogConfiguration.PROCESSOR, ToolCatalogProjection::class.java),
                 Arguments.of(ToolInventoryConfiguration.PROCESSOR, ToolInventoryProjection::class.java),
+                Arguments.of(ToolMaintenanceConfiguration.PROCESSOR, ToolMaintenanceProjection::class.java),
                 Arguments.of(UndeliveredNoticesConfiguration.PROCESSOR, UndeliveredNoticesProjection::class.java),
             )
     }
@@ -168,6 +171,6 @@ class DedicatedProcessorsOverAxonServerTest {
     fun `no processor is named after a package - every handler has an explicit definition`() {
         val packageNamed = processors().keys.filter { it.startsWith("com.toolshed") }
         assertTrue(packageNamed.isEmpty(), "package-named processors still exist: $packageNamed")
-        assertEquals(16, processors().size, "expected 14 projections + 2 outboxes; processors: ${processors().keys}")
+        assertEquals(17, processors().size, "expected 15 projections + 2 outboxes; processors: ${processors().keys}")
     }
 }
